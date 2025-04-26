@@ -20,23 +20,19 @@ try {
         throw new Exception('Invalid email address');
     }
 
-    // Check if email exists in database
     $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
     $stmt->execute([$email]);
     if ($stmt->rowCount() === 0) {
         throw new Exception('No account found with this email address');
     }
 
-    // Generate 6-digit code
     $verification_code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
     
-    // Store in session
     session_start();
     $_SESSION['reset_code'] = $verification_code;
     $_SESSION['reset_email'] = $email;
     $_SESSION['reset_time'] = time();
 
-    // Send email
     $mail = new PHPMailer(true);
     $mail->isSMTP();
     $mail->Host = SMTP_HOST;

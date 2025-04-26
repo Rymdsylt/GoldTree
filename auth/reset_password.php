@@ -38,12 +38,11 @@ try {
         throw new Exception('Passwords do not match');
     }
 
-    // Update password in database
-    $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+    // Update password in database    $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
     $stmt = $conn->prepare("UPDATE users SET password = ? WHERE email = ?");
     $stmt->execute([$hashed_password, $email]);
 
-    // Clear session data
+
     unset($_SESSION['reset_code']);
     unset($_SESSION['reset_email']);
     unset($_SESSION['reset_time']);
