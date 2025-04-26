@@ -15,12 +15,10 @@ try {
     $new_password = $_POST['new_password'];
     $confirm_password = $_POST['confirm_password'];
 
-    // Validate session data exists
     if (!isset($_SESSION['reset_code']) || !isset($_SESSION['reset_email']) || !isset($_SESSION['reset_time'])) {
         throw new Exception('Please request a new verification code');
     }
 
-    // Check if code has expired (10 minutes)
     if (time() - $_SESSION['reset_time'] > 600) {
         unset($_SESSION['reset_code']);
         unset($_SESSION['reset_email']);
@@ -28,20 +26,17 @@ try {
         throw new Exception('Verification code has expired. Please request a new one');
     }
 
-    // Verify code and email match
     if ($verification_code !== $_SESSION['reset_code'] || $email !== $_SESSION['reset_email']) {
         throw new Exception('Invalid verification code');
     }
 
-    // Validate passwords match
     if ($new_password !== $confirm_password) {
         throw new Exception('Passwords do not match');
     }
 
-    // Update password in database    $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+    $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
     $stmt = $conn->prepare("UPDATE users SET password = ? WHERE email = ?");
     $stmt->execute([$hashed_password, $email]);
-
 
     unset($_SESSION['reset_code']);
     unset($_SESSION['reset_email']);
