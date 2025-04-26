@@ -1,0 +1,94 @@
+<?php 
+require_once 'templates/header.php';
+require_once 'auth/login_status.php';
+
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
+// Set default active page
+if (!isset($_SESSION['active_page'])) {
+    $_SESSION['active_page'] = 'dashboard';
+}
+
+// Update active page if clicked
+if (isset($_GET['page'])) {
+    $_SESSION['active_page'] = $_GET['page'];
+}
+
+// Get user data
+$stmt = $conn->prepare("SELECT users.*, members.first_name, members.last_name 
+    FROM users 
+    LEFT JOIN members ON users.member_id = members.id 
+    WHERE users.id = ?");
+$stmt->execute([$_SESSION['user_id']]);
+$user = $stmt->fetch();
+?>
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card stat-card mb-4">
+                <div class="card-body">
+                    <h4 class="card-title mb-0">
+                        Welcome, <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?>!
+                    </h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Quick Access Cards -->
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Members</h5>
+                    <p class="card-text">View and manage church members.</p>
+                    <a href="members.php?page=members" class="btn btn-primary <?php echo ($_SESSION['active_page'] === 'members') ? 'active' : ''; ?>">
+                        <i class="bi bi-people-fill"></i> Go to Members
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Events</h5>
+                    <p class="card-text">Manage church events and activities.</p>
+                    <a href="events.php?page=events" class="btn btn-primary <?php echo ($_SESSION['active_page'] === 'events') ? 'active' : ''; ?>">
+                        <i class="bi bi-calendar-event"></i> Go to Events
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Donations</h5>
+                    <p class="card-text">Track donations and contributions.</p>
+                    <a href="donations.php?page=donations" class="btn btn-primary <?php echo ($_SESSION['active_page'] === 'donations') ? 'active' : ''; ?>">
+                        <i class="bi bi-cash"></i> Go to Donations
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <?php if ($isAdmin): ?>
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Administrative Tools</h5>
+                    <p class="card-text">Access admin panel for advanced management options.</p>
+                    <a href="admin/manage_accounts.php?page=admin" class="btn btn-primary <?php echo ($_SESSION['active_page'] === 'admin') ? 'active' : ''; ?>">
+                        <i class="bi bi-gear"></i> Go to Admin Panel
+                    </a>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<?php require_once 'templates/footer.php'; ?>

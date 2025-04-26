@@ -10,7 +10,7 @@ if (isset($_COOKIE['logged_in']) && $_COOKIE['logged_in'] === 'true') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Mater Dolorosa</title>
+    <title>Reset Password - Mater Dolorosa</title>
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/theme.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -19,40 +19,33 @@ if (isset($_COOKIE['logged_in']) && $_COOKIE['logged_in'] === 'true') {
     <div class="container d-flex justify-content-center align-items-center vh-100">
         <div class="card p-4 shadow-lg fade-in" style="width: 100%; max-width: 400px;">
             <div class="text-center mb-4">
-                <i class="bi bi-church display-4 text-primary"></i>
-                <h3 class="mt-2">Welcome Back</h3>
-                <p class="text-muted">Sign in to your account</p>
+                <i class="bi bi-shield-lock display-4 text-primary"></i>
+                <h3 class="mt-2">Reset Password</h3>
+                <p class="text-muted">Enter your email to receive a reset link</p>
             </div>
+            
             <div id="alert-container"></div>
-            <form id="loginForm" action="auth/login_user.php" method="POST">
-                <div class="mb-3">
-                    <label for="login" class="form-label">Username or Email</label>
+            
+            <form id="resetForm">
+                <div class="mb-4">
+                    <label for="email" class="form-label">Email Address</label>
                     <div class="input-group">
                         <span class="input-group-text bg-light">
-                            <i class="bi bi-person"></i>
+                            <i class="bi bi-envelope"></i>
                         </span>
-                        <input type="text" class="form-control" id="login" name="login" placeholder="Enter your username or email" required>
+                        <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
                     </div>
                 </div>
-                <div class="mb-3">
-                    <label for="password" class="form-label">Password</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light">
-                            <i class="bi bi-lock"></i>
-                        </span>
-                        <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
-                    </div>
-                    <div class="text-end mt-1">
-                        <a href="forgot_password.php" class="small">Forgot Password?</a>
-                    </div>
-                </div>
+                
                 <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-box-arrow-in-right"></i> Sign In
+                    <i class="bi bi-envelope"></i> Send Reset Link
                 </button>
             </form>
+            
             <div class="text-center mt-4">
-                <span class="text-muted">Don't have an account?</span>
-                <a href="register.php" class="ms-1">Register now</a>
+                <a href="login.php" class="text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> Back to Login
+                </a>
             </div>
         </div>
     </div>
@@ -71,23 +64,28 @@ if (isset($_COOKIE['logged_in']) && $_COOKIE['logged_in'] === 'true') {
                 `);
             }
 
-            $('#loginForm').on('submit', function(e) {
+            $('#resetForm').on('submit', function(e) {
                 e.preventDefault();
-                
+                const submitBtn = $(this).find('button[type="submit"]');
+                const originalBtnText = submitBtn.html();
+                submitBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Sending...');
+
                 $.ajax({
                     type: 'POST',
-                    url: 'auth/login_user.php',
+                    url: 'mailer/forgot_password.php',
                     data: $(this).serialize(),
                     dataType: 'json',
                     success: function(response) {
+                        showAlert(response.success ? 'success' : 'danger', response.message);
                         if (response.success) {
-                            window.location.href = 'Dashboard_intro.php?page=dashboard';
-                        } else {
-                            showAlert('danger', response.message);
+                            $('#resetForm')[0].reset();
                         }
                     },
                     error: function() {
-                        showAlert('danger', 'An error occurred. Please try again.');
+                        showAlert('danger', 'An error occurred. Please try again later.');
+                    },
+                    complete: function() {
+                        submitBtn.prop('disabled', false).html(originalBtnText);
                     }
                 });
             });

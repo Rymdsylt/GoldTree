@@ -10,10 +10,29 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 try {
+    // Verify the email code first
+    $verification_code = $_POST['verification_code'];
+    $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+
+    if (!isset($_SESSION['verification_code']) || !isset($_SESSION['verification_email']) || !isset($_SESSION['verification_time'])) {
+        throw new Exception('Please request a verification code first');
+    }
+
+    // Check if verification code has expired (10 minutes)
+    if (time() - $_SESSION['verification_time'] > 600) {
+        unset($_SESSION['verification_code']);
+        unset($_SESSION['verification_email']);
+        unset($_SESSION['verification_time']);
+        throw new Exception('Verification code has expired. Please request a new one');
+    }
+
+    // Verify the code and email match
+    if ($verification_code !== $_SESSION['verification_code'] || $email !== $_SESSION['verification_email']) {
+        throw new Exception('Invalid verification code');
+    }
 
     $first_name = filter_input(INPUT_POST, 'first_name', FILTER_SANITIZE_STRING);
     $last_name = filter_input(INPUT_POST, 'last_name', FILTER_SANITIZE_STRING);
-    $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
     $phone = filter_input(INPUT_POST, 'phone', FILTER_SANITIZE_STRING);
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
@@ -24,7 +43,6 @@ try {
     if (!$first_name || !$last_name || !$email || !$password || !$confirm_password) {
         throw new Exception('Please fill in all required fields');
     }
-
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         throw new Exception('Invalid email format');
@@ -40,31 +58,30 @@ try {
         throw new Exception('Email already registered');
     }
 
-
     $conn->beginTransaction();
 
     $username = explode('@', $email)[0];
     
-
     $hashed_password = password_hash($password, PASSWORD_BCRYPT);
-
 
     $stmt = $conn->prepare("INSERT INTO users (username, password, email) VALUES (?, ?, ?)");
     $stmt->execute([$username, $hashed_password, $email]);
     $user_id = $conn->lastInsertId();
-
 
     $stmt = $conn->prepare("INSERT INTO members (first_name, last_name, email, phone, address, birthdate, membership_date) 
                            VALUES (?, ?, ?, ?, ?, ?, ?)");
     $stmt->execute([$first_name, $last_name, $email, $phone, $address, $birthdate, $membership_date]);
     $member_id = $conn->lastInsertId();
 
- 
     $stmt = $conn->prepare("UPDATE users SET member_id = ? WHERE id = ?");
     $stmt->execute([$member_id, $user_id]);
 
-
     $conn->commit();
+
+    // Clear verification session data after successful registration
+    unset($_SESSION['verification_code']);
+    unset($_SESSION['verification_email']);
+    unset($_SESSION['verification_time']);
 
     echo json_encode(['status' => 'success', 'message' => 'Registration successful! You can now login.']);
 
