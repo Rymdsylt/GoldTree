@@ -180,7 +180,6 @@ $averageDonation = number_format($stats['average_donation'] ?? 0, 2);
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize with current date range
     const today = new Date();
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
     document.getElementById('startDate').value = firstDay.toISOString().split('T')[0];
@@ -189,7 +188,6 @@ document.addEventListener('DOMContentLoaded', function() {
     loadDonations();
     loadMembers();
 
-    // Set up event listeners for filters
     document.getElementById('searchDonor').addEventListener('input', debounce(filterDonations, 300));
     document.getElementById('typeFilter').addEventListener('change', filterDonations);
     document.getElementById('startDate').addEventListener('change', filterDonations);
@@ -286,14 +284,13 @@ function loadDonations(page = 1) {
             document.getElementById('showing').textContent = data.showing;
             document.getElementById('total').textContent = data.total;
             
-            // Update stats when filters change
             loadStats(queryParams);
         })
         .catch(error => console.error('Error:', error));
 }
 
 function filterDonations() {
-    loadDonations(1); // Reset to first page when filters change
+    loadDonations(1); 
 }
 
 function loadMembers() {

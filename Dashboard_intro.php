@@ -49,6 +49,7 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
         </div>
+        
         <div class="col-md-3">
             <div class="card stat-card h-100">
                 <div class="card-body">

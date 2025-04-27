@@ -10,20 +10,17 @@ $offset = ($page - 1) * $limit;
 $where_clauses = [];
 $params = [];
 
-// Search filter
 if (!empty($_GET['search'])) {
     $search = '%' . $_GET['search'] . '%';
     $where_clauses[] = "(m.first_name LIKE ? OR m.last_name LIKE ? OR d.donor_name LIKE ?)";
     $params = array_merge($params, [$search, $search, $search]);
 }
 
-// Type filter
 if (!empty($_GET['type'])) {
     $where_clauses[] = "d.donation_type = ?";
     $params[] = $_GET['type'];
 }
 
-// Date range filter
 if (!empty($_GET['start_date'])) {
     $where_clauses[] = "d.donation_date >= ?";
     $params[] = $_GET['start_date'];
@@ -35,7 +32,6 @@ if (!empty($_GET['end_date'])) {
 
 $where_sql = !empty($where_clauses) ? 'WHERE ' . implode(' AND ', $where_clauses) : '';
 
-// Check if we're requesting stats only
 if (isset($_GET['stats'])) {
     $stats_sql = "SELECT 
         COALESCE(SUM(d.amount), 0) as totalDonations,
@@ -58,7 +54,6 @@ if (isset($_GET['stats'])) {
     exit;
 }
 
-// Get total count for pagination
 $count_sql = "SELECT COUNT(*) FROM donations d 
     LEFT JOIN members m ON d.member_id = m.id 
     $where_sql";
@@ -66,7 +61,6 @@ $stmt = $conn->prepare($count_sql);
 $stmt->execute($params);
 $total = $stmt->fetchColumn();
 
-// Get donations with pagination
 $sql = "SELECT 
     d.*,
     COALESCE(CONCAT(m.first_name, ' ', m.last_name), d.donor_name) as donor_name

@@ -170,16 +170,15 @@ body {
     border-radius: var(--radius);
     border: none;
     box-shadow: var(--shadow);
-    transition: transform 0.2s ease-in-out;
-    height: 100%;
+    transition: var(--transition);
 }
 
 .card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-5px);
 }
 
 .stat-card {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: linear-gradient(45deg, var(--primary), var(--primary-hover));
     color: var(--white);
 }
 
@@ -205,16 +204,6 @@ body {
 .btn-primary:hover {
     background: linear-gradient(45deg, var(--primary-hover), var(--primary));
     transform: translateY(-1px);
-}
-
-.card .btn {
-    border-radius: 4px;
-    transition: all 0.2s ease-in-out;
-}
-
-.card .btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* Forms */
@@ -246,7 +235,7 @@ body {
 
 /* Utilities */
 .shadow-sm {
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.075) !important;
+    box-shadow: var(--shadow) !important;
 }
 
 /* Status Badges */
@@ -318,31 +307,4 @@ body {
     max-height: 300px;
     overflow-y: auto;
     font-size: 0.875rem;
-}
-
-/* Responsive spacing */
-@media (max-width: 576px) {
-    .container-fluid {
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-    
-    .card-body {
-        padding: 1.25rem;
-    }
-    
-    .btn {
-        padding: 0.5rem 1rem;
-    }
-}
-
-/* Card height adjustments */
-.h-100 {
-    min-height: 200px;
-}
-
-/* Improved spacing for icons */
-.bi {
-    margin-right: 0.5rem;
-    vertical-align: -0.125em;
 }

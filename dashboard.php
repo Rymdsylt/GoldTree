@@ -49,6 +49,7 @@ $user = $stmt->fetch();
                 </div>
             </div>
         </div>
+        
         <div class="col-12 col-sm-6 col-lg-4">
             <div class="card h-100 shadow-sm">
                 <div class="card-body d-flex flex-column">
