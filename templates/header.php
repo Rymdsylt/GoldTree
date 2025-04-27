@@ -26,48 +26,37 @@ if (isset($_SESSION['user_id'])) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mater Dolorosa - <?php echo ucfirst(str_replace('.php', '', $current_page)); ?></title>
-    <link rel="stylesheet" href="/GoldTree/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/GoldTree/css/theme.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <style>
-        .btn-primary.active {
-            background-color: #0056b3;
-            border-color: #0056b3;
-            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.5);
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>Mater Dolorosa Church Management</title>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/theme.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
 </head>
 <body>
-    <!-- Responsive Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container-fluid">
-            <button class="navbar-toggler border-0" type="button" id="sidebarToggle">
-                <i class="bi bi-list"></i>
-            </button>
-            <a class="navbar-brand" href="/GoldTree/dashboard.php">
-                <i class="bi bi-church"></i> Mater Dolorosa
+            <a class="navbar-brand d-flex align-items-center" href="dashboard.php">
+                <i class="bi bi-tree-fill me-2"></i>
+                Mater Dolorosa Church
             </a>
-            <div class="d-flex align-items-center">
-                <?php if (isset($_SESSION['user_id'])): ?>
-                    <div class="dropdown">
-                        <button class="btn btn-link dropdown-toggle text-dark" type="button" id="userMenu" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle"></i>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="/GoldTree/profile.php">Profile</a></li>
-                            <?php if ($isAdmin): ?>
-                                <li><a class="dropdown-item" href="/GoldTree/admin/manage_accounts.php">Admin Panel</a></li>
-                            <?php endif; ?>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/GoldTree/auth/logout_user.php">Logout</a></li>
-                        </ul>
-                    </div>
-                <?php endif; ?>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                </ul>
             </div>
         </div>
     </nav>
+
+    <?php if (isset($_SESSION['alert'])): ?>
+        <div class="alert alert-<?php echo $_SESSION['alert_type']; ?> alert-dismissible fade show m-3" role="alert">
+            <?php echo $_SESSION['alert']; ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <?php unset($_SESSION['alert']); unset($_SESSION['alert_type']); ?>
+    <?php endif; ?>
 
     <!-- Sidebar -->
     <?php if (isset($_SESSION['user_id'])): ?>
@@ -107,6 +96,17 @@ if (isset($_SESSION['user_id'])) {
                         </a>
                     </div>
                 <?php endif; ?>
+                
+                <!-- User Account Section -->
+                <div class="mt-4">
+                    <h6 class="text-muted px-3 mb-3">Account</h6>
+                    <a href="profile.php" class="sidebar-link">
+                        <i class="bi bi-person-circle"></i> Profile
+                    </a>
+                    <a href="auth/logout_user.php" class="sidebar-link">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </a>
+                </div>
             </nav>
         </div>
     </div>

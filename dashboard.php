@@ -25,10 +25,10 @@ $user = $stmt->fetch();
 ?>
 
 <div class="container-fluid py-4">
-    <div class="row">
+    <div class="row mb-4">
         <div class="col-12">
-            <div class="card stat-card mb-4">
-                <div class="card-body">
+            <div class="card stat-card">
+                <div class="card-body p-4">
                     <h4 class="card-title mb-0">
                         Welcome, <?php echo htmlspecialchars($user['first_name'] . ' ' . $user['last_name']); ?>!
                     </h4>
@@ -37,35 +37,35 @@ $user = $stmt->fetch();
         </div>
     </div>
 
-    <div class="row g-4">
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-sm-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
                     <h5 class="card-title">Members</h5>
-                    <p class="card-text">View and manage church members.</p>
-                    <a href="members.php?page=members" class="btn btn-primary <?php echo ($_SESSION['active_page'] === 'members') ? 'active' : ''; ?>">
+                    <p class="card-text flex-grow-1">View and manage church members.</p>
+                    <a href="members.php?page=members" class="btn btn-primary mt-auto w-100 <?php echo ($_SESSION['active_page'] === 'members') ? 'active' : ''; ?>">
                         <i class="bi bi-people-fill"></i> Go to Members
                     </a>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
+        <div class="col-12 col-sm-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
                     <h5 class="card-title">Events</h5>
-                    <p class="card-text">Manage church events and activities.</p>
-                    <a href="events.php?page=events" class="btn btn-primary <?php echo ($_SESSION['active_page'] === 'events') ? 'active' : ''; ?>">
+                    <p class="card-text flex-grow-1">Manage church events and activities.</p>
+                    <a href="events.php?page=events" class="btn btn-primary mt-auto w-100 <?php echo ($_SESSION['active_page'] === 'events') ? 'active' : ''; ?>">
                         <i class="bi bi-calendar-event"></i> Go to Events
                     </a>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card h-100">
-                <div class="card-body">
+        <div class="col-12 col-sm-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
                     <h5 class="card-title">Donations</h5>
-                    <p class="card-text">Track donations and contributions.</p>
-                    <a href="donations.php?page=donations" class="btn btn-primary <?php echo ($_SESSION['active_page'] === 'donations') ? 'active' : ''; ?>">
+                    <p class="card-text flex-grow-1">Track donations and contributions.</p>
+                    <a href="donations.php?page=donations" class="btn btn-primary mt-auto w-100 <?php echo ($_SESSION['active_page'] === 'donations') ? 'active' : ''; ?>">
                         <i class="bi bi-cash"></i> Go to Donations
                     </a>
                 </div>
@@ -74,11 +74,11 @@ $user = $stmt->fetch();
         
         <?php if ($isAdmin): ?>
         <div class="col-12">
-            <div class="card">
-                <div class="card-body">
+            <div class="card shadow-sm">
+                <div class="card-body d-flex flex-column">
                     <h5 class="card-title">Administrative Tools</h5>
-                    <p class="card-text">Access admin panel for advanced management options.</p>
-                    <a href="admin/manage_accounts.php?page=admin" class="btn btn-primary <?php echo ($_SESSION['active_page'] === 'admin') ? 'active' : ''; ?>">
+                    <p class="card-text flex-grow-1">Access admin panel for advanced management options.</p>
+                    <a href="admin/manage_accounts.php?page=admin" class="btn btn-primary mt-auto <?php echo ($_SESSION['active_page'] === 'admin') ? 'active' : ''; ?>">
                         <i class="bi bi-gear"></i> Go to Admin Panel
                     </a>
                 </div>

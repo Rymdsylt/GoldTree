@@ -16,10 +16,11 @@ $stmt = $conn->query("SELECT
     AND donation_date <= LAST_DAY(CURRENT_DATE)");
 $donationStats = $stmt->fetch(PDO::FETCH_ASSOC);
 
-$stmt = $conn->query("SELECT * FROM events 
+$stmt = $conn->prepare("SELECT * FROM events 
     WHERE start_datetime >= CURRENT_DATE 
     AND status = 'upcoming'
     ORDER BY start_datetime ASC LIMIT 5");
+$stmt->execute();
 $upcomingEvents = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 
@@ -31,8 +32,8 @@ $stmt = $conn->query("SELECT d.*, m.first_name, m.last_name
 $recentDonations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $stmt = $conn->query("SELECT * FROM notifications 
-    WHERE end_date >= CURRENT_DATE OR end_date IS NULL
-    ORDER BY priority DESC, created_at DESC LIMIT 5");
+    WHERE status != 'sent'
+    ORDER BY created_at DESC LIMIT 5");
 $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 

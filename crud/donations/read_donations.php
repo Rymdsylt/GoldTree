@@ -2,115 +2,90 @@
 require_once '../../db/connection.php';
 
 header('Content-Type: application/json');
-$response = ['success' => false, 'donations' => [], 'total' => 0, 'showing' => 0];
 
-try {
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$limit = 10;
+$offset = ($page - 1) * $limit;
 
-    if (isset($_GET['id'])) {
-        $stmt = $conn->prepare("SELECT d.*, 
-            CASE 
-                WHEN d.member_id IS NOT NULL THEN CONCAT(m.first_name, ' ', m.last_name)
-                ELSE d.donor_name 
-            END as donor_name
-            FROM donations d 
-            LEFT JOIN members m ON d.member_id = m.id 
-            WHERE d.id = ?");
-        $stmt->execute([$_GET['id']]);
-        $donations = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        $response['success'] = true;
-        $response['donations'] = $donations;
-        $response['total'] = count($donations);
-        $response['showing'] = count($donations);
-        echo json_encode($response);
-        exit;
-    }
+$where_clauses = [];
+$params = [];
 
-    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-    $search = $_GET['search'] ?? '';
-    $type = $_GET['type'] ?? '';
-    $start = $_GET['start'] ?? '';
-    $end = $_GET['end'] ?? '';
-    $limit = 10;
-    $offset = ($page - 1) * $limit;
-
-
-    $where_conditions = [];
-    $params = [];
-
-    if (!empty($search)) {
-        $where_conditions[] = "(m.first_name LIKE ? OR m.last_name LIKE ? OR d.donor_name LIKE ?)";
-        $search_param = "%$search%";
-        $params[] = $search_param;
-        $params[] = $search_param;
-        $params[] = $search_param;
-    }
-
-    if (!empty($type)) {
-        $where_conditions[] = "d.donation_type = ?";
-        $params[] = $type;
-    }
-
-    if (!empty($start)) {
-        $where_conditions[] = "d.donation_date >= ?";
-        $params[] = $start;
-    }
-
-    if (!empty($end)) {
-        $where_conditions[] = "d.donation_date <= ?";
-        $params[] = $end;
-    }
-
-    $where_clause = !empty($where_conditions) ? "WHERE " . implode(" AND ", $where_conditions) : "";
-
-
-    $count_sql = "SELECT COUNT(*) FROM donations d 
-                  LEFT JOIN members m ON d.member_id = m.id 
-                  $where_clause";
-    
-    if (!empty($params)) {
-        $stmt = $conn->prepare($count_sql);
-        $stmt->execute($params);
-    } else {
-        $stmt = $conn->query($count_sql);
-    }
-    $total = $stmt->fetchColumn();
-
-
-    $query = "SELECT d.*, 
-        CASE 
-            WHEN d.member_id IS NOT NULL THEN CONCAT(m.first_name, ' ', m.last_name)
-            ELSE d.donor_name 
-        END as donor_name,
-        d.donation_type as type
-        FROM donations d 
-        LEFT JOIN members m ON d.member_id = m.id 
-        $where_clause
-        ORDER BY d.donation_date DESC, d.created_at DESC 
-        LIMIT :limit OFFSET :offset";
-
-    $stmt = $conn->prepare($query);
-
-    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-    
-
-    foreach ($params as $key => $value) {
-        $stmt->bindValue($key + 1, $value);
-    }
-    
-    $stmt->execute();
-    $donations = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    $response['success'] = true;
-    $response['donations'] = $donations;
-    $response['total'] = $total;
-    $response['showing'] = count($donations);
-    $response['currentPage'] = $page;
-    $response['totalPages'] = ceil($total / $limit);
-
-} catch (Exception $e) {
-    $response['message'] = $e->getMessage();
+// Search filter
+if (!empty($_GET['search'])) {
+    $search = '%' . $_GET['search'] . '%';
+    $where_clauses[] = "(m.first_name LIKE ? OR m.last_name LIKE ? OR d.donor_name LIKE ?)";
+    $params = array_merge($params, [$search, $search, $search]);
 }
 
-echo json_encode($response);
+// Type filter
+if (!empty($_GET['type'])) {
+    $where_clauses[] = "d.donation_type = ?";
+    $params[] = $_GET['type'];
+}
+
+// Date range filter
+if (!empty($_GET['start_date'])) {
+    $where_clauses[] = "d.donation_date >= ?";
+    $params[] = $_GET['start_date'];
+}
+if (!empty($_GET['end_date'])) {
+    $where_clauses[] = "d.donation_date <= ?";
+    $params[] = $_GET['end_date'] . ' 23:59:59';
+}
+
+$where_sql = !empty($where_clauses) ? 'WHERE ' . implode(' AND ', $where_clauses) : '';
+
+// Check if we're requesting stats only
+if (isset($_GET['stats'])) {
+    $stats_sql = "SELECT 
+        COALESCE(SUM(d.amount), 0) as totalDonations,
+        COUNT(DISTINCT COALESCE(d.member_id, d.donor_name)) as totalDonors,
+        COALESCE(AVG(d.amount), 0) as averageDonation,
+        (
+            SELECT COALESCE(SUM(amount), 0)
+            FROM donations d2
+            WHERE MONTH(d2.donation_date) = MONTH(CURRENT_DATE)
+            AND YEAR(d2.donation_date) = YEAR(CURRENT_DATE)
+            " . ($where_sql ? ' AND ' . str_replace('d.', 'd2.', implode(' AND ', $where_clauses)) : '') . "
+        ) as monthlyDonations
+        FROM donations d
+        LEFT JOIN members m ON d.member_id = m.id
+        $where_sql";
+    
+    $stmt = $conn->prepare($stats_sql);
+    $stmt->execute($params);
+    echo json_encode($stmt->fetch(PDO::FETCH_ASSOC));
+    exit;
+}
+
+// Get total count for pagination
+$count_sql = "SELECT COUNT(*) FROM donations d 
+    LEFT JOIN members m ON d.member_id = m.id 
+    $where_sql";
+$stmt = $conn->prepare($count_sql);
+$stmt->execute($params);
+$total = $stmt->fetchColumn();
+
+// Get donations with pagination
+$sql = "SELECT 
+    d.*,
+    COALESCE(CONCAT(m.first_name, ' ', m.last_name), d.donor_name) as donor_name
+    FROM donations d
+    LEFT JOIN members m ON d.member_id = m.id
+    $where_sql
+    ORDER BY d.donation_date DESC
+    LIMIT $limit OFFSET $offset";
+
+$stmt = $conn->prepare($sql);
+$stmt->execute($params);
+$donations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$totalPages = ceil($total / $limit);
+
+echo json_encode([
+    'donations' => $donations,
+    'currentPage' => $page,
+    'totalPages' => $totalPages,
+    'showing' => count($donations),
+    'total' => $total
+]);

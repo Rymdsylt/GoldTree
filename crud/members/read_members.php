@@ -4,13 +4,13 @@ require_once '../../db/connection.php';
 
 header('Content-Type: application/json');
 
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$page = max(1, isset($_GET['page']) ? (int)$_GET['page'] : 1);
 $search = isset($_GET['search']) ? $_GET['search'] : '';
 $status = isset($_GET['status']) ? $_GET['status'] : '';
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'name';
 
 $limit = 10; 
-$offset = ($page - 1) * $limit;
+$offset = max(0, ($page - 1) * $limit);
 
 try {
     $params = [];

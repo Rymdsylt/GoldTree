@@ -4,25 +4,25 @@ require_once '../../db/connection.php';
 header('Content-Type: application/json');
 
 try {
-    // Get total members
+
     $totalQuery = "SELECT COUNT(*) as total FROM members";
     $totalStmt = $conn->prepare($totalQuery);
     $totalStmt->execute();
     $total = $totalStmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-    // Get active members
+
     $activeQuery = "SELECT COUNT(*) as active FROM members WHERE status = 'active'";
     $activeStmt = $conn->prepare($activeQuery);
     $activeStmt->execute();
     $active = $activeStmt->fetch(PDO::FETCH_ASSOC)['active'];
 
-    // Get new members (this month)
+
     $newQuery = "SELECT COUNT(*) as new FROM members WHERE MONTH(membership_date) = MONTH(CURRENT_DATE()) AND YEAR(membership_date) = YEAR(CURRENT_DATE())";
     $newStmt = $conn->prepare($newQuery);
     $newStmt->execute();
     $new = $newStmt->fetch(PDO::FETCH_ASSOC)['new'];
 
-    // Get regular attendance (members who attended at least 75% of events in last 3 months)
+
     $attendanceQuery = "
         WITH EventCount AS (
             SELECT COUNT(*) as total_events

@@ -32,19 +32,20 @@ require_once '../templates/admin_header.php';
                 <form id="notificationForm">
                     <div class="mb-3">
                         <label class="form-label">Recipients</label>
-                        <div class="d-flex gap-2 mb-2">
-                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="selectAll()">
-                                Select All
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="deselectAll()">
-                                Deselect All
-                            </button>
-                        </div>
-                        <div class="card member-select-list">
-                            <div class="list-group list-group-flush" id="membersList">
+                        <div class="search-container position-relative">
+                            <input type="text" 
+                                class="form-control" 
+                                id="userSearch" 
+                                placeholder="Type username or email..." 
+                                autocomplete="off">
+                            <div id="searchSuggestions" 
+                                class="suggestions-dropdown d-none">
                             </div>
                         </div>
+                        <div id="selectedUsers" class="selected-users mt-2"></div>
+                        <input type="hidden" name="recipients" id="recipientIds">
                     </div>
+
                     <div class="mb-3">
                         <label class="form-label">Notification Type</label>
                         <select class="form-select" name="notification_type" required>
@@ -104,98 +105,321 @@ require_once '../templates/admin_header.php';
     </div>
 </div>
 
-<script src="../js/bootstrap.bundle.js"></script>
+<style>
+.search-container {
+    position: relative;
+}
+.suggestions-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+.suggestion-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f0f0f0;
+}
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+.suggestion-item:hover {
+    background-color: #f8f9fa;
+}
+.suggestion-item.keyboard-selected {
+    background-color: #e9ecef;
+}
+.suggestion-info {
+    flex-grow: 1;
+}
+.user-badge {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 8px;
+}
+.badge-admin {
+    background-color: #dc3545;
+    color: white;
+}
+.badge-user {
+    background-color: #6c757d;
+    color: white;
+}
+.selected-users {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.user-tag {
+    background: #e9ecef;
+    border-radius: 16px;
+    padding: 4px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+}
+.user-tag .remove {
+    cursor: pointer;
+    color: #dc3545;
+    font-weight: bold;
+    padding: 0 4px;
+}
+</style>
+
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        loadMembers();
-        loadRecentNotifications();
+let selectedUsers = new Set();
+let currentSuggestionIndex = -1;
+let debounceTimeout;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('userSearch');
+    const suggestionsBox = document.getElementById('searchSuggestions');
+
+    searchInput.addEventListener('input', handleSearchInput);
+    searchInput.addEventListener('keydown', handleKeyboardNavigation);
+
+    // Close suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+            hideSuggestions();
+        }
     });
 
-    function loadMembers() {
-        fetch('../crud/members/read_members.php')
+    // Form submission
+    document.getElementById('notificationForm').addEventListener('submit', handleFormSubmit);
+});
+
+function handleSearchInput(e) {
+    const searchTerm = e.target.value.trim();
+    clearTimeout(debounceTimeout);
+
+    if (searchTerm.length === 0) {
+        hideSuggestions();
+        return;
+    }
+
+    // Show loading state
+    const suggestionsBox = document.getElementById('searchSuggestions');
+    suggestionsBox.innerHTML = '<div class="suggestion-item text-muted">Searching...</div>';
+    suggestionsBox.classList.remove('d-none');
+
+    debounceTimeout = setTimeout(() => {
+        fetch(`../ajax/search_users.php?search=${encodeURIComponent(searchTerm)}`)
             .then(response => response.json())
-            .then(data => {
-                const membersList = document.getElementById('membersList');
-                membersList.innerHTML = '';
-                
-                data.forEach(member => {
-                    membersList.innerHTML += `
-                        <label class="list-group-item">
-                            <input class="form-check-input me-1" type="checkbox" name="recipients[]" 
-                                value="${member.id}">
-                            ${member.first_name} ${member.last_name}
-                        </label>
-                    `;
-                });
-            })
-            .catch(error => console.error('Error:', error));
+            .then(handleSearchResults)
+            .catch(error => {
+                console.error('Error:', error);
+                showErrorSuggestion();
+            });
+    }, 300);
+}
+
+function handleSearchResults(results) {
+    const suggestionsBox = document.getElementById('searchSuggestions');
+    
+    if (!results.length) {
+        suggestionsBox.innerHTML = '<div class="suggestion-item text-muted">No users found</div>';
+        return;
     }
 
-    function loadRecentNotifications() {
-        fetch('../crud/notifications/read_notifications.php')
-            .then(response => response.json())
-            .then(data => {
-                const tbody = document.getElementById('notificationsTableBody');
-                tbody.innerHTML = '';
-                
-                data.forEach(notification => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${new Date(notification.created_at).toLocaleString()}</td>
-                            <td>
-                                <span class="badge bg-primary">
-                                    ${notification.notification_type}
-                                </span>
-                            </td>
-                            <td>${notification.subject}</td>
-                            <td>${notification.recipient_count} members</td>
-                            <td>
-                                <span class="badge ${notification.status === 'sent' ? 'bg-success' : 'bg-warning'}">
-                                    ${notification.status}
-                                </span>
-                            </td>
-                        </tr>
-                    `;
-                });
-            })
-            .catch(error => console.error('Error:', error));
+    suggestionsBox.innerHTML = '';
+    currentSuggestionIndex = -1;
+
+    results.forEach((user, index) => {
+        if (selectedUsers.has(user.id.toString())) return;
+
+        const div = document.createElement('div');
+        div.className = 'suggestion-item';
+        div.dataset.index = index;
+        div.dataset.userId = user.id;
+        
+        div.innerHTML = `
+            <div class="suggestion-info">
+                <div><strong>${user.username}</strong></div>
+                ${user.email ? `<small class="text-muted">${user.email}</small>` : ''}
+            </div>
+            <span class="user-badge badge-${user.admin_status == 1 ? 'admin' : 'user'}">
+                ${user.admin_status == 1 ? 'Admin' : 'User'}
+            </span>
+        `;
+        
+        div.addEventListener('click', () => selectUser(user));
+        suggestionsBox.appendChild(div);
+    });
+}
+
+function handleKeyboardNavigation(e) {
+    const suggestionsBox = document.getElementById('searchSuggestions');
+    const suggestions = suggestionsBox.querySelectorAll('.suggestion-item');
+    
+    if (suggestionsBox.classList.contains('d-none') || !suggestions.length) return;
+
+    switch(e.key) {
+        case 'ArrowDown':
+            e.preventDefault();
+            navigateSuggestions(1, suggestions);
+            break;
+        case 'ArrowUp':
+            e.preventDefault();
+            navigateSuggestions(-1, suggestions);
+            break;
+        case 'Enter':
+            e.preventDefault();
+            if (currentSuggestionIndex >= 0) {
+                const selectedItem = suggestions[currentSuggestionIndex];
+                const userId = selectedItem.dataset.userId;
+                selectUserById(userId);
+            }
+            break;
+        case 'Escape':
+            hideSuggestions();
+            break;
+    }
+}
+
+function navigateSuggestions(direction, suggestions) {
+    suggestions[currentSuggestionIndex]?.classList.remove('keyboard-selected');
+    
+    currentSuggestionIndex += direction;
+    if (currentSuggestionIndex >= suggestions.length) {
+        currentSuggestionIndex = 0;
+    } else if (currentSuggestionIndex < 0) {
+        currentSuggestionIndex = suggestions.length - 1;
     }
 
-    function selectAll() {
-        document.querySelectorAll('input[name="recipients[]"]')
-            .forEach(checkbox => checkbox.checked = true);
-    }
+    const selectedItem = suggestions[currentSuggestionIndex];
+    selectedItem.classList.add('keyboard-selected');
+    selectedItem.scrollIntoView({ block: 'nearest' });
+}
 
-    function deselectAll() {
-        document.querySelectorAll('input[name="recipients[]"]')
-            .forEach(checkbox => checkbox.checked = false);
-    }
-
-    document.getElementById('notificationForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
- 
-        if (!formData.getAll('recipients[]').length) {
-            alert('Please select at least one recipient');
-            return;
-        }
-
-        fetch('../crud/notifications/create_notification.php', {
-            method: 'POST',
-            body: formData
-        })
+function selectUserById(userId) {
+    fetch(`../ajax/search_users.php?search=${userId}`)
         .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Notification sent successfully!');
-                this.reset();
-                loadRecentNotifications();
-            } else {
-                alert('Error sending notification: ' + data.message);
+        .then(results => {
+            const user = results.find(u => u.id.toString() === userId);
+            if (user) {
+                selectUser(user);
             }
         })
         .catch(error => console.error('Error:', error));
+}
+
+function selectUser(user) {
+    if (selectedUsers.has(user.id.toString())) return;
+    
+    selectedUsers.add(user.id.toString());
+    addUserTag(user);
+    
+    document.getElementById('userSearch').value = '';
+    hideSuggestions();
+    updateRecipientIds();
+}
+
+function addUserTag(user) {
+    const selectedContainer = document.getElementById('selectedUsers');
+    
+    const tag = document.createElement('div');
+    tag.className = 'user-tag';
+    tag.innerHTML = `
+        <span>${user.username}</span>
+        <span class="remove" onclick="removeUser('${user.id}')">&times;</span>
+    `;
+    
+    selectedContainer.appendChild(tag);
+}
+
+function removeUser(id) {
+    selectedUsers.delete(id.toString());
+    const tag = document.querySelector(`.user-tag span[onclick*="${id}"]`).parentNode;
+    tag.remove();
+    updateRecipientIds();
+}
+
+function updateRecipientIds() {
+    document.getElementById('recipientIds').value = Array.from(selectedUsers).join(',');
+}
+
+function hideSuggestions() {
+    document.getElementById('searchSuggestions').classList.add('d-none');
+    currentSuggestionIndex = -1;
+}
+
+function showErrorSuggestion() {
+    const suggestionsBox = document.getElementById('searchSuggestions');
+    suggestionsBox.innerHTML = '<div class="suggestion-item text-danger">Error loading suggestions</div>';
+}
+
+function handleFormSubmit(e) {
+    e.preventDefault();
+    
+    // Get form data
+    const form = document.getElementById('notificationForm');
+    const formData = new FormData(form);
+
+    // Validate recipients
+    if (selectedUsers.size === 0) {
+        alert('Please select at least one recipient');
+        return;
+    }
+
+    // Add recipients to form data
+    formData.set('recipients', Array.from(selectedUsers).join(','));
+
+    // Show loading state
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
+
+    // Log form data for debugging
+    console.log('Sending form data:', Object.fromEntries(formData));
+
+    fetch('../crud/notifications/create_notification.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(async response => {
+        const text = await response.text();
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            console.error('Server response:', text);
+            throw new Error('Invalid JSON response from server');
+        }
+    })
+    .then(data => {
+        if (data.success) {
+            alert('Notification sent successfully!');
+            form.reset();
+            selectedUsers.clear();
+            document.getElementById('selectedUsers').innerHTML = '';
+        } else {
+            alert('Error sending notification: ' + (data.message || 'Unknown error'));
+            console.error('Server error details:', data.debug);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error sending notification. Please check the console for details.');
+    })
+    .finally(() => {
+        // Restore button state
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
     });
+}
 </script>
 
 <?php require_once '../templates/admin_footer.php'; ?>

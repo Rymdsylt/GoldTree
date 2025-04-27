@@ -12,9 +12,9 @@ $search = $_GET['search'];
 
 try {
     $stmt = $conn->prepare("
-        SELECT id, first_name, last_name, email, status, category 
-        FROM members 
-        WHERE CONCAT(first_name, ' ', last_name) LIKE :search 
+        SELECT id, username, email, admin_status 
+        FROM users 
+        WHERE username LIKE :search 
         OR email LIKE :search
         LIMIT 5
     ");

@@ -63,18 +63,20 @@ try {
     $params = [];
     
     if ($search) {
-        $where[] = "(title LIKE ? OR description LIKE ? OR location LIKE ?)";
-        $params = array_merge($params, ["%$search%", "%$search%", "%$search%"]);
+        $where[] = "(title LIKE :search1 OR description LIKE :search2 OR location LIKE :search3)";
+        $params[':search1'] = "%$search%";
+        $params[':search2'] = "%$search%";
+        $params[':search3'] = "%$search%";
     }
     
     if ($status) {
-        $where[] = "status = ?";
-        $params[] = $status;
+        $where[] = "status = :status";
+        $params[':status'] = $status;
     }
     
     if ($date) {
-        $where[] = "DATE(start_datetime) = ?";
-        $params[] = $date;
+        $where[] = "DATE(start_datetime) = :date";
+        $params[':date'] = $date;
     }
     
     $whereClause = !empty($where) ? "WHERE " . implode(" AND ", $where) : "";
@@ -89,14 +91,16 @@ try {
     
     error_log("Total count: " . $total);
     
-
     $query = "SELECT * FROM events $whereClause ORDER BY start_datetime ASC LIMIT :limit OFFSET :offset";
+    
     $stmt = $conn->prepare($query);
 
+    // Bind all the search/filter parameters first
     foreach($params as $key => $value) {
-        $stmt->bindValue($key + 1, $value);
+        $stmt->bindValue($key, $value);
     }
 
+    // Then bind the pagination parameters
     $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
     $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
     

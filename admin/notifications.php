@@ -223,7 +223,7 @@ require_once '../templates/admin_header.php';
         .then(data => {
             const recipientsList = document.getElementById('modalRecipients');
             recipientsList.innerHTML = data.recipients.map(r => 
-                `<span class="badge bg-secondary me-1">${r.first_name} ${r.last_name}</span>`
+                `<span class="badge bg-secondary me-1">${r.username} (${r.email})</span>`
             ).join('');
         })
         .catch(error => console.error('Error:', error));

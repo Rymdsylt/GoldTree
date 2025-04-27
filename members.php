@@ -155,19 +155,19 @@ function updatePagination(currentPage, totalPages) {
     
     if (totalPages <= 1) return;
 
-    // Previous button
+
     pagination.insertAdjacentHTML('beforeend', `
         <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
             <a class="page-link" href="javascript:void(0)" onclick="loadMembers(${currentPage - 1})">Previous</a>
         </li>
     `);
     
-    // Page numbers
+
     for (let i = 1; i <= totalPages; i++) {
         if (
-            i === 1 || // First page
-            i === totalPages || // Last page
-            (i >= currentPage - 1 && i <= currentPage + 1) // Pages around current
+            i === 1 || 
+            i === totalPages || 
+            (i >= currentPage - 1 && i <= currentPage + 1) 
         ) {
             pagination.insertAdjacentHTML('beforeend', `
                 <li class="page-item ${currentPage === i ? 'active' : ''}">
@@ -186,7 +186,6 @@ function updatePagination(currentPage, totalPages) {
         }
     }
     
-    // Next button
     pagination.insertAdjacentHTML('beforeend', `
         <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
             <a class="page-link" href="javascript:void(0)" onclick="loadMembers(${currentPage + 1})">Next</a>

@@ -1,7 +1,7 @@
 <?php 
 require_once 'templates/header.php';
 
-// Fetch donation statistics
+
 $stmt = $conn->query("SELECT 
     SUM(amount) as total_donations,
     COUNT(DISTINCT COALESCE(member_id, donor_name)) as total_donors,
@@ -9,7 +9,7 @@ $stmt = $conn->query("SELECT
     FROM donations");
 $stats = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// Get monthly donations
+
 $stmt = $conn->query("SELECT SUM(amount) as monthly 
     FROM donations 
     WHERE MONTH(donation_date) = MONTH(CURRENT_DATE) 
@@ -21,7 +21,7 @@ $monthlyDonations = number_format($monthlyStats['monthly'] ?? 0, 2);
 $totalDonors = number_format($stats['total_donors'] ?? 0);
 $averageDonation = number_format($stats['average_donation'] ?? 0, 2);
 ?>
-<!--stat cards -->
+
 <div class="container-fluid py-4">
     <div class="row g-4 mb-4">
         <div class="col-md-3">
@@ -180,17 +180,20 @@ $averageDonation = number_format($stats['average_donation'] ?? 0, 2);
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize with current date range
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    document.getElementById('startDate').value = firstDay.toISOString().split('T')[0];
+    document.getElementById('endDate').value = today.toISOString().split('T')[0];
+
     loadDonations();
     loadMembers();
-    loadStats();
-    
 
-    const filters = ['searchDonor', 'typeFilter', 'startDate', 'endDate'];
-    filters.forEach(id => {
-        document.getElementById(id).addEventListener('change', loadDonations);
-    });
-    document.getElementById('searchDonor').addEventListener('input', debounce(loadDonations, 300));
-    
+    // Set up event listeners for filters
+    document.getElementById('searchDonor').addEventListener('input', debounce(filterDonations, 300));
+    document.getElementById('typeFilter').addEventListener('change', filterDonations);
+    document.getElementById('startDate').addEventListener('change', filterDonations);
+    document.getElementById('endDate').addEventListener('change', filterDonations);
 
     document.getElementById('addDonationForm').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -215,8 +218,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-function loadStats() {
-    fetch('crud/donations/get_filtered_donations.php?stats=true')
+function loadStats(queryParams) {
+    fetch(`crud/donations/read_donations.php?stats=true&${queryParams}`)
         .then(response => response.json())
         .then(data => {
             document.getElementById('totalDonations').textContent = formatCurrency(data.totalDonations);
@@ -228,16 +231,28 @@ function loadStats() {
 }
 
 function loadDonations(page = 1) {
-    const search = document.getElementById('searchDonor').value;
-    const type = document.getElementById('typeFilter').value;
-    const startDate = document.getElementById('startDate').value;
-    const endDate = document.getElementById('endDate').value;
+    const queryParams = new URLSearchParams({
+        page: page,
+        search: document.getElementById('searchDonor').value,
+        type: document.getElementById('typeFilter').value,
+        start_date: document.getElementById('startDate').value,
+        end_date: document.getElementById('endDate').value
+    });
     
-    fetch(`crud/donations/read_donations.php?page=${page}&search=${search}&type=${type}&start=${startDate}&end=${endDate}`)
+    fetch(`crud/donations/read_donations.php?${queryParams}`)
         .then(response => response.json())
         .then(data => {
             const tbody = document.getElementById('donationsTableBody');
             tbody.innerHTML = '';
+            
+            if (data.donations.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center">No donations found</td>
+                    </tr>
+                `;
+                return;
+            }
             
             data.donations.forEach(donation => {
                 const row = `
@@ -270,8 +285,15 @@ function loadDonations(page = 1) {
             updatePagination(data.currentPage, data.totalPages);
             document.getElementById('showing').textContent = data.showing;
             document.getElementById('total').textContent = data.total;
+            
+            // Update stats when filters change
+            loadStats(queryParams);
         })
         .catch(error => console.error('Error:', error));
+}
+
+function filterDonations() {
+    loadDonations(1); // Reset to first page when filters change
 }
 
 function loadMembers() {

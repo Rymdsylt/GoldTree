@@ -115,16 +115,37 @@ try {
         FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
     )");
 
-    $conn->exec("CREATE TABLE IF NOT EXISTS notifications (
-        id INT PRIMARY KEY AUTO_INCREMENT,
-        title VARCHAR(100) NOT NULL,
-        content TEXT NOT NULL,
-        priority ENUM('low', 'medium', 'high') DEFAULT 'medium',
-        start_date DATE NOT NULL,
-        end_date DATE,
-        is_read BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )");
+    // Drop and recreate notifications tables to fix schema
+    try {
+        $conn->exec("DROP TABLE IF EXISTS notification_recipients");
+        $conn->exec("DROP TABLE IF EXISTS notifications");
+        
+        $conn->exec("CREATE TABLE notifications (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            notification_type ENUM('announcement', 'event', 'donation', 'other') NOT NULL,
+            subject VARCHAR(255) NOT NULL,
+            message TEXT NOT NULL,
+            send_email BOOLEAN DEFAULT FALSE,
+            status ENUM('pending', 'sent', 'failed') DEFAULT 'pending',
+            created_by INT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+        )");
+
+        $conn->exec("CREATE TABLE notification_recipients (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            notification_id INT NOT NULL,
+            user_id INT NOT NULL,
+            is_read BOOLEAN DEFAULT FALSE,
+            email_sent BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (notification_id) REFERENCES notifications(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )");
+    } catch(PDOException $e) {
+        // Log error but continue
+        error_log("Error recreating notification tables: " . $e->getMessage());
+    }
 
     $conn->exec("CREATE TABLE IF NOT EXISTS pastoral_care (
         id INT PRIMARY KEY AUTO_INCREMENT,
