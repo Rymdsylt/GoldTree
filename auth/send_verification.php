@@ -20,23 +20,20 @@ try {
         throw new Exception('Invalid email address');
     }
 
-    // Generate a random 6-digit verification code
+
     $verification_code = sprintf('%06d', mt_rand(0, 999999));
-    
-    // Start the session if not already started
+
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
 
-    // Store the verification details in session
+
     $_SESSION['verification_code'] = $verification_code;
     $_SESSION['verification_email'] = $email;
     $_SESSION['verification_time'] = time();
 
-    // Create a new PHPMailer instance
     $mail = new PHPMailer(true);
 
-    // Server settings
     $mail->isSMTP();
     $mail->Host = SMTP_HOST;
     $mail->SMTPAuth = true;
@@ -45,11 +42,10 @@ try {
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Port = SMTP_PORT;
 
-    // Recipients
+
     $mail->setFrom(SMTP_FROM_EMAIL, 'Mater Dolorosa Church');
     $mail->addAddress($email);
 
-    // Content
     $mail->isHTML(true);
     $mail->Subject = 'Verify Your Email Address';
     $mail->Body = "

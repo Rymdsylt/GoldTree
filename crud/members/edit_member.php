@@ -3,7 +3,11 @@ require_once '../../db/connection.php';
 header('Content-Type: application/json');
 
 try {
-    $id = $_POST['id'] ?? '';
+    $id = $_POST['id'] ?? null;
+    if (!$id) {
+        throw new Exception('Member ID is required');
+    }
+
     $first_name = $_POST['first_name'] ?? '';
     $last_name = $_POST['last_name'] ?? '';
     $email = $_POST['email'] ?? '';
@@ -14,16 +18,24 @@ try {
     $category = $_POST['category'] ?? 'regular';
     $status = $_POST['status'] ?? 'active';
 
-    $checkStmt = $conn->prepare("SELECT id FROM members WHERE email = ? AND id != ?");
-    $checkStmt->execute([$email, $id]);
-    if ($checkStmt->rowCount() > 0) {
-        throw new Exception('A member with this email already exists');
-    }
+    // Start building the query
+    $updateFields = [
+        'first_name = ?',
+        'last_name = ?',
+        'email = ?',
+        'phone = ?',
+        'address = ?',
+        'birthdate = ?',
+        'gender = ?',
+        'category = ?',
+        'status = ?'
+    ];
+    $params = [
+        $first_name, $last_name, $email, $phone, $address,
+        $date_of_birth, $gender, $category, $status
+    ];
 
-
-    $profileImageSQL = '';
-    $params = [$first_name, $last_name, $email, $phone, $address, $date_of_birth, $gender, $category, $status];
-
+    // Handle profile image upload if provided
     if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] == 0) {
         $allowed = ['jpg', 'jpeg', 'png', 'gif'];
         $filename = $_FILES['profile_image']['name'];
@@ -31,38 +43,38 @@ try {
         
         if (in_array($ext, $allowed)) {
             $profile_image = file_get_contents($_FILES['profile_image']['tmp_name']);
-            $profileImageSQL = ', profile_image = ?';
+            $updateFields[] = 'profile_image = ?';
             $params[] = $profile_image;
         }
     }
 
-    $params[] = $id; 
+    // Add member ID to params
+    $params[] = $id;
 
-    $stmt = $conn->prepare("
-        UPDATE members 
-        SET first_name = ?, last_name = ?, email = ?, phone = ?, 
-            address = ?, birthdate = ?, gender = ?, category = ?, 
-            status = ? {$profileImageSQL}
-        WHERE id = ?
-    ");
-    
+    // Build and execute update query
+    $query = "UPDATE members SET " . implode(', ', $updateFields) . " WHERE id = ?";
+    $stmt = $conn->prepare($query);
     $stmt->execute($params);
-    
+
+    if ($stmt->rowCount() === 0) {
+        throw new Exception('Member not found or no changes made');
+    }
+
     echo json_encode([
         'success' => true,
         'message' => 'Member updated successfully'
     ]);
 
 } catch (PDOException $e) {
-    error_log('Database error in update_members.php: ' . $e->getMessage());
+    error_log('Database error in edit_member.php: ' . $e->getMessage());
     echo json_encode([
         'success' => false,
         'message' => 'Database error: ' . $e->getMessage()
     ]);
 } catch (Exception $e) {
-    error_log('Error in update_members.php: ' . $e->getMessage());
+    error_log('Error in edit_member.php: ' . $e->getMessage());
     echo json_encode([
         'success' => false,
-        'message' => 'Error: ' . $e->getMessage()
+        'message' => $e->getMessage()
     ]);
 }

@@ -1,7 +1,14 @@
 <?php require_once 'templates/header.php'; ?>
 
+<style>
+.chart-container {
+    height: 400px;
+    position: relative;
+}
+</style>
+
 <div class="container-fluid py-4">
-    <!-- Date Range Filter -->
+
     <div class="row mb-4">
         <div class="col-12">
             <div class="card stat-card">
@@ -28,7 +35,7 @@
         </div>
     </div>
 
-    <!-- Overview Statistics -->
+
     <div class="row g-4 mb-4">
         <div class="col-md-3">
             <div class="card stat-card">
@@ -68,13 +75,15 @@
         </div>
     </div>
 
-    <!-- Charts Row -->
+
     <div class="row g-4 mb-4">
         <div class="col-md-8">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Donations Overview</h5>
-                    <canvas id="donationsChart"></canvas>
+                    <div class="chart-container">
+                        <canvas id="donationsChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -82,19 +91,23 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Donation Types Distribution</h5>
-                    <canvas id="donationTypesChart"></canvas>
+                    <div class="chart-container">
+                        <canvas id="donationTypesChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- More Analytics -->
+  
     <div class="row g-4">
         <div class="col-md-6">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Member Demographics</h5>
-                    <canvas id="demographicsChart"></canvas>
+                    <div class="chart-container">
+                        <canvas id="demographicsChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -102,13 +115,15 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Event Participation</h5>
-                    <canvas id="eventParticipationChart"></canvas>
+                    <div class="chart-container">
+                        <canvas id="eventParticipationChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Export Options -->
+
     <div class="row mt-4">
         <div class="col-12">
             <div class="card">
@@ -142,11 +157,11 @@
     </div>
 </div>
 
-<!-- Include Chart.js -->
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-// Chart.js Global Configuration
+
 Chart.defaults.color = '#6a1b9a';
 Chart.defaults.borderColor = 'rgba(106, 27, 154, 0.1)';
 

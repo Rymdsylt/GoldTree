@@ -14,11 +14,11 @@ try {
         throw new Exception('Invalid event ID');
     }
 
-    // First delete any attendance records associated with this event
+
     $stmt = $conn->prepare("DELETE FROM event_attendance WHERE event_id = ?");
     $stmt->execute([$id]);
 
-    // Then delete the event
+
     $stmt = $conn->prepare("DELETE FROM events WHERE id = ?");
     $stmt->execute([$id]);
 

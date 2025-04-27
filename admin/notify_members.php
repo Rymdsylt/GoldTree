@@ -1,9 +1,10 @@
 <?php
+session_start();
 require_once '../auth/login_status.php';
 require_once '../db/connection.php';
-session_start();
 
-// Verify admin status
+
+
 if (!isset($_SESSION['user_id'])){
     header("Location: ../login.php");
     exit();
@@ -41,7 +42,6 @@ require_once '../templates/admin_header.php';
                         </div>
                         <div class="card member-select-list">
                             <div class="list-group list-group-flush" id="membersList">
-                                <!-- Members will be loaded here dynamically -->
                             </div>
                         </div>
                     </div>
@@ -79,7 +79,6 @@ require_once '../templates/admin_header.php';
             </div>
         </div>
 
-        <!-- Recent Notifications -->
         <div class="card mt-4">
             <div class="card-header">
                 <h5 class="mb-0">Recent Notifications</h5>
@@ -97,7 +96,6 @@ require_once '../templates/admin_header.php';
                             </tr>
                         </thead>
                         <tbody id="notificationsTableBody">
-                            <!-- Recent notifications will be loaded here -->
                         </tbody>
                     </table>
                 </div>

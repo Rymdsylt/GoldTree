@@ -1,12 +1,34 @@
-<?php require_once 'templates/header.php'; ?>
+<?php 
+require_once 'templates/header.php';
 
+// Fetch donation statistics
+$stmt = $conn->query("SELECT 
+    SUM(amount) as total_donations,
+    COUNT(DISTINCT COALESCE(member_id, donor_name)) as total_donors,
+    AVG(amount) as average_donation
+    FROM donations");
+$stats = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// Get monthly donations
+$stmt = $conn->query("SELECT SUM(amount) as monthly 
+    FROM donations 
+    WHERE MONTH(donation_date) = MONTH(CURRENT_DATE) 
+    AND YEAR(donation_date) = YEAR(CURRENT_DATE)");
+$monthlyStats = $stmt->fetch(PDO::FETCH_ASSOC);
+
+$totalDonations = number_format($stats['total_donations'] ?? 0, 2);
+$monthlyDonations = number_format($monthlyStats['monthly'] ?? 0, 2);
+$totalDonors = number_format($stats['total_donors'] ?? 0);
+$averageDonation = number_format($stats['average_donation'] ?? 0, 2);
+?>
+<!--stat cards -->
 <div class="container-fluid py-4">
     <div class="row g-4 mb-4">
         <div class="col-md-3">
             <div class="card stat-card">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Total Donations</h6>
-                    <h2 class="card-title mb-0" id="totalDonations">₱0.00</h2>
+                    <h2 class="card-title mb-0">₱<?php echo $totalDonations; ?></h2>
                     <small>All time</small>
                 </div>
             </div>
@@ -15,7 +37,7 @@
             <div class="card stat-card">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Monthly Donations</h6>
-                    <h2 class="card-title mb-0" id="monthlyDonations">₱0.00</h2>
+                    <h2 class="card-title mb-0">₱<?php echo $monthlyDonations; ?></h2>
                     <small>This month</small>
                 </div>
             </div>
@@ -24,7 +46,7 @@
             <div class="card stat-card">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Total Donors</h6>
-                    <h2 class="card-title mb-0" id="totalDonors">0</h2>
+                    <h2 class="card-title mb-0"><?php echo $totalDonors; ?></h2>
                     <small>Unique contributors</small>
                 </div>
             </div>
@@ -33,14 +55,13 @@
             <div class="card stat-card">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Average Donation</h6>
-                    <h2 class="card-title mb-0" id="averageDonation">₱0.00</h2>
+                    <h2 class="card-title mb-0">₱<?php echo $averageDonation; ?></h2>
                     <small>Per transaction</small>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Filter Section -->
     <div class="row g-3 mb-4">
         <div class="col-md-8">
             <div class="card">
@@ -72,7 +93,6 @@
 
     </div>
 
-    <!-- Donations List -->
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -86,11 +106,10 @@
                                     <th>Amount</th>
                                     <th>Date</th>
                                     <th>Notes</th>
-                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="donationsTableBody">
-                                <!-- Table content will be loaded dynamically -->
+                           
                             </tbody>
                         </table>
                     </div>
@@ -99,7 +118,7 @@
                             Showing <span id="showing">0</span> of <span id="total">0</span> donations
                         </div>
                         <ul class="pagination mb-0">
-                            <!-- Pagination will be added dynamically -->
+           
                         </ul>
                     </nav>
                 </div>
@@ -108,7 +127,7 @@
     </div>
 </div>
 
-<!-- Add Donation Modal -->
+
 <div class="modal fade" id="addDonationModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -122,7 +141,7 @@
                         <label class="form-label">Member</label>
                         <select class="form-select" name="member_id" required>
                             <option value="">Select Member</option>
-                            <!-- Members will be loaded dynamically -->
+
                         </select>
                     </div>
                     <div class="mb-3">
@@ -165,14 +184,14 @@ document.addEventListener('DOMContentLoaded', function() {
     loadMembers();
     loadStats();
     
-    // Add event listeners
+
     const filters = ['searchDonor', 'typeFilter', 'startDate', 'endDate'];
     filters.forEach(id => {
         document.getElementById(id).addEventListener('change', loadDonations);
     });
     document.getElementById('searchDonor').addEventListener('input', debounce(loadDonations, 300));
     
-    // Handle form submission
+
     document.getElementById('addDonationForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = new FormData(this);
@@ -230,8 +249,8 @@ function loadDonations(page = 1) {
                                     <i class="bi bi-person"></i>
                                 </div>
                                 <div class="ms-3">
-                                    <div class="fw-bold">${donation.first_name} ${donation.last_name}</div>
-                                    <small class="text-muted">#${donation.member_id}</small>
+                                    <div class="fw-bold">${donation.donor_name || 'Anonymous'}</div>
+                                    ${donation.member_id ? `<small class="text-muted">#${donation.member_id}</small>` : ''}
                                 </div>
                             </div>
                         </td>
@@ -243,16 +262,6 @@ function loadDonations(page = 1) {
                         <td>₱${formatNumber(donation.amount)}</td>
                         <td>${formatDate(donation.donation_date)}</td>
                         <td>${donation.notes || '-'}</td>
-                        <td>
-                            <div class="btn-group">
-                                <button class="btn btn-sm btn-outline-primary" onclick="editDonation(${donation.id})">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteDonation(${donation.id})">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </div>
-                        </td>
                     </tr>
                 `;
                 tbody.insertAdjacentHTML('beforeend', row);

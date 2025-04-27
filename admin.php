@@ -20,15 +20,15 @@ if (!$user || $user['admin_status'] != 1) {
 
 <?php require_once 'templates/admin_header.php'; ?>
 
-<div class="container-fluid">
+<div class="container-fluid px-3 px-md-4">
     <div class="row g-4">
         <div class="col-12">
             <h2 class="mb-4">Admin Dashboard</h2>
         </div>
         
-        <!-- Quick Stats -->
-        <div class="col-md-3">
-            <div class="admin-card card mb-4">
+
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="admin-card card h-100">
                 <div class="card-body">
                     <h5 class="card-title text-primary">Total Members</h5>
                     <?php
@@ -40,8 +40,8 @@ if (!$user || $user['admin_status'] != 1) {
             </div>
         </div>
         
-        <div class="col-md-3">
-            <div class="admin-card card mb-4">
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="admin-card card h-100">
                 <div class="card-body">
                     <h5 class="card-title text-primary">Recent Donations</h5>
                     <?php
@@ -53,8 +53,8 @@ if (!$user || $user['admin_status'] != 1) {
             </div>
         </div>
         
-        <div class="col-md-3">
-            <div class="admin-card card mb-4">
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="admin-card card h-100">
                 <div class="card-body">
                     <h5 class="card-title text-primary">Upcoming Events</h5>
                     <?php
@@ -66,41 +66,44 @@ if (!$user || $user['admin_status'] != 1) {
             </div>
         </div>
         
-        <div class="col-md-3">
-            <div class="admin-card card mb-4">
+        <div class="col-12 col-sm-6 col-lg-3">
+            <div class="admin-card card h-100">
                 <div class="card-body">
                     <h5 class="card-title text-primary">New Members</h5>
                     <?php
-                    $stmt = $conn->query("SELECT COUNT(*) as count FROM members WHERE date_joined >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
+                    $stmt = $conn->query("SELECT COUNT(*) as count FROM members WHERE membership_date >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
                     $newMembers = $stmt->fetch()['count'];
                     ?>
                     <h3 class="mb-0"><?php echo $newMembers; ?></h3>
                 </div>
             </div>
         </div>
-        
-        <!-- Recent Activity -->
-        <div class="col-md-6">
-            <div class="admin-card card">
+
+
+        <div class="col-12 col-lg-6">
+            <div class="admin-card card h-100">
                 <div class="card-body">
-                    <h5 class="card-title mb-4">Recent Members</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="card-title mb-0">Recent Members</h5>
+                        <a href="admin/manage_members.php" class="btn btn-sm btn-primary">View All</a>
+                    </div>
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover align-middle">
                             <thead>
                                 <tr>
                                     <th>Name</th>
                                     <th>Date Joined</th>
-                                    <th>Action</th>
+                                    <th class="text-end">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php
-                                $stmt = $conn->query("SELECT * FROM members ORDER BY date_joined DESC LIMIT 5");
+                                $stmt = $conn->query("SELECT * FROM members ORDER BY membership_date DESC LIMIT 5");
                                 while ($member = $stmt->fetch()) {
                                     echo "<tr>";
-                                    echo "<td>" . htmlspecialchars($member['first_name'] . ' ' . $member['last_name']) . "</td>";
-                                    echo "<td>" . date('M d, Y', strtotime($member['date_joined'])) . "</td>";
-                                    echo "<td><a href='admin/manage_members.php?id=" . $member['id'] . "' class='btn btn-sm btn-primary'>View</a></td>";
+                                    echo "<td class='text-nowrap'>" . htmlspecialchars($member['first_name'] . ' ' . $member['last_name']) . "</td>";
+                                    echo "<td class='text-nowrap'>" . date('M d, Y', strtotime($member['membership_date'])) . "</td>";
+                                    echo "<td class='text-end'><a href='admin/manage_members.php?id=" . $member['id'] . "' class='btn btn-sm btn-primary'>View</a></td>";
                                     echo "</tr>";
                                 }
                                 ?>
@@ -111,18 +114,21 @@ if (!$user || $user['admin_status'] != 1) {
             </div>
         </div>
         
-        <div class="col-md-6">
-            <div class="admin-card card">
+        <div class="col-12 col-lg-6">
+            <div class="admin-card card h-100">
                 <div class="card-body">
-                    <h5 class="card-title mb-4">Recent Donations</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="card-title mb-0">Recent Donations</h5>
+                        <a href="admin/add_donations.php" class="btn btn-sm btn-primary">View All</a>
+                    </div>
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover align-middle">
                             <thead>
                                 <tr>
                                     <th>Member</th>
                                     <th>Amount</th>
                                     <th>Date</th>
-                                    <th>Action</th>
+                                    <th class="text-end">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -133,10 +139,10 @@ if (!$user || $user['admin_status'] != 1) {
                                     ORDER BY d.date DESC LIMIT 5");
                                 while ($donation = $stmt->fetch()) {
                                     echo "<tr>";
-                                    echo "<td>" . htmlspecialchars($donation['first_name'] . ' ' . $donation['last_name']) . "</td>";
-                                    echo "<td>$" . number_format($donation['amount'], 2) . "</td>";
-                                    echo "<td>" . date('M d, Y', strtotime($donation['date'])) . "</td>";
-                                    echo "<td><a href='admin/add_donations.php?id=" . $donation['id'] . "' class='btn btn-sm btn-primary'>View</a></td>";
+                                    echo "<td class='text-nowrap'>" . htmlspecialchars($donation['first_name'] . ' ' . $donation['last_name']) . "</td>";
+                                    echo "<td class='text-nowrap'>$" . number_format($donation['amount'], 2) . "</td>";
+                                    echo "<td class='text-nowrap'>" . date('M d, Y', strtotime($donation['date'])) . "</td>";
+                                    echo "<td class='text-end'><a href='admin/add_donations.php?id=" . $donation['id'] . "' class='btn btn-sm btn-primary'>View</a></td>";
                                     echo "</tr>";
                                 }
                                 ?>

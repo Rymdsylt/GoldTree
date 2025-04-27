@@ -19,14 +19,24 @@ try {
         phone VARCHAR(20),
         address TEXT,
         birthdate DATE,
-        membership_date DATE,
+        membership_date DATE DEFAULT CURRENT_DATE,
+        gender ENUM('male', 'female', 'other') DEFAULT NULL,
+        category ENUM('regular', 'youth', 'senior', 'visitor') DEFAULT 'regular',
         status ENUM('active', 'inactive') DEFAULT 'active',
         profile_image LONGBLOB,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )");
 
     try {
+
+        $conn->exec("ALTER TABLE members CHANGE COLUMN IF EXISTS date_joined membership_date DATE");
+        
+
+        $conn->exec("ALTER TABLE members ADD COLUMN IF NOT EXISTS membership_date DATE");
+        
         $conn->exec("ALTER TABLE members ADD COLUMN IF NOT EXISTS profile_image LONGBLOB");
+        $conn->exec("ALTER TABLE members ADD COLUMN IF NOT EXISTS gender ENUM('male', 'female', 'other') DEFAULT NULL");
+        $conn->exec("ALTER TABLE members ADD COLUMN IF NOT EXISTS category ENUM('regular', 'youth', 'senior', 'visitor') DEFAULT 'regular'");
     } catch(PDOException $e) {
         if($conn->inTransaction()) {
             $conn->rollBack();
@@ -45,7 +55,7 @@ try {
         FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
     )");
 
-    // Create default admin user if it doesn't exist
+ 
     $checkAdmin = $conn->query("SELECT id FROM users WHERE username = 'root'")->fetch();
     if (!$checkAdmin) {
         $hashedPassword = password_hash('mdradmin', PASSWORD_DEFAULT);
@@ -56,6 +66,7 @@ try {
     $conn->exec("CREATE TABLE IF NOT EXISTS donations (
         id INT PRIMARY KEY AUTO_INCREMENT,
         member_id INT,
+        donor_name VARCHAR(100),
         amount DECIMAL(10,2) NOT NULL,
         donation_type ENUM('tithe', 'offering', 'project', 'other') NOT NULL,
         donation_date DATE NOT NULL,
@@ -63,6 +74,15 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
     )");
+
+
+    try {
+        $conn->exec("ALTER TABLE donations ADD COLUMN IF NOT EXISTS donor_name VARCHAR(100)");
+    } catch(PDOException $e) {
+        if($conn->inTransaction()) {
+            $conn->rollBack();
+        }
+    }
 
     $conn->exec("CREATE TABLE IF NOT EXISTS events (
         id INT PRIMARY KEY AUTO_INCREMENT,

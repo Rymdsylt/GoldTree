@@ -11,7 +11,7 @@
         </div>
     </div>
 
-    <!-- Search and Filter Section -->
+
     <div class="row g-3 mb-4">
         <div class="col-md-4">
             <div class="card">
@@ -43,7 +43,6 @@
         </div>
     </div>
 
-    <!-- Members List -->
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -61,7 +60,7 @@
                                 </tr>
                             </thead>
                             <tbody id="membersTableBody">
-                                <!-- Table content will be loaded dynamically -->
+                          
                             </tbody>
                         </table>
                     </div>
@@ -70,7 +69,7 @@
                             Showing <span id="showing">0</span> of <span id="total">0</span> members
                         </div>
                         <ul class="pagination mb-0">
-                            <!-- Pagination will be added dynamically -->
+                           
                         </ul>
                     </nav>
                 </div>
@@ -84,32 +83,9 @@
 document.addEventListener('DOMContentLoaded', function() {
     loadMembers();
     
-    // Add event listeners for search and filters
     document.getElementById('searchMembers').addEventListener('input', debounce(loadMembers, 300));
     document.getElementById('statusFilter').addEventListener('change', loadMembers);
     document.getElementById('sortBy').addEventListener('change', loadMembers);
-    
-    // Handle form submission
-    document.getElementById('addMemberForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        
-        fetch('crud/members/create_member.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                bootstrap.Modal.getInstance(document.getElementById('addMemberModal')).hide();
-                loadMembers();
-                this.reset();
-            } else {
-                alert(data.message || 'Error adding member');
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    });
 });
 
 function loadMembers(page = 1) {
@@ -120,18 +96,25 @@ function loadMembers(page = 1) {
     fetch(`crud/members/read_members.php?page=${page}&search=${search}&status=${status}&sort=${sort}`)
         .then(response => response.json())
         .then(data => {
+            if (!data.success) {
+                throw new Error(data.message || 'Error loading members');
+            }
+
             const tbody = document.getElementById('membersTableBody');
             tbody.innerHTML = '';
             
             data.members.forEach(member => {
+                const profileImage = member.profile_image 
+                    ? `<img src="data:image/jpeg;base64,${member.profile_image}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">` 
+                    : `<div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="bi bi-person"></i>
+                       </div>`;
+
                 const row = `
                     <tr>
                         <td>
                             <div class="d-flex align-items-center">
-                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" 
-                                     style="width: 40px; height: 40px;">
-                                    <i class="bi bi-person"></i>
-                                </div>
+                                ${profileImage}
                                 <div class="ms-3">
                                     <div class="fw-bold">${member.first_name} ${member.last_name}</div>
                                     <small class="text-muted">#${member.id}</small>
@@ -160,33 +143,53 @@ function loadMembers(page = 1) {
             document.getElementById('showing').textContent = data.showing;
             document.getElementById('total').textContent = data.total;
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading members: ' + error.message);
+        });
 }
 
 function updatePagination(currentPage, totalPages) {
     const pagination = document.querySelector('.pagination');
     pagination.innerHTML = '';
     
+    if (totalPages <= 1) return;
+
     // Previous button
     pagination.insertAdjacentHTML('beforeend', `
         <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="loadMembers(${currentPage - 1})">Previous</a>
+            <a class="page-link" href="javascript:void(0)" onclick="loadMembers(${currentPage - 1})">Previous</a>
         </li>
     `);
     
     // Page numbers
     for (let i = 1; i <= totalPages; i++) {
-        pagination.insertAdjacentHTML('beforeend', `
-            <li class="page-item ${currentPage === i ? 'active' : ''}">
-                <a class="page-link" href="#" onclick="loadMembers(${i})">${i}</a>
-            </li>
-        `);
+        if (
+            i === 1 || // First page
+            i === totalPages || // Last page
+            (i >= currentPage - 1 && i <= currentPage + 1) // Pages around current
+        ) {
+            pagination.insertAdjacentHTML('beforeend', `
+                <li class="page-item ${currentPage === i ? 'active' : ''}">
+                    <a class="page-link" href="javascript:void(0)" onclick="loadMembers(${i})">${i}</a>
+                </li>
+            `);
+        } else if (
+            i === 2 || 
+            i === totalPages - 1
+        ) {
+            pagination.insertAdjacentHTML('beforeend', `
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+            `);
+        }
     }
     
     // Next button
     pagination.insertAdjacentHTML('beforeend', `
         <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="loadMembers(${currentPage + 1})">Next</a>
+            <a class="page-link" href="javascript:void(0)" onclick="loadMembers(${currentPage + 1})">Next</a>
         </li>
     `);
 }
@@ -210,7 +213,7 @@ function debounce(func, wait) {
 }
 
 function viewPastoralCare(memberId) {
-    fetch(`crud/pastoral_care/get_pastoral_care.php?member_id=${memberId}`)
+    fetch(`ajax/get_pastoral_care.php?member_id=${memberId}`)
         .then(response => response.json())
         .then(data => {
             let content = `<div class="table-responsive">
@@ -224,7 +227,7 @@ function viewPastoralCare(memberId) {
                     </thead>
                     <tbody>`;
             
-            if (data.length > 0) {
+            if (Array.isArray(data) && data.length > 0) {
                 data.forEach(care => {
                     content += `
                         <tr>
@@ -239,9 +242,9 @@ function viewPastoralCare(memberId) {
             
             content += `</tbody></table></div>`;
 
-            // Create and show modal
-            const modal = new bootstrap.Modal(document.createElement('div'));
-            modal.element.innerHTML = `
+            const modalDiv = document.createElement('div');
+            modalDiv.className = 'modal fade';
+            modalDiv.innerHTML = `
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -251,11 +254,18 @@ function viewPastoralCare(memberId) {
                         <div class="modal-body">${content}</div>
                     </div>
                 </div>`;
-            modal.element.classList.add('modal', 'fade');
-            document.body.appendChild(modal.element);
+            document.body.appendChild(modalDiv);
+            
+            const modal = new bootstrap.Modal(modalDiv);
+            modalDiv.addEventListener('hidden.bs.modal', function() {
+                document.body.removeChild(modalDiv);
+            });
             modal.show();
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading pastoral care records');
+        });
 }
 </script>
 

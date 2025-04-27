@@ -9,11 +9,11 @@ $memberStats = $stmt->fetch(PDO::FETCH_ASSOC);
 
 
 $stmt = $conn->query("SELECT 
-    SUM(amount) as total_donations,
-    COUNT(DISTINCT member_id) as unique_donors
+    COALESCE(SUM(amount), 0) as total_donations,
+    COUNT(*) as unique_donors
     FROM donations 
-    WHERE MONTH(donation_date) = MONTH(CURRENT_DATE)
-    AND YEAR(donation_date) = YEAR(CURRENT_DATE)");
+    WHERE donation_date >= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01') 
+    AND donation_date <= LAST_DAY(CURRENT_DATE)");
 $donationStats = $stmt->fetch(PDO::FETCH_ASSOC);
 
 $stmt = $conn->query("SELECT * FROM events 
@@ -26,7 +26,8 @@ $upcomingEvents = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $stmt = $conn->query("SELECT d.*, m.first_name, m.last_name 
     FROM donations d
     LEFT JOIN members m ON d.member_id = m.id
-    ORDER BY d.created_at DESC LIMIT 5");
+    WHERE d.donation_date > DATE_SUB(CURRENT_DATE, INTERVAL 2 DAY)
+    ORDER BY d.donation_date DESC LIMIT 5");
 $recentDonations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $stmt = $conn->query("SELECT * FROM notifications 
@@ -52,7 +53,7 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Monthly Donations</h6>
                     <h2 class="card-title mb-0">₱<?php echo number_format($donationStats['total_donations'], 2); ?></h2>
-                    <small><?php echo $donationStats['unique_donors']; ?> donors this month</small>
+                    <small><?php echo $donationStats['unique_donors']; ?> donations this month</small>
                 </div>
             </div>
         </div>
@@ -78,7 +79,7 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     <div class="row g-4">
         <div class="col-md-6">
-            <div class="card h-100">
+            <div class="card">
                 <div class="card-header bg-white">
                     <h5 class="card-title mb-0">Upcoming Events</h5>
                 </div>
@@ -121,7 +122,13 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <div class="list-group-item">
                                 <div class="d-flex w-100 justify-content-between">
                                     <h6 class="mb-1">
-                                        <?php echo htmlspecialchars($donation['first_name'] . ' ' . $donation['last_name']); ?>
+                                        <?php 
+                                        if (!empty($donation['first_name']) || !empty($donation['last_name'])) {
+                                            echo htmlspecialchars($donation['first_name'] . ' ' . $donation['last_name']);
+                                        } else {
+                                            echo 'Anonymous';
+                                        }
+                                        ?>
                                     </h6>
                                     <span class="badge bg-success">₱<?php echo number_format($donation['amount'], 2); ?></span>
                                 </div>
@@ -136,6 +143,7 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
         </div>
+        
         <div class="col-12">
             <div class="card">
                 <div class="card-header bg-white">

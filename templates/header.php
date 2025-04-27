@@ -93,7 +93,7 @@ if (isset($_SESSION['user_id'])) {
                 </a>
                 <a href="/GoldTree/announcements.php?page=announcements" 
                    class="sidebar-link <?php echo $_SESSION['active_page'] == 'announcements' ? 'active' : ''; ?>">
-                    <i class="bi bi-megaphone"></i> Announcements
+                    <i class="bi bi-megaphone"></i> Notifications
                 </a>
                 <a href="/GoldTree/reports.php?page=reports" 
                    class="sidebar-link <?php echo $_SESSION['active_page'] == 'reports' ? 'active' : ''; ?>">

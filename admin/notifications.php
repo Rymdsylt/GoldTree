@@ -1,5 +1,7 @@
 <?php
+session_start();
 require_once '../templates/admin_header.php';
+
 ?>
 
 <style>
@@ -64,12 +66,10 @@ require_once '../templates/admin_header.php';
                 </div>
 
                 <div class="list-group" id="notificationsList">
-                    <!-- Notifications will be loaded here -->
                 </div>
 
                 <nav class="mt-3">
                     <ul class="pagination justify-content-center" id="pagination">
-                        <!-- Pagination will be added here -->
                     </ul>
                 </nav>
             </div>
@@ -77,7 +77,6 @@ require_once '../templates/admin_header.php';
     </div>
 </div>
 
-<!-- Notification Details Modal -->
 <div class="modal fade" id="notificationModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -118,7 +117,7 @@ require_once '../templates/admin_header.php';
     document.addEventListener('DOMContentLoaded', () => {
         loadNotifications();
         setupFilterListeners();
-        // Set default date range (last 30 days)
+
         const today = new Date();
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(today.getDate() - 30);
@@ -174,7 +173,6 @@ require_once '../templates/admin_header.php';
                 `;
             });
 
-            // Update pagination
             updatePagination(data.totalPages, page);
         })
         .catch(error => console.error('Error:', error));
@@ -186,14 +184,12 @@ require_once '../templates/admin_header.php';
         
         if (totalPages <= 1) return;
 
-        // Previous button
         pagination.innerHTML += `
             <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
                 <a class="page-link" href="#" onclick="loadNotifications(${currentPage - 1})">Previous</a>
             </li>
         `;
 
-        // Page numbers
         for (let i = 1; i <= totalPages; i++) {
             pagination.innerHTML += `
                 <li class="page-item ${currentPage === i ? 'active' : ''}">
@@ -202,7 +198,6 @@ require_once '../templates/admin_header.php';
             `;
         }
 
-        // Next button
         pagination.innerHTML += `
             <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
                 <a class="page-link" href="#" onclick="loadNotifications(${currentPage + 1})">Next</a>
@@ -216,8 +211,7 @@ require_once '../templates/admin_header.php';
         document.getElementById('modalType').textContent = notification.notification_type;
         document.getElementById('modalDate').textContent = new Date(notification.created_at).toLocaleString();
         document.getElementById('modalMessage').textContent = notification.message;
-        
-        // Load recipients
+
         fetch('../crud/notifications/get_notification_recipients.php', {
             method: 'POST',
             headers: {
@@ -236,7 +230,6 @@ require_once '../templates/admin_header.php';
 
         notificationModal.show();
 
-        // Mark as read if unread
         if (notification.status === 'unread') {
             markAsRead(notification.id);
         }

@@ -7,17 +7,15 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// Set default active page
+
 if (!isset($_SESSION['active_page'])) {
     $_SESSION['active_page'] = 'dashboard';
 }
 
-// Update active page if clicked
 if (isset($_GET['page'])) {
     $_SESSION['active_page'] = $_GET['page'];
 }
 
-// Get user data
 $stmt = $conn->prepare("SELECT users.*, members.first_name, members.last_name 
     FROM users 
     LEFT JOIN members ON users.member_id = members.id 
@@ -40,7 +38,6 @@ $user = $stmt->fetch();
     </div>
 
     <div class="row g-4">
-        <!-- Quick Access Cards -->
         <div class="col-md-4">
             <div class="card h-100">
                 <div class="card-body">

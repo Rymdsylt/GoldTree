@@ -10,7 +10,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 try {
-    // Verify the email code first
     $verification_code = $_POST['verification_code'];
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
 
@@ -18,7 +17,6 @@ try {
         throw new Exception('Please request a verification code first');
     }
 
-    // Check if verification code has expired (10 minutes)
     if (time() - $_SESSION['verification_time'] > 600) {
         unset($_SESSION['verification_code']);
         unset($_SESSION['verification_email']);
@@ -26,7 +24,6 @@ try {
         throw new Exception('Verification code has expired. Please request a new one');
     }
 
-    // Verify the code and email match
     if ($verification_code !== $_SESSION['verification_code'] || $email !== $_SESSION['verification_email']) {
         throw new Exception('Invalid verification code');
     }
@@ -78,7 +75,6 @@ try {
 
     $conn->commit();
 
-    // Clear verification session data after successful registration
     unset($_SESSION['verification_code']);
     unset($_SESSION['verification_email']);
     unset($_SESSION['verification_time']);

@@ -13,6 +13,9 @@ try {
     $member = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($member) {
+        if (!empty($member['profile_image'])) {
+            $member['profile_image'] = base64_encode($member['profile_image']);
+        }
         echo json_encode(['success' => true, 'data' => $member]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Member not found']);

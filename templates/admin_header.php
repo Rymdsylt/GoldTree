@@ -1,10 +1,9 @@
 <?php
-session_start();
+
 require_once __DIR__ . '/../db/connection.php';
 
 $current_page = basename($_SERVER['PHP_SELF']);
 
-// Verify admin status
 if (!isset($_SESSION['user_id'])) {
     header("Location: /GoldTree/login.php");
     exit();
@@ -15,7 +14,7 @@ $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch();
 
 if (!$user || $user['admin_status'] != 1) {
-    header("Location: Dashboard_intro.php?page=dashboard");
+    header("Location: /GoldTree/events.php?page=events");
     exit();
 }
 ?>
@@ -41,15 +40,34 @@ if (!$user || $user['admin_status'] != 1) {
             --sidebar-width: 250px;
         }
 
+        body {
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            position: fixed;
+            width: 100%;
+            z-index: 1030;
+        }
+
         .btn-primary.active {
             background-color: #0056b3;
             border-color: #0056b3;
             box-shadow: 0 0 0 0.2rem rgba(0,123,255,.5);
         }
 
-        /* Admin-specific animations */
+        /* Updated admin sidebar styles */
         .admin-sidebar {
-            transition: transform 0.3s ease;
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            width: var(--sidebar-width);
+            height: calc(100vh - var(--header-height));
+            overflow-y: auto;
+            background: var(--white);
+            box-shadow: var(--shadow);
+            z-index: 1020;
+            transition: var(--transition);
         }
 
         .admin-card {
@@ -66,6 +84,14 @@ if (!$user || $user['admin_status'] != 1) {
 
         .admin-content {
             transition: margin-left 0.3s ease;
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 20px;
+            min-height: calc(100vh - var(--header-height));
+            transition: var(--transition);
         }
 
         /* Fade animations */
@@ -122,6 +148,65 @@ if (!$user || $user['admin_status'] != 1) {
             margin-right: 10px;
             font-size: 1.1rem;
         }
+
+        @media (max-width: 768px) {
+            .admin-sidebar {
+                transform: translateX(-100%);
+            }
+
+            .admin-sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 15px;
+            }
+
+            .main-content.sidebar-hidden {
+                margin-left: var(--sidebar-width);
+            }
+
+            .navbar .container-fluid {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+
+            .navbar-brand {
+                font-size: 1.1rem;
+            }
+
+            .btn {
+                padding: 0.375rem 0.75rem;
+                font-size: 0.875rem;
+            }
+
+            .sidebar {
+                width: 100%;
+                position: fixed;
+                z-index: 1000;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease-in-out;
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+            .dropdown-menu {
+                position: fixed !important;
+                width: 100%;
+                bottom: 0;
+                border-radius: 1rem 1rem 0 0;
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            }
+        }
     </style>
 </head>
 <body>
@@ -135,8 +220,11 @@ if (!$user || $user['admin_status'] != 1) {
                 <i class="bi bi-shield-lock"></i> Admin Panel
             </a>
             <div class="d-flex align-items-center">
-                <a href="/GoldTree/Dashboard_intro.php?page=dashboard" class="btn btn-outline-primary me-2">
+                <a href="/GoldTree/Dashboard_intro.php?page=dashboard" class="btn btn-outline-primary me-2 d-none d-md-inline-block">
                     <i class="bi bi-house"></i> Main Dashboard
+                </a>
+                <a href="/GoldTree/reports.php" class="btn btn-outline-primary me-2 d-none d-md-inline-block">
+                    <i class="bi bi-graph-up"></i> Reports
                 </a>
                 <div class="dropdown">
                     <button class="btn btn-link dropdown-toggle text-dark" type="button" id="userMenu" data-bs-toggle="dropdown">
@@ -144,6 +232,8 @@ if (!$user || $user['admin_status'] != 1) {
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="/GoldTree/profile.php">Profile</a></li>
+                        <li><a class="dropdown-item d-md-none" href="/GoldTree/Dashboard_intro.php?page=dashboard">Main Dashboard</a></li>
+                        <li><a class="dropdown-item d-md-none" href="/GoldTree/reports.php">Reports</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="/GoldTree/auth/logout_user.php">Logout</a></li>
                     </ul>

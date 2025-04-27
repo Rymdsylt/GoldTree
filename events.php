@@ -21,7 +21,7 @@ $totalCount = $totalStmt->fetch()['count'];
 ?>
 
 <div class="container-fluid py-4">
-    <!-- Statistics Cards -->
+
     <div class="row g-4 mb-4">
         <div class="col-md-4">
             <div class="card stat-card">
@@ -52,7 +52,6 @@ $totalCount = $totalStmt->fetch()['count'];
         </div>
     </div>
 
-    <!-- Filters and Actions -->
     <div class="row g-3 mb-4">
         <div class="col-md-8">
             <div class="card">
@@ -84,12 +83,11 @@ $totalCount = $totalStmt->fetch()['count'];
         </div>
     </div>
 
-    <!-- Events Grid -->
+
     <div class="row g-4" id="eventsGrid">
-        <!-- Events will be loaded dynamically here -->
+
     </div>
 
-    <!-- Event Description Modal -->
     <div class="modal fade" id="eventDescriptionModal" tabindex="-1" aria-labelledby="eventDescriptionModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -98,7 +96,7 @@ $totalCount = $totalStmt->fetch()['count'];
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="eventDescriptionModalBody">
-                    <!-- Event details will be loaded here -->
+
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -107,20 +105,20 @@ $totalCount = $totalStmt->fetch()['count'];
         </div>
     </div>
 
-    <!-- Pagination -->
+   
     <nav aria-label="Events pagination" class="mt-4">
         <div class="d-flex justify-content-between align-items-center">
             <div class="text-muted">
                 Showing <span id="showing">0</span> of <span id="total">0</span> events
             </div>
             <ul class="pagination mb-0" id="eventsPagination">
-                <!-- Pagination will be added dynamically -->
+   
             </ul>
         </div>
     </nav>
 </div>
 
-<!-- Add Event Modal -->
+
 <div class="modal fade" id="addEventModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">

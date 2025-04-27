@@ -1,7 +1,7 @@
 <?php require_once 'templates/header.php'; ?>
 
 <div class="container-fluid py-4">
-    <!-- Statistics Cards -->
+ 
     <div class="row g-4 mb-4">
         <div class="col-md-3">
             <div class="card stat-card">
@@ -41,7 +41,6 @@
         </div>
     </div>
 
-    <!-- Filter Section -->
     <div class="row g-3 mb-4">
         <div class="col-md-8">
             <div class="card">
@@ -72,12 +71,9 @@
         </div>
     </div>
 
-    <!-- Announcements Grid -->
     <div class="row g-4" id="announcementsGrid">
-        <!-- Announcements will be loaded dynamically -->
     </div>
 
-    <!-- Pagination -->
     <div class="row mt-4">
         <div class="col-12">
             <nav aria-label="Announcements pagination" class="d-flex justify-content-between align-items-center">
@@ -85,14 +81,12 @@
                     Showing <span id="showing">0</span> of <span id="total">0</span> announcements
                 </div>
                 <ul class="pagination mb-0">
-                    <!-- Pagination will be added dynamically -->
                 </ul>
             </nav>
         </div>
     </div>
 </div>
 
-<!-- Add Announcement Modal -->
 <div class="modal fade" id="addAnnouncementModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -151,15 +145,13 @@
 document.addEventListener('DOMContentLoaded', function() {
     loadAnnouncements();
     loadStats();
-    
-    // Add event listeners
+
     const filters = ['searchAnnouncement', 'priorityFilter', 'statusFilter'];
     filters.forEach(id => {
         document.getElementById(id).addEventListener('change', loadAnnouncements);
     });
     document.getElementById('searchAnnouncement').addEventListener('input', debounce(loadAnnouncements, 300));
-    
-    // Handle form submission
+
     document.getElementById('addAnnouncementForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = new FormData(this);
