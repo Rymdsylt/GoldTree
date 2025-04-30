@@ -10,7 +10,7 @@ try {
     $member_id = $donor_type === 'member' ? ($_POST['member_id'] ?? null) : null;
     $donor_name = $donor_type === 'non-member' ? ($_POST['donor_name'] ?? null) : null;
     $amount = $_POST['amount'] ?? null;
-    $type = $_POST['type'] ?? null;
+    $type = $_POST['donation_type'] ?? null; // Changed from 'type' to 'donation_type'
     $donation_date = $_POST['donation_date'] ?? null;
     $notes = $_POST['notes'] ?? '';
 

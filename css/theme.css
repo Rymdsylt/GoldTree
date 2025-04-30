@@ -46,7 +46,7 @@ body {
 /* Sidebar */
 .sidebar {
     width: var(--sidebar-width);
-    height: 100vh;
+    height: calc(100vh - var(--header-height));
     position: fixed;
     top: var(--header-height);
     left: 0;
@@ -55,6 +55,25 @@ body {
     z-index: 1020;
     transition: var(--transition);
     overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+/* Custom scrollbar styles for the sidebar */
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.05);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-hover);
 }
 
 .sidebar-link {

@@ -66,7 +66,7 @@ session_start();
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Donation Type</label>
-                        <select class="form-select" name="type" required>
+                        <select class="form-select" name="donation_type" required>
                             <option value="tithe">Tithe</option>
                             <option value="offering">Offering</option>
                             <option value="project">Project</option>
@@ -120,6 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
             memberSelect.style.display = 'none';
             nonMemberName.style.display = 'block';
             memberIdSelect.removeAttribute('required');
+            memberIdSelect.value = ''; // Clear member selection when switching to non-member
         } else {
             memberSelect.style.display = 'block';
             nonMemberName.style.display = 'none';
@@ -133,10 +134,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const donorType = formData.get('donor_type');
         const donationId = formData.get('donation_id');
         
+        // Remove member_id requirement for non-member donations
         if (donorType === 'non-member') {
             formData.delete('member_id');
+            const memberIdSelect = this.querySelector('[name="member_id"]');
+            if (memberIdSelect) {
+                memberIdSelect.removeAttribute('required');
+            }
         }
         
+        // Set date to today if not specified
+        if (!formData.get('donation_date')) {
+            const today = new Date().toISOString().split('T')[0];
+            formData.set('donation_date', today);
+        }
+
         const url = donationId ? 
             '../crud/donations/update_donation.php' : 
             '../crud/donations/create_donation.php';
@@ -187,8 +199,8 @@ function loadDonations(page = 1) {
                         <tr>
                             <td>${donation.donor_name || 'Anonymous'}</td>
                             <td>
-                                <span class="badge bg-${getTypeBadge(donation.type)}">
-                                    ${capitalizeFirst(donation.type)}
+                                <span class="badge bg-${getTypeBadge(donation.donation_type)}">
+                                    ${capitalizeFirst(donation.donation_type)}
                                 </span>
                             </td>
                             <td>${formatCurrency(donation.amount)}</td>
@@ -325,7 +337,7 @@ function editDonation(id) {
                     memberIdSelect.value = donation.member_id;
                 }
                 
-                form.querySelector('[name="type"]').value = donation.type;
+                form.querySelector('[name="donation_type"]').value = donation.donation_type;
                 form.querySelector('[name="amount"]').value = donation.amount;
                 form.querySelector('[name="donation_date"]').value = donation.donation_date;
                 form.querySelector('[name="notes"]').value = donation.notes || '';

@@ -77,6 +77,7 @@ $donations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $totalPages = ceil($total / $limit);
 
 echo json_encode([
+    'success' => true,
     'donations' => $donations,
     'currentPage' => $page,
     'totalPages' => $totalPages,

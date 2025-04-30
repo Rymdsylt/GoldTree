@@ -26,7 +26,7 @@ try {
     $member_id = $donor_type === 'member' ? ($_POST['member_id'] ?? null) : null;
     $donor_name = $donor_type === 'non-member' ? ($_POST['donor_name'] ?? null) : null;
     $amount = $_POST['amount'] ?? null;
-    $type = $_POST['type'] ?? null;
+    $donation_type = $_POST['donation_type'] ?? null;
     $donation_date = $_POST['donation_date'] ?? null;
     $notes = $_POST['notes'] ?? '';
 
@@ -38,7 +38,7 @@ try {
         throw new Exception('Member selection is required for member donations');
     }
 
-    if (empty($amount) || empty($type) || empty($donation_date)) {
+    if (empty($amount) || empty($donation_type) || empty($donation_date)) {
         throw new Exception('Amount, type, and date are required fields');
     }
 
@@ -51,7 +51,7 @@ try {
         notes = ?
         WHERE id = ?");
         
-    $stmt->execute([$member_id, $donor_name, $amount, $type, $donation_date, $notes, $donation_id]);
+    $stmt->execute([$member_id, $donor_name, $amount, $donation_type, $donation_date, $notes, $donation_id]);
 
     if ($stmt->rowCount() === 0) {
         throw new Exception('No donation found with the given ID');
