@@ -11,20 +11,26 @@ if (!isset($_SESSION['user_id'])) {
 
 try {
     $data = json_decode(file_get_contents('php://input'), true);
-    $notification_id = $data['id'];
+    
+    if (!isset($data['id'])) {
+        throw new Exception('Notification ID is required');
+    }
 
-    // Update recipients using the notification id directly
     $stmt = $conn->prepare("
         UPDATE notification_recipients 
         SET is_read = 1 
-        WHERE notification_id = ?
+        WHERE notification_id = ? 
+        AND user_id = ?
     ");
     
-    $stmt->execute([$notification_id]);
+    $stmt->execute([$data['id'], $_SESSION['user_id']]);
     
     echo json_encode(['success' => true]);
     
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getMessage()
+    ]);
 }
 ?>

@@ -42,18 +42,11 @@ if (isset($_COOKIE['logged_in']) && $_COOKIE['logged_in'] === 'true') {
                         </span>
                         <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
                     </div>
-                    <div class="text-end mt-1">
-                        <a href="forgot_password.php" class="small">Forgot Password?</a>
-                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">
                     <i class="bi bi-box-arrow-in-right"></i> Sign In
                 </button>
             </form>
-            <div class="text-center mt-4">
-                <span class="text-muted">Don't have an account?</span>
-                <a href="register.php" class="ms-1">Register now</a>
-            </div>
         </div>
     </div>
 

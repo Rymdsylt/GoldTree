@@ -1,46 +1,6 @@
 <?php require_once 'templates/header.php'; ?>
 
 <div class="container-fluid py-4">
- 
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <div class="card stat-card">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2">Total Notifications</h6>
-                    <h2 class="card-title mb-0" id="totalAnnouncements">0</h2>
-                    <small>All time</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stat-card">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2">Unread</h6>
-                    <h2 class="card-title mb-0" id="activeAnnouncements">0</h2>
-                    <small>Pending notifications</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stat-card">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2">Urgent</h6>
-                    <h2 class="card-title mb-0" id="highPriorityCount">0</h2>
-                    <small>High priority</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stat-card">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2">Response Rate</h6>
-                    <h2 class="card-title mb-0" id="readRate">0%</h2>
-                    <small>User responses</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="row g-3 mb-4">
         <div class="col-md-8">
             <div class="card">
@@ -188,36 +148,57 @@ function loadStats() {
 }
 
 function loadAnnouncements(page = 1) {
-    const search = document.getElementById('searchAnnouncement').value;
-    const priority = document.getElementById('priorityFilter').value;
-    const status = document.getElementById('statusFilter').value;
+    const search = document.getElementById('searchAnnouncement')?.value || '';
+    const priority = document.getElementById('priorityFilter')?.value || '';
+    const status = document.getElementById('statusFilter')?.value || '';
     
     fetch(`crud/announcements/read_announcements.php?page=${page}&search=${search}&priority=${priority}&status=${status}`)
         .then(response => response.json())
         .then(data => {
             const grid = document.getElementById('announcementsGrid');
+            if (!grid) return;
             grid.innerHTML = '';
+
+            if (!data.success) {
+                grid.innerHTML = '<div class="col-12"><div class="alert alert-danger">Error: ' + (data.message || 'Unknown error') + '</div></div>';
+                updateCounters(0, 0);
+                return;
+            }
             
+            if (!data.announcements || data.announcements.length === 0) {
+                grid.innerHTML = '<div class="col-12"><div class="alert alert-info">No announcements found.</div></div>';
+                updateCounters(0, 0);
+                return;
+            }
+
             data.announcements.forEach(announcement => {
+                const readStatus = announcement.is_read ? 'Read' : 'Unread';
+                const readStatusClass = announcement.is_read ? 'text-muted' : 'fw-bold';
+                
                 const card = `
                     <div class="col-md-6 col-lg-4">
                         <div class="card h-100">
                             <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
-                                <span class="badge bg-${getPriorityBadge(announcement.priority)}">
-                                    ${capitalizeFirst(announcement.priority)} Priority
-                                </span>
+                                <div>
+                                    <span class="badge bg-${getPriorityBadge(announcement.priority || 'low')}">
+                                        ${capitalizeFirst(announcement.priority || 'low')} Priority
+                                    </span>
+                                    <span class="badge bg-secondary ms-1 ${readStatusClass}">
+                                        ${readStatus}
+                                    </span>
+                                </div>
                                 <div class="dropdown">
                                     <button class="btn btn-link btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
                                         <i class="bi bi-three-dots-vertical"></i>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end">
                                         <li>
-                                            <button class="dropdown-item" onclick="editAnnouncement(${announcement.id})">
-                                                <i class="bi bi-pencil me-2"></i> Edit
+                                            <button class="dropdown-item" onclick="markAsRead(${announcement.notification_id})">
+                                                <i class="bi bi-check2 me-2"></i> Mark as Read
                                             </button>
                                         </li>
                                         <li>
-                                            <button class="dropdown-item" onclick="deleteAnnouncement(${announcement.id})">
+                                            <button class="dropdown-item text-danger" onclick="deleteAnnouncement(${announcement.notification_id})">
                                                 <i class="bi bi-trash me-2"></i> Delete
                                             </button>
                                         </li>
@@ -225,20 +206,13 @@ function loadAnnouncements(page = 1) {
                                 </div>
                             </div>
                             <div class="card-body">
-                                <h5 class="card-title">${announcement.title}</h5>
-                                <p class="card-text">${announcement.content}</p>
-                                ${announcement.attachments ? `
-                                    <div class="mt-3">
-                                        <small class="text-muted">
-                                            <i class="bi bi-paperclip me-1"></i> ${announcement.attachments} attachments
-                                        </small>
-                                    </div>
-                                ` : ''}
+                                <h5 class="card-title">${announcement.subject || 'Untitled'}</h5>
+                                <p class="card-text">${announcement.message || 'No content'}</p>
                             </div>
                             <div class="card-footer bg-transparent">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <small class="text-muted">
-                                        Posted ${formatDate(announcement.created_at)}
+                                        Posted ${formatDate(announcement.created_at || new Date())}
                                     </small>
                                     <small class="text-muted">
                                         ${announcement.end_date ? `Expires ${formatDate(announcement.end_date)}` : 'No expiration'}
@@ -251,11 +225,46 @@ function loadAnnouncements(page = 1) {
                 grid.insertAdjacentHTML('beforeend', card);
             });
             
-            updatePagination(data.currentPage, data.totalPages);
-            document.getElementById('showing').textContent = data.showing;
-            document.getElementById('total').textContent = data.total;
+            updatePagination(data.currentPage || 1, data.totalPages || 1);
+            updateCounters(data.showing || 0, data.total || 0);
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error loading announcements:', error);
+            const grid = document.getElementById('announcementsGrid');
+            if (grid) {
+                grid.innerHTML = '<div class="col-12"><div class="alert alert-danger">Error loading announcements. Please try again.</div></div>';
+            }
+            updateCounters(0, 0);
+        });
+}
+
+function markAsRead(id) {
+    fetch('crud/announcements/mark_as_read.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: id })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadAnnouncements();
+            loadStats();
+        } else {
+            alert('Error marking notification as read: ' + data.message);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+
+function updateCounters(showing, total) {
+    const showingEl = document.getElementById('showing');
+    const totalEl = document.getElementById('total');
+    
+    if (showingEl) showingEl.textContent = showing;
+    if (totalEl) totalEl.textContent = total;
 }
 
 function updatePagination(currentPage, totalPages) {
@@ -299,6 +308,28 @@ function formatDate(dateString) {
 
 function capitalizeFirst(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+function deleteAnnouncement(id) {
+    if (confirm('Are you sure you want to delete this notification?')) {
+        fetch('crud/announcements/delete_announcement.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ id: id })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadAnnouncements();
+                loadStats();
+            } else {
+                alert('Error deleting notification: ' + data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
 }
 
 function debounce(func, wait) {

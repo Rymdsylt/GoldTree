@@ -117,8 +117,6 @@ try {
 
     // Drop and recreate notifications tables to fix schema
     try {
-        $conn->exec("DROP TABLE IF EXISTS notification_recipients");
-        $conn->exec("DROP TABLE IF EXISTS notifications");
         
         $conn->exec("CREATE TABLE notifications (
             id INT PRIMARY KEY AUTO_INCREMENT,
@@ -136,6 +134,7 @@ try {
             id INT PRIMARY KEY AUTO_INCREMENT,
             notification_id INT NOT NULL,
             user_id INT NOT NULL,
+            user_email VARCHAR(100),
             is_read BOOLEAN DEFAULT FALSE,
             email_sent BOOLEAN DEFAULT FALSE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

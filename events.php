@@ -1,7 +1,7 @@
 <?php 
 require_once 'templates/header.php';
 require_once 'db/connection.php';
-
+require_once 'auth/login_status.php';
 
 $now = date('Y-m-d H:i:s');
 

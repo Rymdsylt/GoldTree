@@ -1,6 +1,6 @@
 <?php 
 require_once 'templates/header.php';
-
+require_once 'auth/login_status.php';
 
 $stmt = $conn->query("SELECT 
     SUM(amount) as total_donations,

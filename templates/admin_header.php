@@ -216,7 +216,7 @@ if (!$user || $user['admin_status'] != 1) {
             <button class="navbar-toggler border-0" type="button" id="adminSidebarToggle">
                 <i class="bi bi-list"></i>
             </button>
-            <a class="navbar-brand" href="/GoldTree/admin.php">
+            <a class="navbar-brand" href="">
                 <i class="bi bi-shield-lock"></i> Admin Panel
             </a>
             <div class="d-flex align-items-center">

@@ -40,7 +40,6 @@ try {
 
     $conn->beginTransaction();
 
-
     $stmt = $conn->prepare("
         INSERT INTO notifications (
             notification_type, subject, message, send_email, created_by, status
@@ -54,34 +53,31 @@ try {
     $notification_id = $conn->lastInsertId();
     error_log("Notification created with ID: $notification_id");
 
-
+    // Get user emails along with IDs
+    $placeholders = str_repeat('?,', count($recipients) - 1) . '?';
     $stmt = $conn->prepare("
-        INSERT INTO notification_recipients (notification_id, user_id) 
-        VALUES (?, ?)
+        SELECT id, email 
+        FROM users 
+        WHERE id IN ($placeholders)
+    ");
+    $stmt->execute($recipients);
+    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Insert recipients with their emails
+    $stmt = $conn->prepare("
+        INSERT INTO notification_recipients (notification_id, user_id, user_email) 
+        VALUES (?, ?, ?)
     ");
 
-    foreach ($recipients as $user_id) {
-        if (!empty($user_id)) {
-            if (!$stmt->execute([$notification_id, $user_id])) {
-                throw new Exception("Error adding recipient $user_id: " . implode(", ", $stmt->errorInfo()));
-            }
+    foreach ($users as $user) {
+        if (!$stmt->execute([$notification_id, $user['id'], $user['email']])) {
+            throw new Exception("Error adding recipient {$user['id']}: " . implode(", ", $stmt->errorInfo()));
         }
     }
 
- 
     if ($send_email) {
         require_once '../../vendor/autoload.php';
         require_once '../../mailer/_credentials.php';
-
-
-        $placeholders = str_repeat('?,', count($recipients) - 1) . '?';
-        $stmt = $conn->prepare("
-            SELECT id, username, email 
-            FROM users 
-            WHERE id IN ($placeholders) AND email IS NOT NULL
-        ");
-        $stmt->execute($recipients);
-        $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (!empty($users)) {
             try {
@@ -137,6 +133,7 @@ try {
             }
         }
     }
+
     $stmt = $conn->prepare("
         UPDATE notifications 
         SET status = 'sent' 

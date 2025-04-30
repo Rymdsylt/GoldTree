@@ -1,4 +1,5 @@
 <?php
+require_once 'auth/login_status.php';
 session_start();
 if (isset($_COOKIE['logged_in']) && $_COOKIE['logged_in'] === 'true') {
     header("Location: dashboard.php");

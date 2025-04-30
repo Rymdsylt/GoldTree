@@ -1,6 +1,6 @@
 <?php 
 require_once 'templates/header.php';
-
+require_once 'auth/login_status.php';
 
 $stmt = $conn->query("SELECT COUNT(*) as total_members, 
     SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_members 

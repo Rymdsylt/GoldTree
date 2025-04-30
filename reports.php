@@ -1,4 +1,6 @@
-<?php require_once 'templates/header.php'; ?>
+<?php require_once 'templates/header.php'
+; 
+require_once 'auth/login_status.php';?>
 
 <style>
 .chart-container {
