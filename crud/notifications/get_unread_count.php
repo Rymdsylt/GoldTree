@@ -11,14 +11,18 @@ if (!isset($_SESSION['user_id'])) {
 
 try {
     $stmt = $conn->prepare("
-        UPDATE notification_recipients 
-        SET is_read = 1 
-        WHERE user_id = ?
+        SELECT COUNT(*) as unread_count
+        FROM notification_recipients nr
+        WHERE nr.user_id = ? AND nr.is_read = 0
     ");
     
     $stmt->execute([$_SESSION['user_id']]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    echo json_encode(['success' => true]);
+    echo json_encode([
+        'success' => true,
+        'unread_count' => (int)$result['unread_count']
+    ]);
     
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);

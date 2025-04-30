@@ -31,9 +31,18 @@ $stmt = $conn->query("SELECT d.*, m.first_name, m.last_name
     ORDER BY d.donation_date DESC LIMIT 5");
 $recentDonations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$stmt = $conn->query("SELECT * FROM notifications 
-    WHERE status != 'sent'
-    ORDER BY created_at DESC LIMIT 5");
+$stmt = $conn->query("SELECT COUNT(*) as total_unread 
+    FROM notifications n
+    INNER JOIN notification_recipients nr ON n.id = nr.notification_id
+    WHERE nr.user_id = {$_SESSION['user_id']} AND nr.is_read = 0");
+$unreadCount = $stmt->fetch(PDO::FETCH_ASSOC)['total_unread'];
+
+$stmt = $conn->query("SELECT n.*, nr.is_read 
+    FROM notifications n
+    INNER JOIN notification_recipients nr ON n.id = nr.notification_id
+    WHERE nr.user_id = {$_SESSION['user_id']} 
+    AND nr.is_read = 0
+    ORDER BY n.created_at DESC LIMIT 5");
 $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
@@ -71,9 +80,9 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="col-md-3">
             <div class="card stat-card h-100">
                 <div class="card-body">
-                    <h6 class="card-subtitle mb-2">Active Notifications</h6>
-                    <h2 class="card-title mb-0"><?php echo count($notifications); ?></h2>
-                    <small>Current notices</small>
+                    <h6 class="card-subtitle mb-2">Unread Notifications</h6>
+                    <h2 class="card-title mb-0"><?php echo $unreadCount; ?></h2>
+                    <small>Pending attention</small>
                 </div>
             </div>
         </div>
@@ -149,29 +158,36 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="col-12">
             <div class="card">
                 <div class="card-header bg-white">
-                    <h5 class="card-title mb-0">Active Notifications</h5>
+                    <h5 class="card-title mb-0">Unread Notifications</h5>
                 </div>
                 <div class="card-body">
                     <?php if (empty($notifications)): ?>
-                        <p class="text-muted text-center">No active notifications</p>
+                        <p class="text-muted text-center">No unread notifications</p>
                     <?php else: ?>
                         <div class="list-group list-group-flush">
                         <?php foreach ($notifications as $notification): ?>
-                            <div class="list-group-item notification-priority-<?php echo $notification['priority']; ?>">
+                            <div class="list-group-item">
                                 <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1"><?php echo htmlspecialchars($notification['title']); ?></h6>
+                                    <h6 class="mb-1">
+                                        <i class="bi bi-circle-fill text-primary me-2" style="font-size: 8px;"></i>
+                                        <?php echo htmlspecialchars($notification['subject']); ?>
+                                    </h6>
                                     <small class="text-muted">
-                                        <?php 
-                                        echo $notification['end_date'] 
-                                            ? 'Until ' . date('M d, Y', strtotime($notification['end_date']))
-                                            : 'No end date';
-                                        ?>
+                                        <?php echo date('M d, Y', strtotime($notification['created_at'])); ?>
                                     </small>
                                 </div>
-                                <p class="mb-1"><?php echo htmlspecialchars($notification['content']); ?></p>
-                                <small class="text-muted">
-                                    Priority: <?php echo ucfirst($notification['priority']); ?>
-                                </small>
+                                <p class="mb-1"><?php echo htmlspecialchars($notification['message']); ?></p>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <span class="badge bg-primary"><?php echo ucfirst($notification['notification_type']); ?></span>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="markAsRead(<?php echo $notification['id']; ?>)">
+                                            <i class="bi bi-check2"></i> Mark as Read
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteNotification(<?php echo $notification['id']; ?>)">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                         </div>
@@ -181,5 +197,49 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 </div>
+
+<script>
+function markAsRead(id) {
+    if (!id) return;
+    
+    fetch('crud/notifications/mark_as_read.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error marking notification as read: ' + data.message);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function deleteNotification(id) {
+    if (!id || !confirm('Are you sure you want to delete this notification?')) return;
+    
+    fetch('crud/notifications/delete_notification.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error deleting notification: ' + data.message);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>
 
 <?php require_once 'templates/footer.php'; ?>

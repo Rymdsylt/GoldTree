@@ -13,7 +13,6 @@ try {
     $stmt = $conn->prepare("
         SELECT COUNT(*) as total,
                SUM(CASE WHEN nr.is_read = 0 THEN 1 ELSE 0 END) as unread,
-               SUM(CASE WHEN n.notification_type = 'event' THEN 1 ELSE 0 END) as high_priority,
                COUNT(CASE WHEN nr.is_read = 1 THEN 1 END) * 100.0 / COUNT(*) as read_rate
         FROM notifications n
         INNER JOIN notification_recipients nr ON n.id = nr.notification_id
@@ -27,7 +26,6 @@ try {
         'success' => true,
         'total' => (int)$stats['total'],
         'active' => (int)$stats['unread'],
-        'highPriority' => (int)$stats['high_priority'],
         'readRate' => round($stats['read_rate'] ?? 0, 1)
     ]);
     

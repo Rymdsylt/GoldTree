@@ -114,7 +114,7 @@ try {
                     if (!empty($user['email'])) {
                         try {
                             $mail->clearAddresses();
-                            $mail->addAddress($user['email'], $user['username']);
+                            $mail->addAddress($user['email']); // Removed username parameter
                             $mail->send();
 
                             $stmt = $conn->prepare("

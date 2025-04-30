@@ -31,6 +31,24 @@ if (isset($_SESSION['user_id'])) {
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/theme.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        .notification-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: #dc3545;
+            color: white;
+            border-radius: 50%;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            min-width: 1.5rem;
+            text-align: center;
+        }
+        .sidebar-link {
+            position: relative;
+            display: inline-block;
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light">
@@ -83,6 +101,7 @@ if (isset($_SESSION['user_id'])) {
                 <a href="/GoldTree/announcements.php?page=announcements" 
                    class="sidebar-link <?php echo $_SESSION['active_page'] == 'announcements' ? 'active' : ''; ?>">
                     <i class="bi bi-megaphone"></i> Notifications
+                    <span id="unreadNotificationsBadge" class="notification-badge d-none">0</span>
                 </a>
                 <a href="/GoldTree/reports.php?page=reports" 
                    class="sidebar-link <?php echo $_SESSION['active_page'] == 'reports' ? 'active' : ''; ?>">
@@ -114,3 +133,27 @@ if (isset($_SESSION['user_id'])) {
 
     <!-- Main Content Container -->
     <main class="main-content <?php echo !isset($_SESSION['user_id']) ? 'ml-0' : ''; ?>"><?php ?>
+    <script>
+    function updateNotificationBadge() {
+        fetch('/GoldTree/crud/notifications/get_unread_count.php')
+            .then(response => response.json())
+            .then(data => {
+                const badge = document.getElementById('unreadNotificationsBadge');
+                if (data.success) {
+                    if (data.unread_count > 0) {
+                        badge.textContent = data.unread_count > 99 ? '99+' : data.unread_count;
+                        badge.classList.remove('d-none');
+                    } else {
+                        badge.classList.add('d-none');
+                    }
+                }
+            })
+            .catch(console.error);
+    }
+
+    // Update badge when page loads
+    document.addEventListener('DOMContentLoaded', updateNotificationBadge);
+
+    // Update badge every minute
+    setInterval(updateNotificationBadge, 60000);
+    </script>

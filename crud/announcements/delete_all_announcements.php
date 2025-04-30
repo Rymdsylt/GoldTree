@@ -10,17 +10,27 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 try {
-    $stmt = $conn->prepare("
-        UPDATE notification_recipients 
-        SET is_read = 1 
-        WHERE user_id = ?
-    ");
-    
+    $conn->beginTransaction();
+
+
+    $stmt = $conn->prepare("DELETE FROM notification_recipients WHERE user_id = ?");
     $stmt->execute([$_SESSION['user_id']]);
-    
+
+
+    $stmt = $conn->prepare("
+        DELETE n FROM notifications n
+        LEFT JOIN notification_recipients nr ON n.id = nr.notification_id
+        WHERE nr.id IS NULL
+    ");
+    $stmt->execute();
+
+    $conn->commit();
     echo json_encode(['success' => true]);
     
 } catch (Exception $e) {
+    if ($conn->inTransaction()) {
+        $conn->rollBack();
+    }
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 ?>

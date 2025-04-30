@@ -86,10 +86,16 @@ if (!$user || $user['admin_status'] != 1) {
                         </div>
 
                         <div class="col-12">
-                            <div class="form-check">
+                            <div class="form-check mb-2">
                                 <input class="form-check-input" type="checkbox" name="send_notifications" id="sendNotifications">
                                 <label class="form-check-label" for="sendNotifications">
-                                    Send notifications to members
+                                    Send notifications to registered users
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="send_all_emails" id="sendAllEmails">
+                                <label class="form-check-label" for="sendAllEmails">
+                                    Send email to all users and members
                                 </label>
                             </div>
                         </div>
@@ -261,6 +267,14 @@ if (!$user || $user['admin_status'] != 1) {
                             <input type="file" class="form-control" name="event_image" accept="image/*">
                             <div class="form-text">Leave empty to keep existing image</div>
                         </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="send_notifications" id="editSendNotifications">
+                                <label class="form-check-label" for="editSendNotifications">
+                                    Send update notifications to members
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -389,9 +403,33 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!isValid) {
             return;
         }
-        
+
+        // Find the submit button using the form attribute selector since it's outside the form
+        const submitButton = document.querySelector('button[form="eventForm"][type="submit"]');
         const formData = new FormData(this);
-        
+        const sendNotifications = formData.get('send_notifications') === 'on';
+        const sendAllEmails = formData.get('send_all_emails') === 'on';
+
+        // Prepare event data
+        const eventData = {
+            title: formData.get('title'),
+            start_datetime: formData.get('start_datetime'),
+            end_datetime: formData.get('end_datetime'),
+            event_type: formData.get('event_type'),
+            location: formData.get('location'),
+            description: formData.get('description'),
+            max_attendees: formData.get('max_attendees'),
+            registration_deadline: formData.get('registration_deadline')
+        };
+
+        // Disable submit button and show loading state if sending emails
+        if (sendNotifications || sendAllEmails) {
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="bi bi-hourglass-split"></i> Creating Event & Sending Emails... Don\'t close or refresh the page!';
+            showAlert('info', '<i class="bi bi-hourglass-split"></i> Creating event and sending email notifications... Don\'t close or refresh the page!', false);
+        }
+
+        // First create the event
         fetch('../crud/events/create_event.php', {
             method: 'POST',
             body: formData
@@ -399,45 +437,32 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                if (formData.get('send_notifications') === 'on') {
-                    showAlert('info', '<i class="bi bi-hourglass-split"></i> Sending email notifications...', false);
-                    
-                    fetch('../mailer/notify_event.php', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            event_id: data.event_id
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(notifyData => {
-                        if (notifyData.success) {
-                            showAlert('success', 'Event created and notifications sent successfully!');
-                        } else {
-                            throw new Error(notifyData.message || 'Failed to send notifications');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        showAlert('warning', 'Event created but failed to send notifications: ' + error.message);
-                    });
-                } else {
-                    showAlert('success', 'Event created successfully!');
-                }
+                showAlert('success', 'Event created successfully!');
+                
+                // Reset form and preview
                 preview.image.src = '../images/placeholder-event.jpg';
                 preview.title.textContent = 'Event Title';
                 preview.dateTime.innerHTML = '<i class="bi bi-calendar-event"></i> Date and Time';
                 preview.location.innerHTML = '<i class="bi bi-geo-alt"></i> Location';
                 preview.description.textContent = 'Event description will appear here...';
+                form.reset();
+                
+                // Reload events list
+                loadEvents();
             } else {
                 throw new Error(data.message || 'Failed to create event');
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            showAlert('danger', error.message || 'An error occurred while creating the event');
+            showAlert('danger', error.message || 'An error occurred while processing your request');
+        })
+        .finally(() => {
+            // Re-enable submit button and reset its text
+            if (sendNotifications || sendAllEmails) {
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<i class="bi bi-plus-circle"></i> Create Event';
+            }
         });
     });
 

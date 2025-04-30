@@ -10,12 +10,11 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 try {
-    // Get pagination parameters
-    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    //TANGINANG PAGINATION PARAMS PAKSHETTTTTT
+    $page = max(1, isset($_GET['page']) ? (int)$_GET['page'] : 1);
     $limit = 10; // Items per page
-    $offset = ($page - 1) * $limit;
+    $offset = max(0, ($page - 1) * $limit);
 
-    // First get the notification IDs for the current user from notification_recipients
     $baseQuery = "
         SELECT 
             n.id,
@@ -42,13 +41,11 @@ try {
     $params = [':user_id' => $_SESSION['user_id']];
     $where = [];
 
-    // Add search filter
     if (!empty($_GET['search'])) {
         $where[] = "(n.subject LIKE :search OR n.message LIKE :search)";
         $params[':search'] = "%{$_GET['search']}%";
     }
 
-    // Add status filter
     if (!empty($_GET['status'])) {
         switch($_GET['status']) {
             case 'active':
@@ -60,24 +57,15 @@ try {
         }
     }
 
-    // Combine WHERE conditions
     if (!empty($where)) {
         $whereClause = " AND " . implode(" AND ", $where);
         $baseQuery .= $whereClause;
         $countQuery .= $whereClause;
     }
 
-    // Add sorting - show newest notifications first
     $baseQuery .= " ORDER BY n.created_at DESC";
-
-    // Add pagination
     $baseQuery .= " LIMIT :limit OFFSET :offset";
 
-    // Debug - log the query and parameters
-    error_log("Query: " . $baseQuery);
-    error_log("Params: " . print_r($params, true));
-
-    // Get total count
     $stmt = $conn->prepare($countQuery);
     foreach ($params as $key => $value) {
         $stmt->bindValue($key, $value);
@@ -85,7 +73,6 @@ try {
     $stmt->execute();
     $total = $stmt->fetchColumn();
 
-    // Execute main query
     $stmt = $conn->prepare($baseQuery);
     foreach ($params as $key => $value) {
         $stmt->bindValue($key, $value);
@@ -95,9 +82,6 @@ try {
     $stmt->execute();
     
     $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    // Debug - log the results
-    error_log("Results: " . print_r($notifications, true));
 
     echo json_encode([
         'success' => true,

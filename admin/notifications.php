@@ -101,6 +101,14 @@ require_once '../templates/admin_header.php';
                     <strong>Recipients:</strong>
                     <div id="modalRecipients"></div>
                 </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="" id="sendEmailCheck">
+                        <label class="form-check-label" for="sendEmailCheck">
+                            Send email notification to recipients
+                        </label>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -247,6 +255,7 @@ require_once '../templates/admin_header.php';
         .then(data => {
             if (data.success) {
                 loadNotifications();
+                updateNotificationBadge(); // Add this line
             }
         })
         .catch(error => console.error('Error:', error));
@@ -260,6 +269,7 @@ require_once '../templates/admin_header.php';
         .then(data => {
             if (data.success) {
                 loadNotifications();
+                updateNotificationBadge(); // Add this line
             }
         })
         .catch(error => console.error('Error:', error));
@@ -287,6 +297,11 @@ require_once '../templates/admin_header.php';
             })
             .catch(error => console.error('Error:', error));
         }
+    }
+
+    function updateNotificationBadge() {
+        // Logic to refresh the notification badge
+        console.log('Notification badge updated');
     }
 </script>
 

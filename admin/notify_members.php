@@ -32,6 +32,14 @@ require_once '../templates/admin_header.php';
                 <form id="notificationForm">
                     <div class="mb-3">
                         <label class="form-label">Recipients</label>
+                        <div class="mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="selectAllUsers">
+                                <label class="form-check-label" for="selectAllUsers">
+                                    Select All Users
+                                </label>
+                            </div>
+                        </div>
                         <div class="search-container position-relative">
                             <input type="text" 
                                 class="form-control" 
@@ -77,29 +85,6 @@ require_once '../templates/admin_header.php';
                         </button>
                     </div>
                 </form>
-            </div>
-        </div>
-
-        <div class="card mt-4">
-            <div class="card-header">
-                <h5 class="mb-0">Recent Notifications</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Type</th>
-                                <th>Subject</th>
-                                <th>Recipients</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="notificationsTableBody">
-                        </tbody>
-                    </table>
-                </div>
             </div>
         </div>
     </div>
@@ -190,14 +175,38 @@ document.addEventListener('DOMContentLoaded', function() {
     searchInput.addEventListener('input', handleSearchInput);
     searchInput.addEventListener('keydown', handleKeyboardNavigation);
 
-    // Close suggestions when clicking outside
+
     document.addEventListener('click', function(e) {
         if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
             hideSuggestions();
         }
     });
 
-    // Form submission
+    document.getElementById('selectAllUsers').addEventListener('change', function(e) {
+        if (e.target.checked) {
+            fetch('../ajax/search_users.php?all=true')
+                .then(response => response.json())
+                .then(users => {
+                    selectedUsers.clear();
+                    document.getElementById('selectedUsers').innerHTML = '';
+                    users.forEach(user => {
+                        selectedUsers.add(user.id.toString());
+                        addUserTag(user);
+                    });
+                    updateRecipientIds();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error fetching users');
+                });
+        } else {
+            selectedUsers.clear();
+            document.getElementById('selectedUsers').innerHTML = '';
+            updateRecipientIds();
+        }
+    });
+
+
     document.getElementById('notificationForm').addEventListener('submit', handleFormSubmit);
 });
 
@@ -210,7 +219,6 @@ function handleSearchInput(e) {
         return;
     }
 
-    // Show loading state
     const suggestionsBox = document.getElementById('searchSuggestions');
     suggestionsBox.innerHTML = '<div class="suggestion-item text-muted">Searching...</div>';
     suggestionsBox.classList.remove('d-none');
@@ -364,26 +372,25 @@ function showErrorSuggestion() {
 function handleFormSubmit(e) {
     e.preventDefault();
     
-    // Get form data
+   
     const form = document.getElementById('notificationForm');
     const formData = new FormData(form);
 
-    // Validate recipients
+
     if (selectedUsers.size === 0) {
         alert('Please select at least one recipient');
         return;
     }
 
-    // Add recipients to form data
+
     formData.set('recipients', Array.from(selectedUsers).join(','));
 
-    // Show loading state
+
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
 
-    // Log form data for debugging
     console.log('Sending form data:', Object.fromEntries(formData));
 
     fetch('../crud/notifications/create_notification.php', {
@@ -415,7 +422,6 @@ function handleFormSubmit(e) {
         alert('Error sending notification. Please check the console for details.');
     })
     .finally(() => {
-        // Restore button state
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
     });

@@ -6,18 +6,10 @@
             <div class="card">
                 <div class="card-body">
                     <div class="row g-3">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <input type="text" class="form-control" id="searchAnnouncement" placeholder="Search notifications...">
                         </div>
-                        <div class="col-md-4">
-                            <select class="form-select" id="priorityFilter">
-                                <option value="">All Priorities</option>
-                                <option value="high">Urgent</option>
-                                <option value="medium">Important</option>
-                                <option value="low">Normal</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <select class="form-select" id="statusFilter">
                                 <option value="">All Status</option>
                                 <option value="active">Unread</option>
@@ -27,6 +19,16 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="d-flex gap-2 justify-content-end">
+                <button class="btn btn-primary" onclick="markAllAsRead()">
+                    <i class="bi bi-check-all"></i> Mark All as Read
+                </button>
+                <button class="btn btn-danger" onclick="deleteAllAnnouncements()">
+                    <i class="bi bi-trash"></i> Delete All
+                </button>
             </div>
         </div>
     </div>
@@ -66,14 +68,6 @@
                             <textarea class="form-control" name="content" rows="4" required></textarea>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Priority</label>
-                            <select class="form-select" name="priority" required>
-                                <option value="low">Normal</option>
-                                <option value="medium">Important</option>
-                                <option value="high">Urgent</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
                             <label class="form-label">Recipients</label>
                             <select class="form-select" name="target_audience" multiple>
                                 <option value="all">All Members</option>
@@ -106,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadAnnouncements();
     loadStats();
 
-    const filters = ['searchAnnouncement', 'priorityFilter', 'statusFilter'];
+    const filters = ['searchAnnouncement', 'statusFilter'];
     filters.forEach(id => {
         document.getElementById(id).addEventListener('change', loadAnnouncements);
     });
@@ -141,7 +135,6 @@ function loadStats() {
         .then(data => {
             document.getElementById('totalAnnouncements').textContent = data.total;
             document.getElementById('activeAnnouncements').textContent = data.active;
-            document.getElementById('highPriorityCount').textContent = data.highPriority;
             document.getElementById('readRate').textContent = data.readRate + '%';
         })
         .catch(error => console.error('Error:', error));
@@ -149,10 +142,9 @@ function loadStats() {
 
 function loadAnnouncements(page = 1) {
     const search = document.getElementById('searchAnnouncement')?.value || '';
-    const priority = document.getElementById('priorityFilter')?.value || '';
     const status = document.getElementById('statusFilter')?.value || '';
     
-    fetch(`crud/announcements/read_announcements.php?page=${page}&search=${search}&priority=${priority}&status=${status}`)
+    fetch(`crud/announcements/read_announcements.php?page=${page}&search=${search}&status=${status}`)
         .then(response => response.json())
         .then(data => {
             const grid = document.getElementById('announcementsGrid');
@@ -180,9 +172,6 @@ function loadAnnouncements(page = 1) {
                         <div class="card h-100">
                             <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
                                 <div>
-                                    <span class="badge bg-${getPriorityBadge(announcement.priority || 'low')}">
-                                        ${capitalizeFirst(announcement.priority || 'low')} Priority
-                                    </span>
                                     <span class="badge bg-secondary ms-1 ${readStatusClass}">
                                         ${readStatus}
                                     </span>
@@ -242,22 +231,22 @@ function markAsRead(id) {
     fetch('crud/announcements/mark_as_read.php', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ id: id })
+        body: JSON.stringify({ id })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
             loadAnnouncements();
             loadStats();
+            updateNotificationBadge();
         } else {
             alert('Error marking notification as read: ' + data.message);
         }
     })
     .catch(error => console.error('Error:', error));
 }
-
 
 function updateCounters(showing, total) {
     const showingEl = document.getElementById('showing');
@@ -292,15 +281,6 @@ function updatePagination(currentPage, totalPages) {
     `);
 }
 
-function getPriorityBadge(priority) {
-    const badges = {
-        high: 'danger',
-        medium: 'warning',
-        low: 'info'
-    };
-    return badges[priority] || 'secondary';
-}
-
 function formatDate(dateString) {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
@@ -326,6 +306,41 @@ function deleteAnnouncement(id) {
                 loadStats();
             } else {
                 alert('Error deleting notification: ' + data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+}
+
+function markAllAsRead() {
+    fetch('crud/announcements/mark_all_as_read.php', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadAnnouncements();
+            loadStats();
+            updateNotificationBadge();
+        } else {
+            alert('Error marking all notifications as read: ' + data.message);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function deleteAllAnnouncements() {
+    if (confirm('Are you sure you want to delete all notifications?')) {
+        fetch('crud/announcements/delete_all_announcements.php', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadAnnouncements();
+                loadStats();
+            } else {
+                alert('Error deleting all notifications: ' + data.message);
             }
         })
         .catch(error => console.error('Error:', error));

@@ -115,7 +115,7 @@ try {
         FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
     )");
 
-    // Drop and recreate notifications tables to fix schema
+
     try {
         
         $conn->exec("CREATE TABLE notifications (
@@ -142,7 +142,6 @@ try {
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )");
     } catch(PDOException $e) {
-        // Log error but continue
         error_log("Error recreating notification tables: " . $e->getMessage());
     }
 

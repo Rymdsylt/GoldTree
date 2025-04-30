@@ -16,16 +16,31 @@ function sendEventNotification($eventId) {
     if (!$event) {
         throw new Exception('Event not found');
     }
-    
 
-    $stmt = $conn->prepare("SELECT first_name, last_name, email FROM members WHERE status = 'active' AND email IS NOT NULL");
-    $stmt->execute();
+    // Get all users emails
+    $stmt = $conn->query("SELECT DISTINCT email FROM users WHERE email IS NOT NULL");
+    $users = $stmt->fetchAll();
+
+    // Get all members emails that are not in users table
+    $stmt = $conn->query("
+        SELECT DISTINCT email 
+        FROM members 
+        WHERE status = 'active' 
+        AND email IS NOT NULL 
+        AND email NOT IN (SELECT email FROM users WHERE email IS NOT NULL)
+    ");
     $members = $stmt->fetchAll();
+    
+    // Combine all recipients
+    $allRecipients = array_merge($users, $members);
+    
+    if (empty($allRecipients)) {
+        throw new Exception('No recipients found to notify');
+    }
     
     $mail = new PHPMailer(true);
     
     try {
-
         $mail->isSMTP();
         $mail->Host = SMTP_HOST;
         $mail->SMTPAuth = true;
@@ -34,9 +49,7 @@ function sendEventNotification($eventId) {
         $mail->SMTPSecure = SMTP_SECURE;
         $mail->Port = SMTP_PORT;
         
-        
         $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
-        
         $mail->isHTML(true);
         $mail->Subject = 'New Event: ' . $event['title'];
         
@@ -60,15 +73,27 @@ function sendEventNotification($eventId) {
         }
         
         $mail->Body = $emailBody;
-        
 
-        foreach ($members as $member) {
-            $mail->clearAddresses();
-            $mail->addAddress($member['email'], $member['first_name'] . ' ' . $member['last_name']);
-            $mail->send();
+        $successCount = 0;
+        foreach ($allRecipients as $recipient) {
+            if (!empty($recipient['email'])) {
+                try {
+                    $mail->clearAddresses();
+                    $mail->addAddress($recipient['email']);
+                    $mail->send();
+                    $successCount++;
+                } catch (Exception $e) {
+                    error_log("Failed to send email to {$recipient['email']}: " . $e->getMessage());
+                }
+            }
+        }
+        
+        if ($successCount === 0) {
+            throw new Exception('Failed to send any email notifications');
         }
         
         return true;
+        
     } catch (Exception $e) {
         throw new Exception('Error sending email notifications: ' . $mail->ErrorInfo);
     }
