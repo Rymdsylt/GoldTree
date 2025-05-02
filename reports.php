@@ -39,7 +39,7 @@ require_once 'auth/login_status.php';?>
 
 
     <div class="row g-4 mb-4">
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card stat-card">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Total Donations</h6>
@@ -48,7 +48,7 @@ require_once 'auth/login_status.php';?>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card stat-card">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Active Members</h6>
@@ -57,21 +57,12 @@ require_once 'auth/login_status.php';?>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card stat-card">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Event Attendance</h6>
                     <h2 class="card-title mb-0" id="avgAttendance">0%</h2>
                     <small>Average rate</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stat-card">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2">Growth Rate</h6>
-                    <h2 class="card-title mb-0" id="growthRate">0%</h2>
-                    <small>Year over year</small>
                 </div>
             </div>
         </div>
@@ -197,7 +188,6 @@ function loadStatistics() {
             document.getElementById('totalDonations').textContent = formatCurrency(data.totalDonations);
             document.getElementById('activeMembers').textContent = data.activeMembers;
             document.getElementById('avgAttendance').textContent = data.avgAttendance + '%';
-            document.getElementById('growthRate').textContent = data.growthRate + '%';
         })
         .catch(error => console.error('Error:', error));
 }
@@ -285,25 +275,74 @@ function initializeCharts() {
 
     const participationCtx = document.getElementById('eventParticipationChart').getContext('2d');
     window.eventParticipationChart = new Chart(participationCtx, {
-        type: 'line',
+        type: 'bar',
         data: {
             labels: [],
-            datasets: [{
-                label: 'Attendance',
-                data: [],
-                borderColor: '#6a1b9a',
-                tension: 0.4
-            }]
+            datasets: [
+                {
+                    label: 'Present',
+                    data: [],
+                    backgroundColor: 'rgba(255, 193, 7, 0.8)', // Gold
+                    borderColor: '#ffc107',
+                    borderWidth: 1,
+                    borderRadius: 4
+                },
+                {
+                    label: 'Absent',
+                    data: [],
+                    backgroundColor: 'rgba(108, 117, 125, 0.8)', // Gray
+                    borderColor: '#6c757d',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
             scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                },
                 y: {
                     beginAtZero: true,
-                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Count'
+                    },
                     ticks: {
-                        callback: value => value + '%'
+                        stepSize: 1
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                title: {
+                    display: true,
+                    text: 'Daily Attendance Count',
+                    padding: {
+                        top: 10,
+                        bottom: 30
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        footer: (tooltipItems) => {
+                            const total = tooltipItems.reduce((sum, item) => sum + item.parsed.y, 0);
+                            return `Total Count: ${total}`;
+                        }
                     }
                 }
             }
@@ -344,9 +383,22 @@ function updateCharts() {
     fetch(`crud/reports/get_event_participation.php?start=${startDate}&end=${endDate}`)
         .then(response => response.json())
         .then(data => {
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to load attendance data');
+            }
             window.eventParticipationChart.data.labels = data.labels;
-            window.eventParticipationChart.data.datasets[0].data = data.values;
+            window.eventParticipationChart.data.datasets[0].data = data.present;
+            window.eventParticipationChart.data.datasets[1].data = data.absent;
             window.eventParticipationChart.update();
+        })
+        .catch(error => {
+            console.error('Error loading attendance data:', error);
+            const chartContainer = document.getElementById('eventParticipationChart').parentElement;
+            chartContainer.innerHTML = `
+                <div class="alert alert-danger">
+                    Failed to load attendance data: ${error.message}
+                </div>
+            `;
         });
 }
 

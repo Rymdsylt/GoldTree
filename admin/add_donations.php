@@ -88,6 +88,12 @@ session_start();
                         <label class="form-label">Notes</label>
                         <textarea class="form-control" name="notes" rows="2"></textarea>
                     </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="sendNotification" name="send_notification">
+                            <label class="form-check-label" for="sendNotification">Send notification to Users</label>
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -120,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
             memberSelect.style.display = 'none';
             nonMemberName.style.display = 'block';
             memberIdSelect.removeAttribute('required');
-            memberIdSelect.value = ''; // Clear member selection when switching to non-member
+            memberIdSelect.value = ''; 
         } else {
             memberSelect.style.display = 'block';
             nonMemberName.style.display = 'none';
@@ -134,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const donorType = formData.get('donor_type');
         const donationId = formData.get('donation_id');
         
-        // Remove member_id requirement for non-member donations
+   
         if (donorType === 'non-member') {
             formData.delete('member_id');
             const memberIdSelect = this.querySelector('[name="member_id"]');
@@ -143,7 +149,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Set date to today if not specified
+
         if (!formData.get('donation_date')) {
             const today = new Date().toISOString().split('T')[0];
             formData.set('donation_date', today);

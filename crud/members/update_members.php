@@ -3,66 +3,95 @@ require_once '../../db/connection.php';
 header('Content-Type: application/json');
 
 try {
-    $id = $_POST['id'] ?? '';
-    $first_name = $_POST['first_name'] ?? '';
-    $last_name = $_POST['last_name'] ?? '';
-    $email = $_POST['email'] ?? '';
-    $phone = $_POST['phone'] ?? '';
-    $address = $_POST['address'] ?? '';
-    $date_of_birth = $_POST['date_of_birth'] ?? null;
-    $gender = $_POST['gender'] ?? null;
-    $category = $_POST['category'] ?? 'regular';
-    $status = $_POST['status'] ?? 'active';
-
-    $checkStmt = $conn->prepare("SELECT id FROM members WHERE email = ? AND id != ?");
-    $checkStmt->execute([$email, $id]);
-    if ($checkStmt->rowCount() > 0) {
-        throw new Exception('A member with this email already exists');
+    $data = $_POST;
+    
+    if (empty($data['id'])) {
+        throw new Exception('Member ID is required');
     }
 
-
-    $profileImageSQL = '';
-    $params = [$first_name, $last_name, $email, $phone, $address, $date_of_birth, $gender, $category, $status];
-
-    if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] == 0) {
-        $allowed = ['jpg', 'jpeg', 'png', 'gif'];
-        $filename = $_FILES['profile_image']['name'];
-        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-        
-        if (in_array($ext, $allowed)) {
-            $profile_image = file_get_contents($_FILES['profile_image']['tmp_name']);
-            $profileImageSQL = ', profile_image = ?';
-            $params[] = $profile_image;
-        }
+    // Require associated user
+    if (empty($data['associated_user'])) {
+        throw new Exception('An associated user is required for each member');
     }
 
-    $params[] = $id; 
+    // Check if selected user is already associated with another member
+    $checkQuery = "SELECT id FROM members WHERE user_id = ? AND id != ?";
+    $checkStmt = $conn->prepare($checkQuery);
+    $checkStmt->execute([$data['associated_user'], $data['id']]);
+    
+    if ($checkStmt->fetch()) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'This user is already associated with another member'
+        ]);
+        exit;
+    }
 
-    $stmt = $conn->prepare("
-        UPDATE members 
-        SET first_name = ?, last_name = ?, email = ?, phone = ?, 
-            address = ?, birthdate = ?, gender = ?, category = ?, 
-            status = ? {$profileImageSQL}
-        WHERE id = ?
-    ");
-    
-    $stmt->execute($params);
-    
+    $conn->beginTransaction();
+
+    // First, clear the old user association if any
+    $clearOldUserQuery = "UPDATE users SET member_id = NULL WHERE member_id = ?";
+    $clearStmt = $conn->prepare($clearOldUserQuery);
+    $clearStmt->execute([$data['id']]);
+
+    // Update member data
+    $query = "UPDATE members SET 
+              first_name = ?,
+              last_name = ?,
+              email = ?,
+              phone = ?,
+              address = ?,
+              date_of_birth = ?,
+              gender = ?,
+              category = ?,
+              status = ?,
+              user_id = ?
+              WHERE id = ?";
+              
+    $stmt = $conn->prepare($query);
+    $stmt->execute([
+        $data['first_name'],
+        $data['last_name'],
+        $data['email'],
+        $data['phone'] ?? null,
+        $data['address'] ?? null,
+        $data['date_of_birth'] ?? null,
+        $data['gender'] ?? null,
+        $data['category'] ?? null,
+        $data['status'] ?? 'active',
+        $data['associated_user'],
+        $data['id']
+    ]);
+
+    // Update the users table with the new member association
+    $updateUserQuery = "UPDATE users SET member_id = ? WHERE id = ?";
+    $updateUserStmt = $conn->prepare($updateUserQuery);
+    $updateUserStmt->execute([$data['id'], $data['associated_user']]);
+
+    $conn->commit();
+
     echo json_encode([
         'success' => true,
         'message' => 'Member updated successfully'
     ]);
 
 } catch (PDOException $e) {
+    if ($conn->inTransaction()) {
+        $conn->rollBack();
+    }
     error_log('Database error in update_members.php: ' . $e->getMessage());
     echo json_encode([
         'success' => false,
-        'message' => 'Database error: ' . $e->getMessage()
+        'message' => $e->getMessage()
     ]);
 } catch (Exception $e) {
+    if ($conn->inTransaction()) {
+        $conn->rollBack();
+    }
     error_log('Error in update_members.php: ' . $e->getMessage());
     echo json_encode([
         'success' => false,
-        'message' => 'Error: ' . $e->getMessage()
+        'message' => $e->getMessage()
     ]);
 }
+?>

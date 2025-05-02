@@ -1,5 +1,6 @@
 <?php
 require_once '../../db/connection.php';
+header('Content-Type: application/json');
 
 $startDate = $_GET['start'] ?? date('Y-m-d', strtotime('-30 days'));
 $endDate = $_GET['end'] ?? date('Y-m-d');
@@ -24,19 +25,10 @@ try {
     $stmt->execute([$startDate, $endDate]);
     $avgAttendance = round($stmt->fetch(PDO::FETCH_ASSOC)['avg_rate'] ?? 0, 1);
 
-    $stmt = $conn->prepare("SELECT 
-        ((COUNT(CASE WHEN membership_date BETWEEN ? AND ? THEN 1 END) * 100.0 / 
-        NULLIF(COUNT(CASE WHEN membership_date BETWEEN DATE_SUB(?, INTERVAL 1 YEAR) 
-        AND DATE_SUB(?, INTERVAL 1 YEAR) THEN 1 END), 0)) - 100) as growth_rate
-        FROM members");
-    $stmt->execute([$startDate, $endDate, $startDate, $endDate]);
-    $growthRate = round($stmt->fetch(PDO::FETCH_ASSOC)['growth_rate'] ?? 0, 1);
-
     echo json_encode([
         'totalDonations' => $totalDonations,
         'activeMembers' => $activeMembers,
-        'avgAttendance' => $avgAttendance,
-        'growthRate' => $growthRate
+        'avgAttendance' => $avgAttendance
     ]);
 
 } catch(PDOException $e) {

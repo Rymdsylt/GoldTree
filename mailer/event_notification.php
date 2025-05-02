@@ -17,11 +17,9 @@ function sendEventNotification($eventId) {
         throw new Exception('Event not found');
     }
 
-    // Get all users emails
     $stmt = $conn->query("SELECT DISTINCT email FROM users WHERE email IS NOT NULL");
     $users = $stmt->fetchAll();
 
-    // Get all members emails that are not in users table
     $stmt = $conn->query("
         SELECT DISTINCT email 
         FROM members 
@@ -31,7 +29,6 @@ function sendEventNotification($eventId) {
     ");
     $members = $stmt->fetchAll();
     
-    // Combine all recipients
     $allRecipients = array_merge($users, $members);
     
     if (empty($allRecipients)) {
@@ -60,16 +57,10 @@ function sendEventNotification($eventId) {
         <h2>New Event: {$event['title']}</h2>
         <p><strong>Date:</strong> {$startDate} - {$endDate}</p>
         <p><strong>Location:</strong> {$event['location']}</p>
-        <p><strong>Type:</strong> " . ucfirst($event['event_type']) . "</p>
-        <p><strong>Description:</strong><br>{$event['description']}</p>";
+        <p><strong>Type:</strong> " . ucfirst($event['event_type']) . "</p>";
         
         if ($event['max_attendees']) {
             $emailBody .= "<p><strong>Maximum Attendees:</strong> {$event['max_attendees']}</p>";
-        }
-        
-        if ($event['registration_deadline']) {
-            $deadline = date('F j, Y g:i A', strtotime($event['registration_deadline']));
-            $emailBody .= "<p><strong>Registration Deadline:</strong> {$deadline}</p>";
         }
         
         $mail->Body = $emailBody;

@@ -5,32 +5,40 @@ $startDate = $_GET['start'] ?? date('Y-m-d', strtotime('-30 days'));
 $endDate = $_GET['end'] ?? date('Y-m-d');
 
 try {
+    // Use DATE() function to ensure we're comparing just the date portion
     $stmt = $conn->prepare("
         SELECT 
-            DATE(e.start_datetime) as event_date,
-            COUNT(CASE WHEN ea.attendance_status IN ('present', 'late') THEN 1 END) * 100.0 / COUNT(*) as attendance_rate
-        FROM events e
-        LEFT JOIN event_attendance ea ON e.id = ea.event_id
-        WHERE e.start_datetime BETWEEN ? AND ?
-        GROUP BY DATE(e.start_datetime)
-        ORDER BY event_date ASC
+            DATE(attendance_date) as attendance_date,
+            SUM(CASE WHEN attendance_status = 'present' THEN 1 ELSE 0 END) as present_count,
+            SUM(CASE WHEN attendance_status = 'absent' THEN 1 ELSE 0 END) as absent_count
+        FROM event_attendance
+        WHERE DATE(attendance_date) BETWEEN DATE(?) AND DATE(?)
+        GROUP BY DATE(attendance_date)
+        ORDER BY DATE(attendance_date) ASC
     ");
+    
     $stmt->execute([$startDate, $endDate]);
     
     $labels = [];
-    $values = [];
+    $presentValues = [];
+    $absentValues = [];
     
     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $labels[] = date('M d', strtotime($row['event_date']));
-        $values[] = round(floatval($row['attendance_rate']), 1);
+        $labels[] = date('M d', strtotime($row['attendance_date']));
+        $presentValues[] = (int)$row['present_count'];
+        $absentValues[] = (int)$row['absent_count'];
     }
     
     echo json_encode([
+        'success' => true,
         'labels' => $labels,
-        'values' => $values
+        'present' => $presentValues,
+        'absent' => $absentValues
     ]);
 
-} catch(PDOException $e) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+} catch (Exception $e) {
+    echo json_encode([
+        'success' => false,
+        'error' => $e->getMessage()
+    ]);
 }

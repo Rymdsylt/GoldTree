@@ -42,7 +42,7 @@ try {
     $stmt->execute();
     $total = $stmt->fetchColumn();
 
-    $query = "SELECT id, first_name, last_name, email, phone, membership_date, status, profile_image 
+    $query = "SELECT id, first_name, last_name, email, phone, membership_date, status, profile_image, category 
              FROM members $whereClause 
              ORDER BY $orderBy 
              LIMIT :limit OFFSET :offset";

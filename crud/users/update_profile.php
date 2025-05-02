@@ -1,0 +1,81 @@
+<?php
+require_once '../../db/connection.php';
+session_start();
+
+header('Content-Type: application/json');
+
+if (!isset($_SESSION['user_id'])) {
+    echo json_encode(['success' => false, 'message' => 'Not logged in']);
+    exit;
+}
+
+try {
+    $conn->beginTransaction();
+    
+    // Get form data
+    $username = $_POST['username'] ?? '';
+    $first_name = $_POST['first_name'] ?? '';
+    $last_name = $_POST['last_name'] ?? '';
+    $email = $_POST['email'] ?? '';
+    $phone = $_POST['phone'] ?? '';
+    $address = $_POST['address'] ?? '';
+
+    // Check if username exists for other users
+    $check_username = $conn->prepare("SELECT id FROM users WHERE username = ? AND id != ?");
+    $check_username->execute([$username, $_SESSION['user_id']]);
+    if ($check_username->fetch()) {
+        throw new Exception('This username is already taken');
+    }
+
+    // Check if email exists for other users
+    $check_email = $conn->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
+    $check_email->execute([$email, $_SESSION['user_id']]);
+    if ($check_email->fetch()) {
+        throw new Exception('This email is already registered to another user');
+    }
+
+    // Update the user record
+    $stmt = $conn->prepare("UPDATE users SET username = ?, email = ? WHERE id = ?");
+    $stmt->execute([$username, $email, $_SESSION['user_id']]);
+
+    // Find the member record associated with this user
+    $stmt = $conn->prepare("SELECT member_id FROM users WHERE id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $member_id = $stmt->fetchColumn();
+
+    // Update the existing member record if it exists
+    if ($member_id) {
+        $stmt = $conn->prepare("
+            UPDATE members 
+            SET first_name = ?, 
+                last_name = ?, 
+                email = ?, 
+                phone = ?, 
+                address = ?
+            WHERE id = ?");
+        $stmt->execute([$first_name, $last_name, $email, $phone, $address, $member_id]);
+
+        // Handle profile image update if provided
+        if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
+            $allowed = ['jpg', 'jpeg', 'png', 'gif'];
+            $filename = $_FILES['profile_image']['name'];
+            $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+            
+            if (in_array($ext, $allowed)) {
+                $profile_image = file_get_contents($_FILES['profile_image']['tmp_name']);
+                $stmt = $conn->prepare("UPDATE members SET profile_image = ? WHERE id = ?");
+                $stmt->execute([$profile_image, $member_id]);
+            }
+        }
+    }
+
+    $conn->commit();
+    $_SESSION['username'] = $username; // Update session username
+    echo json_encode(['success' => true, 'message' => 'Profile updated successfully']);
+
+} catch (Exception $e) {
+    if ($conn->inTransaction()) {
+        $conn->rollBack();
+    }
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+}

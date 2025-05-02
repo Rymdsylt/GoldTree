@@ -128,20 +128,14 @@ foreach($members as $member) {
                             <input type="text" class="form-control" id="searchMembers" placeholder="Search members...">
                         </div>
                         <div class="col-12 col-sm-4">
+                            <input type="text" class="form-control" id="ministryFilter" placeholder="Filter by ministry type...">
+                        </div>
+                        <div class="col-12 col-sm-4">
                             <select class="form-select" id="statusFilter">
                                 <option value="">All Status</option>
                                 <option value="active">Active</option>
                                 <option value="inactive">Inactive</option>
                                 <option value="pending">Pending</option>
-                            </select>
-                        </div>
-                        <div class="col-12 col-sm-4">
-                            <select class="form-select" id="categoryFilter">
-                                <option value="">All Categories</option>
-                                <option value="regular">Regular</option>
-                                <option value="youth">Youth</option>
-                                <option value="senior">Senior</option>
-                                <option value="visitor">Visitor</option>
                             </select>
                         </div>
                     </div>
@@ -170,7 +164,7 @@ foreach($members as $member) {
                         <tr>
                             <th>Member</th>
                             <th>Contact</th>
-                            <th>Category</th>
+                            <th>Ministry Type</th>
                             <th>Status</th>
                             <th>Last Attendance</th>
                             <th>Actions</th>
@@ -207,15 +201,8 @@ foreach($members as $member) {
                                 </div>
                             </td>
                             <td>
-                                <span class="badge bg-<?php
-                                    echo match($member['category']) {
-                                        'regular' => 'primary',
-                                        'youth' => 'success',
-                                        'senior' => 'info',
-                                        default => 'secondary'
-                                    };
-                                ?>">
-                                    <?php echo ucfirst($member['category']); ?>
+                                <span class="badge bg-<?php echo $member['category'] ? 'primary' : 'secondary'; ?>">
+                                    <?php echo htmlspecialchars($member['category'] ?: 'N/A'); ?>
                                 </span>
                             </td>
                             <td>
@@ -248,6 +235,10 @@ foreach($members as $member) {
                                     <button type="button" onclick="editMember(<?php echo $member['id']; ?>)" 
                                             class="btn btn-sm btn-outline-secondary">
                                         <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" onclick="viewNotes(<?php echo $member['id']; ?>)" 
+                                            class="btn btn-sm btn-outline-info">
+                                        <i class="bi bi-journal-text"></i>
                                     </button>
                                     <button type="button" onclick="deleteMember(<?php echo $member['id']; ?>)" 
                                             class="btn btn-sm btn-outline-danger">
@@ -311,13 +302,8 @@ foreach($members as $member) {
                             </select>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Category</label>
-                            <select class="form-select" name="category" required>
-                                <option value="regular">Regular</option>
-                                <option value="youth">Youth</option>
-                                <option value="senior">Senior</option>
-                                <option value="visitor">Visitor</option>
-                            </select>
+                            <label class="form-label">Ministry Type</label>
+                            <input type="text" class="form-control" name="category" placeholder="e.g. Pastor, Elder, Deacon">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Status</label>
@@ -326,6 +312,13 @@ foreach($members as $member) {
                                 <option value="inactive">Inactive</option>
                                 <option value="pending">Pending</option>
                             </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Associated User *</label>
+                            <select class="form-select" name="associated_user" id="associated_user" required>
+                                <option value="">Select Associated User</option>
+                            </select>
+                            <div class="text-muted small mt-1">User account associated with this member (required)</div>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Address</label>
@@ -346,6 +339,42 @@ foreach($members as $member) {
     </div>
 </div>
 
+<!-- Add Notes Modal -->
+<div class="modal fade" id="notesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Member Notes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addNoteForm" class="mb-4">
+                    <input type="hidden" name="member_id" id="note_member_id">
+                    <div class="mb-3">
+                        <label class="form-label">Note Type</label>
+                        <select class="form-select" name="note_type" required>
+                            <option value="general">General</option>
+                            <option value="pastoral">Pastoral</option>
+                            <option value="counseling">Counseling</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Note</label>
+                        <textarea class="form-control" name="note_text" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Note</button>
+                </form>
+                <div class="notes-list">
+                    <h6>Previous Notes</h6>
+                    <div id="notesList" class="list-group">
+                        <!-- Notes will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -358,7 +387,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('searchMembers').addEventListener('input', debounce(() => loadMembers(1, true), 300));
     document.getElementById('statusFilter').addEventListener('change', () => loadMembers(1, true));
-    document.getElementById('categoryFilter').addEventListener('change', () => loadMembers(1, true));
+    document.getElementById('ministryFilter').addEventListener('input', debounce(() => loadMembers(1, true), 300));
     
 
     updatePagination(1, Math.ceil(<?php echo count($members); ?> / 10));
@@ -390,7 +419,64 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => console.error('Error:', error));
     });
+
+    // Load available users for association
+    loadAvailableUsers();
+
+    // Add event listener for associated user selection
+    document.getElementById('associated_user').addEventListener('change', function() {
+        const selectedUserId = this.value;
+        const emailField = document.querySelector('[name="email"]');
+        
+        if (selectedUserId) {
+            // Get the selected option's email data
+            const selectedOption = this.options[this.selectedIndex];
+            const userEmail = selectedOption.dataset.email;
+            
+            if (userEmail) {
+                emailField.value = userEmail;
+                emailField.disabled = true;  // Disable the email field
+                emailField.classList.add('bg-light');  // Add visual indicator that field is disabled
+            }
+        } else {
+            // If no user is selected (No Associated User option)
+            emailField.disabled = false;  // Enable the email field
+            emailField.classList.remove('bg-light');
+        }
+    });
+    
+    // Add event listener for form reset (when modal is closed)
+    document.getElementById('addMemberModal').addEventListener('hidden.bs.modal', function() {
+        const emailField = document.querySelector('[name="email"]');
+        emailField.disabled = false;  // Re-enable the email field
+        emailField.classList.remove('bg-light');
+        // ...existing code...
+        const form = document.getElementById('addMemberForm');
+        form.reset();
+        const idInput = form.querySelector('[name="id"]');
+        if (idInput) idInput.remove();
+        document.querySelector('#addMemberModal .modal-title').textContent = 'Add New Member';
+        document.querySelector('#addMemberModal button[type="submit"]').textContent = 'Add Member';
+    });
+
 });
+
+function loadAvailableUsers() {
+    fetch('../crud/users/get_available_users.php')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const select = document.getElementById('associated_user');
+                select.innerHTML = '<option value="">No Associated User</option>';
+                data.users.forEach(user => {
+                    select.insertAdjacentHTML('beforeend', `
+                        <option value="${user.id}" data-email="${user.email}">${user.username} (${user.email})</option>
+                    `);
+                });
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
 
 function loadMembers(page = 1, refreshTable = false) {
 
@@ -398,13 +484,13 @@ function loadMembers(page = 1, refreshTable = false) {
 
     const search = document.getElementById('searchMembers').value;
     const status = document.getElementById('statusFilter').value;
-    const category = document.getElementById('categoryFilter').value;
+    const ministry = document.getElementById('ministryFilter').value;
     
     const queryParams = new URLSearchParams({
         page: page,
         search: search,
         status: status,
-        category: category
+        ministry: ministry
     });
     
     fetch(`../crud/members/read_members.php?${queryParams}`)
@@ -440,8 +526,8 @@ function loadMembers(page = 1, refreshTable = false) {
                                 </div>
                             </td>
                             <td>
-                                <span class="badge bg-${getCategoryBadge(member.category)}">
-                                    ${capitalizeFirst(member.category)}
+                                <span class="badge bg-${member.category ? 'primary' : 'secondary'}">
+                                    ${member.category || 'N/A'}
                                 </span>
                             </td>
                             <td>
@@ -459,6 +545,10 @@ function loadMembers(page = 1, refreshTable = false) {
                                     <button type="button" onclick="editMember(${member.id})" 
                                             class="btn btn-sm btn-outline-secondary">
                                         <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" onclick="viewNotes(${member.id})" 
+                                            class="btn btn-sm btn-outline-info">
+                                        <i class="bi bi-journal-text"></i>
                                     </button>
                                     <button type="button" onclick="deleteMember(${member.id})" 
                                             class="btn btn-sm btn-outline-danger">
@@ -499,7 +589,7 @@ function loadStats() {
 
 
 function initializeCharts() {
-
+    // Member growth chart initialization
     const growthCtx = document.getElementById('memberGrowthChart').getContext('2d');
     window.memberGrowthChart = new Chart(growthCtx, {
         type: 'line',
@@ -539,28 +629,47 @@ function initializeCharts() {
         }
     });
 
+    // Member categories chart initialization - now dynamic
     const categoriesCtx = document.getElementById('memberCategoriesChart').getContext('2d');
     window.memberCategoriesChart = new Chart(categoriesCtx, {
         type: 'doughnut',
         data: {
-            labels: ['Regular', 'Youth', 'Senior', 'Visitor'],
+            labels: [],
             datasets: [{
                 data: [],
-                backgroundColor: [
-                    '#6a1b9a',
-                    '#9c27b0',
-                    '#ba68c8',
-                    '#e1bee7'
-                ]
+                backgroundColor: [] // Will be generated dynamically
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
         }
     });
 
     updateCharts();
+}
+
+// Helper function to generate colors for chart
+function generateChartColors(count) {
+    const baseColors = ['#6a1b9a', '#9c27b0', '#ba68c8', '#e1bee7', '#4a148c', '#7b1fa2', '#ab47bc', '#ce93d8'];
+    const colors = [];
+    
+    for (let i = 0; i < count; i++) {
+        if (i < baseColors.length) {
+            colors.push(baseColors[i]);
+        } else {
+            // Generate random colors if we need more than base colors
+            const hue = (i * 137.508) % 360; // Use golden angle approximation for better distribution
+            colors.push(`hsl(${hue}, 70%, 60%)`);
+        }
+    }
+    
+    return colors;
 }
 
 function updateCharts() {
@@ -573,7 +682,9 @@ function updateCharts() {
             window.memberGrowthChart.update();
 
 
+            window.memberCategoriesChart.data.labels = data.categories.labels;
             window.memberCategoriesChart.data.datasets[0].data = data.categories.values;
+            window.memberCategoriesChart.data.datasets[0].backgroundColor = generateChartColors(data.categories.labels.length);
             window.memberCategoriesChart.update();
         })
         .catch(error => console.error('Error:', error));
@@ -670,8 +781,10 @@ function viewProfile(id) {
                                              </div>`
                                         }
                                         <h4 class="mt-2">${member.first_name} ${member.last_name}</h4>
-                                        <span class="badge bg-${getCategoryBadge(member.category)}">${capitalizeFirst(member.category)}</span>
-                                        <span class="badge bg-${getStatusBadge(member.status)}">${capitalizeFirst(member.status)}</span>
+                                        <div class="mt-2">
+                                            <span class="badge bg-${member.category ? 'primary' : 'secondary'}">${member.category || 'N/A'}</span>
+                                            <span class="badge bg-${getStatusBadge(member.status)}">${capitalizeFirst(member.status)}</span>
+                                        </div>
                                     </div>
                                     <div class="col-md-8">
                                         <h5>Contact Information</h5>
@@ -783,18 +896,12 @@ function editMember(id) {
             if (data.success) {
                 const member = data.data;
                 const form = document.getElementById('addMemberForm');
+                // ...existing form population code...
                 
-
-                form.querySelector('[name="first_name"]').value = member.first_name;
-                form.querySelector('[name="last_name"]').value = member.last_name;
-                form.querySelector('[name="email"]').value = member.email;
-                form.querySelector('[name="phone"]').value = member.phone;
-                form.querySelector('[name="date_of_birth"]').value = member.birthdate;
-                form.querySelector('[name="gender"]').value = member.gender;
-                form.querySelector('[name="category"]').value = member.category;
-                form.querySelector('[name="status"]').value = member.status;
-                form.querySelector('[name="address"]').value = member.address;
-                
+                // Set associated user if exists
+                if (member.user_id) {
+                    form.querySelector('[name="associated_user"]').value = member.user_id;
+                }
 
                 const idInput = document.createElement('input');
                 idInput.type = 'hidden';
@@ -805,7 +912,6 @@ function editMember(id) {
                 document.querySelector('#addMemberModal .modal-title').textContent = 'Edit Member';
                 document.querySelector('#addMemberModal button[type="submit"]').textContent = 'Save Changes';
                 
-
                 new bootstrap.Modal(document.getElementById('addMemberModal')).show();
             } else {
                 alert(data.message || 'Error loading member data');
@@ -834,6 +940,71 @@ function deleteMember(id) {
         .catch(error => console.error('Error:', error));
     }
 }
+
+function viewNotes(id) {
+    document.getElementById('note_member_id').value = id;
+    loadMemberNotes(id);
+    new bootstrap.Modal(document.getElementById('notesModal')).show();
+}
+
+function loadMemberNotes(memberId) {
+    fetch(`../crud/members/get_member_notes.php?member_id=${memberId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const notesList = document.getElementById('notesList');
+                notesList.innerHTML = '';
+                
+                data.notes.forEach(note => {
+                    const date = new Date(note.created_at).toLocaleDateString();
+                    const noteTypeClass = {
+                        'general': 'info',
+                        'pastoral': 'warning',
+                        'counseling': 'danger',
+                        'other': 'secondary'
+                    }[note.note_type];
+                    
+                    notesList.insertAdjacentHTML('beforeend', `
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">
+                                    <span class="badge bg-${noteTypeClass}">${capitalizeFirst(note.note_type)}</span>
+                                </h6>
+                                <small>${date}</small>
+                            </div>
+                            <p class="mb-1">${note.note_text}</p>
+                            <small>Added by: ${note.created_by_name || 'System'}</small>
+                        </div>
+                    `);
+                });
+                
+                if (data.notes.length === 0) {
+                    notesList.innerHTML = '<div class="text-center text-muted">No notes found</div>';
+                }
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+document.getElementById('addNoteForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    
+    fetch('../crud/members/add_member_note.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            this.reset();
+            loadMemberNotes(formData.get('member_id'));
+        } else {
+            alert(data.message || 'Error adding note');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+});
 
 document.getElementById('addMemberModal').addEventListener('hidden.bs.modal', function() {
     const form = document.getElementById('addMemberForm');

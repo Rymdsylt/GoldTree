@@ -1,99 +1,302 @@
 <?php
 require_once '../../db/connection.php';
 
-$type = $_GET['type'] ?? '';
-$startDate = $_GET['start'] ?? date('Y-m-d', strtotime('-30 days'));
-$endDate = $_GET['end'] ?? date('Y-m-d');
-
-header('Content-Type: text/csv');
-header('Content-Disposition: attachment; filename="' . $type . '_report_' . date('Y-m-d') . '.csv"');
-
-$output = fopen('php://output', 'w');
+$type = $_GET['type'] ?? 'complete';
+$start_date = $_GET['start'] ?? date('Y-m-d', strtotime('-1 month'));
+$end_date = $_GET['end'] ?? date('Y-m-d');
 
 try {
     switch($type) {
         case 'donations':
-            fputcsv($output, ['Date', 'Member Name', 'Type', 'Amount', 'Notes']);
-            
-            $stmt = $conn->prepare("
-                SELECT d.donation_date, CONCAT(m.first_name, ' ', m.last_name) as member_name,
-                       d.donation_type, d.amount, d.notes
-                FROM donations d
-                LEFT JOIN members m ON d.member_id = m.id
-                WHERE d.donation_date BETWEEN ? AND ?
-                ORDER BY d.donation_date DESC
-            ");
-            $stmt->execute([$startDate, $endDate]);
-            
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                fputcsv($output, [
-                    date('Y-m-d', strtotime($row['donation_date'])),
-                    $row['member_name'],
-                    ucfirst($row['donation_type']),
-                    number_format($row['amount'], 2),
-                    $row['notes']
-                ]);
-            }
+            exportDonations($conn, $start_date, $end_date);
             break;
-            
+        case 'members':
+            exportMembers($conn);
+            break;
+        case 'events':
+            exportEvents($conn, $start_date, $end_date);
+            break;
         case 'complete':
- 
-            fputcsv($output, ['Donation Summary']);
-            fputcsv($output, ['Period:', date('Y-m-d', strtotime($startDate)) . ' to ' . date('Y-m-d', strtotime($endDate))]);
-            fputcsv($output, []);
-            
-          
-            fputcsv($output, ['Donations by Type']);
-            fputcsv($output, ['Type', 'Total Amount']);
-            
-            $stmt = $conn->prepare("
-                SELECT donation_type, SUM(amount) as total
-                FROM donations
-                WHERE donation_date BETWEEN ? AND ?
-                GROUP BY donation_type
-                ORDER BY donation_type
-            ");
-            $stmt->execute([$startDate, $endDate]);
-            
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                fputcsv($output, [
-                    ucfirst($row['donation_type']),
-                    number_format($row['total'], 2)
-                ]);
-            }
-
-            fputcsv($output, []);
-            fputcsv($output, []);
-            
-        
-            fputcsv($output, ['Detailed Transactions']);
-            fputcsv($output, ['Date', 'Member Name', 'Type', 'Amount', 'Notes']);
-            
-            $stmt = $conn->prepare("
-                SELECT d.donation_date, CONCAT(m.first_name, ' ', m.last_name) as member_name,
-                       d.donation_type, d.amount, d.notes
-                FROM donations d
-                LEFT JOIN members m ON d.member_id = m.id
-                WHERE d.donation_date BETWEEN ? AND ?
-                ORDER BY d.donation_date DESC
-            ");
-            $stmt->execute([$startDate, $endDate]);
-            
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                fputcsv($output, [
-                    date('Y-m-d', strtotime($row['donation_date'])),
-                    $row['member_name'],
-                    ucfirst($row['donation_type']),
-                    number_format($row['amount'], 2),
-                    $row['notes']
-                ]);
-            }
+            exportComplete($conn, $start_date, $end_date);
             break;
+    }
+} catch(Exception $e) {
+    header('Content-Type: application/json');
+    echo json_encode(['error' => $e->getMessage()]);
+}
+
+function outputCSV($filename, $headers, $data) {
+    header('Content-Type: text/csv');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    
+    $output = fopen('php://output', 'w');
+    
+    // Add UTF-8 BOM for proper encoding in Excel
+    fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+    
+    // Write headers
+    fputcsv($output, $headers);
+    
+    // Write data rows
+    foreach ($data as $row) {
+        fputcsv($output, $row);
     }
     
     fclose($output);
+    exit();
+}
+
+function exportDonations($conn, $start_date, $end_date) {
+    $headers = ['Date', 'Type', 'Amount', 'Donor', 'Notes'];
     
-} catch(PDOException $e) {
-    http_response_code(500);
-    die("Database error: " . $e->getMessage());
+    $stmt = $conn->prepare("
+        SELECT 
+            donation_date,
+            donation_type,
+            amount,
+            COALESCE(donor_name, CONCAT(m.first_name, ' ', m.last_name)) as donor,
+            notes
+        FROM donations d
+        LEFT JOIN members m ON d.member_id = m.id
+        WHERE donation_date BETWEEN ? AND ?
+        ORDER BY donation_date DESC
+    ");
+    $stmt->execute([$start_date, $end_date]);
+    
+    $data = [];
+    while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $data[] = [
+            $row['donation_date'],
+            ucfirst($row['donation_type']),
+            $row['amount'],
+            $row['donor'],
+            $row['notes']
+        ];
+    }
+    
+    // Add summary rows
+    $stmt = $conn->prepare("
+        SELECT 
+            donation_type,
+            COUNT(*) as count,
+            SUM(amount) as total
+        FROM donations
+        WHERE donation_date BETWEEN ? AND ?
+        GROUP BY donation_type
+    ");
+    $stmt->execute([$start_date, $end_date]);
+    
+    $data[] = [''];  // Empty row for spacing
+    $data[] = ['Summary'];
+    while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $data[] = [
+            ucfirst($row['donation_type']),
+            $row['count'] . ' donations',
+            $row['total'],
+            '',
+            ''
+        ];
+    }
+    
+    outputCSV('donations_report.csv', $headers, $data);
+}
+
+function exportMembers($conn) {
+    $headers = ['Name', 'Email', 'Phone', 'Status', 'Category', 'Join Date'];
+    
+    $stmt = $conn->prepare("
+        SELECT 
+            CONCAT(first_name, ' ', last_name) as name,
+            email,
+            phone,
+            status,
+            category,
+            membership_date
+        FROM members
+        ORDER BY membership_date DESC
+    ");
+    $stmt->execute();
+    
+    $data = [];
+    while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $data[] = [
+            $row['name'],
+            $row['email'],
+            $row['phone'],
+            ucfirst($row['status']),
+            $row['category'],
+            $row['membership_date']
+        ];
+    }
+    
+    // Add summary statistics
+    $stmt = $conn->prepare("
+        SELECT 
+            COUNT(*) as total,
+            COUNT(CASE WHEN status = 'active' THEN 1 END) as active,
+            COUNT(CASE WHEN status = 'inactive' THEN 1 END) as inactive
+        FROM members
+    ");
+    $stmt->execute();
+    $stats = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    $data[] = [''];  // Empty row for spacing
+    $data[] = ['Summary Statistics'];
+    $data[] = ['Total Members:', $stats['total']];
+    $data[] = ['Active Members:', $stats['active']];
+    $data[] = ['Inactive Members:', $stats['inactive']];
+    
+    outputCSV('members_report.csv', $headers, $data);
+}
+
+function exportEvents($conn, $start_date, $end_date) {
+    $headers = ['Event', 'Date', 'Type', 'Location', 'Attendees', 'Status'];
+    
+    $stmt = $conn->prepare("
+        SELECT 
+            e.title,
+            e.start_datetime,
+            e.event_type,
+            e.location,
+            e.status,
+            COUNT(ea.id) as attendees
+        FROM events e
+        LEFT JOIN event_attendance ea ON e.id = ea.event_id AND ea.attendance_status = 'present'
+        WHERE e.start_datetime BETWEEN ? AND ?
+        GROUP BY e.id
+        ORDER BY e.start_datetime DESC
+    ");
+    $stmt->execute([$start_date, $end_date]);
+    
+    $data = [];
+    while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $data[] = [
+            $row['title'],
+            $row['start_datetime'],
+            ucfirst($row['event_type']),
+            $row['location'],
+            $row['attendees'],
+            ucfirst($row['status'])
+        ];
+    }
+    
+    // Add summary statistics
+    $stmt = $conn->prepare("
+        SELECT 
+            COUNT(*) as total_events,
+            AVG(
+                (SELECT COUNT(*) 
+                FROM event_attendance ea 
+                WHERE ea.event_id = e.id AND ea.attendance_status = 'present')
+            ) as avg_attendance
+        FROM events e
+        WHERE start_datetime BETWEEN ? AND ?
+    ");
+    $stmt->execute([$start_date, $end_date]);
+    $stats = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    $data[] = [''];  // Empty row for spacing
+    $data[] = ['Event Statistics'];
+    $data[] = ['Total Events:', $stats['total_events']];
+    $data[] = ['Average Attendance:', round($stats['avg_attendance'], 1)];
+    
+    outputCSV('events_report.csv', $headers, $data);
+}
+
+function exportComplete($conn, $start_date, $end_date) {
+    // Create a combined report with all data
+    $data = [];
+    
+    // Add Donations Section
+    $data[] = ['DONATIONS REPORT'];
+    $data[] = ['Date', 'Type', 'Amount', 'Donor', 'Notes'];
+    
+    $stmt = $conn->prepare("
+        SELECT 
+            donation_date,
+            donation_type,
+            amount,
+            COALESCE(donor_name, CONCAT(m.first_name, ' ', m.last_name)) as donor,
+            notes
+        FROM donations d
+        LEFT JOIN members m ON d.member_id = m.id
+        WHERE donation_date BETWEEN ? AND ?
+        ORDER BY donation_date DESC
+    ");
+    $stmt->execute([$start_date, $end_date]);
+    
+    while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $data[] = [
+            $row['donation_date'],
+            ucfirst($row['donation_type']),
+            $row['amount'],
+            $row['donor'],
+            $row['notes']
+        ];
+    }
+    
+    $data[] = [''];  // Empty row for spacing
+    
+    // Add Members Section
+    $data[] = ['MEMBERS REPORT'];
+    $data[] = ['Name', 'Email', 'Phone', 'Status', 'Category', 'Join Date'];
+    
+    $stmt = $conn->prepare("
+        SELECT 
+            CONCAT(first_name, ' ', last_name) as name,
+            email,
+            phone,
+            status,
+            category,
+            membership_date
+        FROM members
+        ORDER BY membership_date DESC
+    ");
+    $stmt->execute();
+    
+    while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $data[] = [
+            $row['name'],
+            $row['email'],
+            $row['phone'],
+            ucfirst($row['status']),
+            $row['category'],
+            $row['membership_date']
+        ];
+    }
+    
+    $data[] = [''];  // Empty row for spacing
+    
+    // Add Events Section
+    $data[] = ['EVENTS REPORT'];
+    $data[] = ['Event', 'Date', 'Type', 'Location', 'Attendees', 'Status'];
+    
+    $stmt = $conn->prepare("
+        SELECT 
+            e.title,
+            e.start_datetime,
+            e.event_type,
+            e.location,
+            e.status,
+            COUNT(ea.id) as attendees
+        FROM events e
+        LEFT JOIN event_attendance ea ON e.id = ea.event_id AND ea.attendance_status = 'present'
+        WHERE e.start_datetime BETWEEN ? AND ?
+        GROUP BY e.id
+        ORDER BY e.start_datetime DESC
+    ");
+    $stmt->execute([$start_date, $end_date]);
+    
+    while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $data[] = [
+            $row['title'],
+            $row['start_datetime'],
+            ucfirst($row['event_type']),
+            $row['location'],
+            $row['attendees'],
+            ucfirst($row['status'])
+        ];
+    }
+    
+    outputCSV('complete_report.csv', ['Complete Report'], $data);
 }

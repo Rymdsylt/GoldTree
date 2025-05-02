@@ -10,13 +10,22 @@ try {
     $address = $_POST['address'] ?? '';
     $date_of_birth = $_POST['date_of_birth'] ?? null;
     $gender = $_POST['gender'] ?? null;
-    $category = $_POST['category'] ?? 'regular';
+    $category = $_POST['category'] ?? '';
     $status = $_POST['status'] ?? 'active';
+    $associated_user = $_POST['associated_user'] ?? null;
 
-    $checkStmt = $conn->prepare("SELECT id FROM members WHERE email = ?");
-    $checkStmt->execute([$email]);
-    if ($checkStmt->rowCount() > 0) {
-        throw new Exception('A member with this email already exists');
+    // Require associated user
+    if (empty($associated_user)) {
+        throw new Exception('An associated user is required for each member');
+    }
+
+    // Check if selected user is already associated with another member
+    $checkQuery = "SELECT id FROM members WHERE user_id = ?";
+    $checkStmt = $conn->prepare($checkQuery);
+    $checkStmt->execute([$associated_user]);
+    
+    if ($checkStmt->fetch()) {
+        throw new Exception('This user is already associated with another member');
     }
 
     $profile_image = null;
@@ -30,24 +39,34 @@ try {
         }
     }
 
+    $conn->beginTransaction();
+
     $stmt = $conn->prepare("
         INSERT INTO members (
             first_name, last_name, email, phone, address, 
             birthdate, gender, category, status, profile_image,
-            membership_date
+            membership_date, user_id
         ) VALUES (
             ?, ?, ?, ?, ?, 
             ?, ?, ?, ?, ?,
-            CURRENT_DATE
+            CURRENT_DATE, ?
         )
     ");
 
     $stmt->execute([
         $first_name, $last_name, $email, $phone, $address,
-        $date_of_birth, $gender, $category, $status, $profile_image
+        $date_of_birth, $gender, $category, $status, $profile_image,
+        $associated_user
     ]);
 
     $memberId = $conn->lastInsertId();
+
+    // Update the users table with the member ID
+    $updateUserQuery = "UPDATE users SET member_id = ? WHERE id = ?";
+    $updateUserStmt = $conn->prepare($updateUserQuery);
+    $updateUserStmt->execute([$memberId, $associated_user]);
+
+    $conn->commit();
 
     echo json_encode([
         'success' => true,
@@ -56,6 +75,9 @@ try {
     ]);
 
 } catch (PDOException $e) {
+    if ($conn->inTransaction()) {
+        $conn->rollBack();
+    }
     error_log('Database error in create_member.php: ' . $e->getMessage());
     echo json_encode([
         'success' => false,
@@ -68,3 +90,4 @@ try {
         'message' => 'Error: ' . $e->getMessage()
     ]);
 }
+?>

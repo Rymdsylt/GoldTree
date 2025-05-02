@@ -27,7 +27,6 @@ try {
     $event_type = $_POST['event_type'];
     $location = $_POST['location'];
     $max_attendees = !empty($_POST['max_attendees']) ? $_POST['max_attendees'] : null;
-    $registration_deadline = !empty($_POST['registration_deadline']) ? $_POST['registration_deadline'] : null;
     $send_notifications = isset($_POST['send_notifications']) && $_POST['send_notifications'] === 'on';
     $send_all_emails = isset($_POST['send_all_emails']) && $_POST['send_all_emails'] === 'on';
     $created_by = $_SESSION['user_id'];
@@ -39,13 +38,12 @@ try {
 
     $conn->beginTransaction();
 
-    
     $stmt = $conn->prepare("
         INSERT INTO events (
             title, description, start_datetime, end_datetime, 
-            event_type, location, max_attendees, registration_deadline,
+            event_type, location, max_attendees,
             image, created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     
     $result = $stmt->execute([
@@ -56,7 +54,6 @@ try {
         $event_type,
         $location,
         $max_attendees,
-        $registration_deadline,
         $image,
         $created_by
     ]);
@@ -149,7 +146,6 @@ try {
                         <p><strong>Location:</strong> {$location}</p>
                         <p><strong>Description:</strong><br>" . nl2br(htmlspecialchars($description)) . "</p>
                         " . ($max_attendees ? "<p><strong>Maximum Attendees:</strong> {$max_attendees}</p>" : "") . "
-                        " . ($registration_deadline ? "<p><strong>Registration Deadline:</strong> " . date('F j, Y g:i A', strtotime($registration_deadline)) . "</p>" : "") . "
                     </div>
                     <hr>
                     <p style='color: #888; font-size: 12px;'>

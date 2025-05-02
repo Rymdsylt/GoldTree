@@ -20,7 +20,6 @@ try {
 
     $event_id = $data['event_id'];
 
-    // Get event details
     $stmt = $conn->prepare("SELECT * FROM events WHERE id = ?");
     $stmt->execute([$event_id]);
     $event = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -29,14 +28,12 @@ try {
         throw new Exception('Event not found');
     }
 
-    // Start transaction
+
     $conn->beginTransaction();
 
-    // Get all users and their emails
     $stmt = $conn->query("SELECT DISTINCT id, email FROM users WHERE email IS NOT NULL");
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Get all members' emails that are not in users table
     $stmt = $conn->query("
         SELECT DISTINCT m.id, m.email 
         FROM members m 
@@ -46,14 +43,12 @@ try {
     ");
     $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Combine all unique emails
     $allRecipients = array_merge($users, $members);
 
     if (empty($allRecipients)) {
         throw new Exception('No recipients found');
     }
 
-    // Create notification
     $stmt = $conn->prepare("
         INSERT INTO notifications (
             notification_type, subject, message, send_email, created_by, status
@@ -72,14 +67,12 @@ try {
     $stmt->execute([$subject, $message, $_SESSION['user_id']]);
     $notification_id = $conn->lastInsertId();
 
-    // Add notification recipients
     $stmt = $conn->prepare("
         INSERT INTO notification_recipients (
             notification_id, user_id, user_email
         ) VALUES (?, ?, ?)
     ");
 
-    // Initialize email
     $mail = new PHPMailer\PHPMailer\PHPMailer(true);
     $mail->isSMTP();
     $mail->Host = SMTP_HOST;
@@ -101,7 +94,6 @@ try {
                 <p><strong>Location:</strong> {$event['location']}</p>
                 <p><strong>Description:</strong><br>" . nl2br(htmlspecialchars($event['description'])) . "</p>
                 " . ($event['max_attendees'] ? "<p><strong>Maximum Attendees:</strong> {$event['max_attendees']}</p>" : "") . "
-                " . ($event['registration_deadline'] ? "<p><strong>Registration Deadline:</strong> " . date('F j, Y g:i A', strtotime($event['registration_deadline'])) . "</p>" : "") . "
             </div>
             <hr>
             <p style='color: #888; font-size: 12px;'>
@@ -114,12 +106,10 @@ try {
 
     $successfulEmails = 0;
     foreach ($allRecipients as $recipient) {
-        // Create notification recipient record
         if (isset($recipient['id'])) {
             $stmt->execute([$notification_id, $recipient['id'], $recipient['email']]);
         }
 
-        // Send email
         if (!empty($recipient['email'])) {
             try {
                 $mail->clearAddresses();
@@ -127,7 +117,6 @@ try {
                 $mail->send();
                 $successfulEmails++;
 
-                // Update email sent status if it's a user
                 if (isset($recipient['id'])) {
                     $stmt = $conn->prepare("
                         UPDATE notification_recipients 
@@ -142,7 +131,6 @@ try {
         }
     }
 
-    // Update notification status
     $stmt = $conn->prepare("UPDATE notifications SET status = 'sent' WHERE id = ?");
     $stmt->execute([$notification_id]);
 

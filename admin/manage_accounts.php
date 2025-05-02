@@ -77,12 +77,6 @@ if (!$user || $user['admin_status'] != 1) {
                         <input type="password" class="form-control" name="password" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Member ID (Optional)</label>
-                        <select class="form-select" name="member_id" id="memberSelect">
-                            <option value="">Select Member</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
                         <label class="form-label">Admin Status</label>
                         <select class="form-select" name="admin_status">
                             <option value="0">Staff</option>
@@ -123,12 +117,6 @@ if (!$user || $user['admin_status'] != 1) {
                         <input type="password" class="form-control" name="password" id="edit_password">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Member ID (Optional)</label>
-                        <select class="form-select" name="member_id" id="edit_member_id">
-                            <option value="">Select Member</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
                         <label class="form-label">Admin Status</label>
                         <select class="form-select" name="admin_status" id="edit_admin_status">
                             <option value="0">Staff</option>
@@ -149,7 +137,6 @@ if (!$user || $user['admin_status'] != 1) {
 
     document.addEventListener('DOMContentLoaded', () => {
         loadUsers();
-        loadMemberOptions();
     });
 
     function loadUsers() {
@@ -174,7 +161,7 @@ if (!$user || $user['admin_status'] != 1) {
                             <td>${user.id}</td>
                             <td>${user.username}</td>
                             <td>${user.email}</td>
-                            <td>${user.member_id || '-'}</td>
+                            <td>-</td>
                             <td><span class="badge ${badgeClass}">${userRole}</span></td>
                             <td>${user.last_login || '-'}</td>
                             <td>
@@ -192,27 +179,11 @@ if (!$user || $user['admin_status'] != 1) {
             .catch(error => console.error('Error:', error));
     }
 
-    function loadMemberOptions() {
-        fetch('../crud/members/read_members.php')
-            .then(response => response.json())
-            .then(data => {
-                const select = document.getElementById('memberSelect');
-                data.forEach(member => {
-                    const option = document.createElement('option');
-                    option.value = member.id;
-                    option.textContent = `${member.first_name} ${member.last_name}`;
-                    select.appendChild(option);
-                });
-            })
-            .catch(error => console.error('Error:', error));
-    }
-
-
     document.getElementById('saveUserBtn').addEventListener('click', function() {
         const form = document.getElementById('addUserForm');
         const formData = new FormData(form);
 
-        fetch('../auth/register_user.php', {
+        fetch('../crud/users/create_user.php', {
             method: 'POST',
             body: formData
         })
@@ -236,7 +207,6 @@ if (!$user || $user['admin_status'] != 1) {
                 document.getElementById('edit_id').value = user.id;
                 document.getElementById('edit_username').value = user.username;
                 document.getElementById('edit_email').value = user.email;
-                document.getElementById('edit_member_id').value = user.member_id || '';
                 document.getElementById('edit_admin_status').value = user.admin_status;
                 document.getElementById('edit_password').value = '';
                 

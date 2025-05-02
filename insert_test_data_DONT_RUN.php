@@ -1,4 +1,4 @@
-<?php
+<?php //TESTING LANG TO, HUWAG IRUN!!!
 require_once 'db/connection.php';
 
 try {

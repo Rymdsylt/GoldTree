@@ -18,7 +18,6 @@ try {
     $event_type = $_POST['event_type'];
     $location = $_POST['location'];
     $max_attendees = !empty($_POST['max_attendees']) ? $_POST['max_attendees'] : null;
-    $registration_deadline = !empty($_POST['registration_deadline']) ? $_POST['registration_deadline'] : null;
 
     $conn->beginTransaction();
 
@@ -29,14 +28,12 @@ try {
         'end_datetime' => $end_datetime,
         'event_type' => $event_type,
         'location' => $location,
-        'max_attendees' => $max_attendees,
-        'registration_deadline' => $registration_deadline
+        'max_attendees' => $max_attendees
     ];
 
     if (isset($_FILES['event_image']) && $_FILES['event_image']['error'] === UPLOAD_ERR_OK) {
         $updateFields['image'] = file_get_contents($_FILES['event_image']['tmp_name']);
     }
-
 
     $sql = "UPDATE events SET ";
     $params = [];

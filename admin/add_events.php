@@ -75,11 +75,6 @@ if (!$user || $user['admin_status'] != 1) {
                             <div class="form-text">Leave empty for unlimited</div>
                         </div>
 
-                        <div class="col-md-6">
-                            <label class="form-label">Registration Deadline</label>
-                            <input type="datetime-local" class="form-control" name="registration_deadline">
-                        </div>
-
                         <div class="col-12">
                             <label class="form-label">Event Image (Optional)</label>
                             <input type="file" class="form-control" name="event_image" accept="image/*">
@@ -194,10 +189,6 @@ if (!$user || $user['admin_status'] != 1) {
                             <span id="modalEventAttendees"></span>
                         </div>
                         <div class="mb-3">
-                            <i class="bi bi-clock text-primary"></i>
-                            <span id="modalEventDeadline"></span>
-                        </div>
-                        <div class="mb-3">
                             <h5>Description</h5>
                             <p id="modalEventDescription" class="text-muted"></p>
                         </div>
@@ -258,10 +249,6 @@ if (!$user || $user['admin_status'] != 1) {
                             <input type="number" class="form-control" name="max_attendees" min="1">
                             <div class="form-text">Leave empty for unlimited</div>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Registration Deadline</label>
-                            <input type="datetime-local" class="form-control" name="registration_deadline">
-                        </div>
                         <div class="col-12">
                             <label class="form-label">Event Image</label>
                             <input type="file" class="form-control" name="event_image" accept="image/*">
@@ -281,6 +268,32 @@ if (!$user || $user['admin_status'] != 1) {
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="submit" form="editEventForm" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="viewAttendeesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Event Attendees</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Attendees</th>
+                                <th>Absentees</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendeesTableBody">
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -404,13 +417,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Find the submit button using the form attribute selector since it's outside the form
+   
         const submitButton = document.querySelector('button[form="eventForm"][type="submit"]');
         const formData = new FormData(this);
         const sendNotifications = formData.get('send_notifications') === 'on';
         const sendAllEmails = formData.get('send_all_emails') === 'on';
 
-        // Prepare event data
         const eventData = {
             title: formData.get('title'),
             start_datetime: formData.get('start_datetime'),
@@ -418,18 +430,16 @@ document.addEventListener('DOMContentLoaded', function() {
             event_type: formData.get('event_type'),
             location: formData.get('location'),
             description: formData.get('description'),
-            max_attendees: formData.get('max_attendees'),
-            registration_deadline: formData.get('registration_deadline')
+            max_attendees: formData.get('max_attendees')
         };
 
-        // Disable submit button and show loading state if sending emails
+   
         if (sendNotifications || sendAllEmails) {
             submitButton.disabled = true;
             submitButton.innerHTML = '<i class="bi bi-hourglass-split"></i> Creating Event & Sending Emails... Don\'t close or refresh the page!';
             showAlert('info', '<i class="bi bi-hourglass-split"></i> Creating event and sending email notifications... Don\'t close or refresh the page!', false);
         }
 
-        // First create the event
         fetch('../crud/events/create_event.php', {
             method: 'POST',
             body: formData
@@ -439,7 +449,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 showAlert('success', 'Event created successfully!');
                 
-                // Reset form and preview
+
                 preview.image.src = '../images/placeholder-event.jpg';
                 preview.title.textContent = 'Event Title';
                 preview.dateTime.innerHTML = '<i class="bi bi-calendar-event"></i> Date and Time';
@@ -447,7 +457,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 preview.description.textContent = 'Event description will appear here...';
                 form.reset();
                 
-                // Reload events list
+ 
                 loadEvents();
             } else {
                 throw new Error(data.message || 'Failed to create event');
@@ -458,7 +468,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showAlert('danger', error.message || 'An error occurred while processing your request');
         })
         .finally(() => {
-            // Re-enable submit button and reset its text
+
             if (sendNotifications || sendAllEmails) {
                 submitButton.disabled = false;
                 submitButton.innerHTML = '<i class="bi bi-plus-circle"></i> Create Event';
@@ -492,6 +502,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <button class="btn btn-sm btn-info" onclick="viewEvent(${JSON.stringify(event).replace(/"/g, '&quot;')})">
                                         <i class="bi bi-eye"></i>
                                     </button>
+                                    <button class="btn btn-sm btn-primary" onclick="viewAttendees(${event.id})">
+                                        <i class="bi bi-people-fill"></i>
+                                    </button>
                                     <button class="btn btn-sm btn-warning" onclick="editEvent(${JSON.stringify(event).replace(/"/g, '&quot;')})">
                                         <i class="bi bi-pencil"></i>
                                     </button>
@@ -509,17 +522,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     window.viewEvent = function(event) {
- 
         document.getElementById('modalEventTitle').textContent = event.title;
         document.getElementById('modalEventDateTime').textContent = `${new Date(event.start_datetime).toLocaleString()} - ${new Date(event.end_datetime).toLocaleString()}`;
         document.getElementById('modalEventLocation').textContent = event.location;
         document.getElementById('modalEventType').textContent = event.event_type.charAt(0).toUpperCase() + event.event_type.slice(1);
         document.getElementById('modalEventAttendees').textContent = event.max_attendees ? `Maximum ${event.max_attendees} attendees` : 'Unlimited attendees';
-        document.getElementById('modalEventDeadline').textContent = event.registration_deadline ? 
-            `Registration deadline: ${new Date(event.registration_deadline).toLocaleString()}` : 
-            'No registration deadline';
         document.getElementById('modalEventDescription').textContent = event.description || 'No description available';
- 
+
         const modalImage = document.getElementById('modalEventImage');
         if (event.image) {
             modalImage.src = `data:image/jpeg;base64,${event.image}`;
@@ -527,7 +536,6 @@ document.addEventListener('DOMContentLoaded', function() {
             modalImage.src = '../images/placeholder-event.jpg';
         }
 
-  
         const modal = new bootstrap.Modal(document.getElementById('eventDetailsModal'));
         modal.show();
     }
@@ -542,9 +550,6 @@ document.addEventListener('DOMContentLoaded', function() {
         form.elements['location'].value = event.location;
         form.elements['description'].value = event.description || '';
         form.elements['max_attendees'].value = event.max_attendees || '';
-        if (event.registration_deadline) {
-            form.elements['registration_deadline'].value = event.registration_deadline.slice(0, 16);
-        }
 
         const modal = new bootstrap.Modal(document.getElementById('editEventModal'));
         modal.show();
@@ -609,6 +614,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 showAlert('danger', error.message || 'An error occurred while deleting the event');
             });
         }
+    }
+
+    window.viewAttendees = function(eventId) {
+        fetch(`../crud/events/view_attendees.php?event_id=${eventId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const tbody = document.getElementById('attendeesTableBody');
+                    tbody.innerHTML = '';
+                    
+                    data.data.forEach(day => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${new Date(day.date).toLocaleDateString('en-US', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                            })}</td>
+                            <td>${day.attendees.length ? day.attendees.join(', ') : 'No attendees'}</td>
+                            <td>${day.absentees.length ? day.absentees.join(', ') : 'No absentees'}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    
+                    const modal = new bootstrap.Modal(document.getElementById('viewAttendeesModal'));
+                    modal.show();
+                } else {
+                    alert(data.message || 'Error loading attendee data');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error loading attendee data');
+            });
     }
 });
 

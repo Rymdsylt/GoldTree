@@ -53,11 +53,10 @@ require_once 'auth/login_status.php'; ?>
                             <thead>
                                 <tr>
                                     <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Phone</th>
-                                    <th>Membership Date</th>
+                                    <th>Contact</th>
+                                    <th>Ministry Type</th>
                                     <th>Status</th>
-                                    <th>Details</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="membersTableBody">
@@ -122,17 +121,25 @@ function loadMembers(page = 1) {
                                 </div>
                             </div>
                         </td>
-                        <td>${member.email || '-'}</td>
-                        <td>${member.phone || '-'}</td>
-                        <td>${formatDate(member.membership_date)}</td>
+                        <td>
+                            <div class="member-contact">
+                                ${member.email || '-'}<br>
+                                ${member.phone || '-'}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-${member.category ? 'primary' : 'secondary'}">
+                                ${member.category || 'N/A'}
+                            </span>
+                        </td>
                         <td>
                             <span class="badge bg-${member.status === 'active' ? 'success' : 'danger'}">
                                 ${member.status}
                             </span>
                         </td>
                         <td>
-                            <button class="btn btn-sm btn-primary" onclick="viewPastoralCare(${member.id})">
-                                <i class="bi bi-eye"></i> View
+                            <button class="btn btn-sm btn-primary" onclick="viewMemberNotes(${member.id})">
+                                <i class="bi bi-journal-text"></i> Notes
                             </button>
                         </td>
                     </tr>
@@ -266,6 +273,87 @@ function viewPastoralCare(memberId) {
             console.error('Error:', error);
             alert('Error loading pastoral care records');
         });
+}
+
+function viewMemberNotes(memberId) {
+    fetch(`crud/members/get_member_notes.php?member_id=${memberId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let content = '';
+                
+                data.notes.forEach(note => {
+                    const date = new Date(note.created_at).toLocaleDateString();
+                    const noteTypeClass = {
+                        'general': 'info',
+                        'pastoral': 'warning',
+                        'counseling': 'danger',
+                        'other': 'secondary'
+                    }[note.note_type];
+                    
+                    content += `
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">
+                                    <span class="badge bg-${noteTypeClass}">${capitalizeFirst(note.note_type)}</span>
+                                </h6>
+                                <small>${date}</small>
+                            </div>
+                            <p class="mb-1">${note.note_text}</p>
+                            <small>Added by: ${note.created_by_name || 'System'}</small>
+                        </div>`;
+                });
+                
+                if (!content) {
+                    content = '<div class="text-center text-muted">No notes found</div>';
+                }
+
+                const modalDiv = document.createElement('div');
+                modalDiv.className = 'modal fade';
+                modalDiv.innerHTML = `
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Member Notes</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="list-group">
+                                    ${content}
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                document.body.appendChild(modalDiv);
+                
+                const modal = new bootstrap.Modal(modalDiv);
+                modalDiv.addEventListener('hidden.bs.modal', function() {
+                    document.body.removeChild(modalDiv);
+                });
+                modal.show();
+            } else {
+                alert(data.message || 'Error loading member notes');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading member notes');
+        });
+}
+
+function capitalizeFirst(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+function getCategoryBadge(category) {
+    switch (category) {
+        case 'minister':
+            return 'primary';
+        case 'elder':
+            return 'warning';
+        default:
+            return 'secondary';
+    }
 }
 </script>
 

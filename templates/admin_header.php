@@ -262,9 +262,6 @@ if (!$user || $user['admin_status'] != 1) {
                 <a href="/GoldTree/admin/notify_members.php" class="sidebar-link <?php echo $current_page == 'notify_members.php' ? 'active' : ''; ?>">
                     <i class="bi bi-envelope"></i> Notify Members
                 </a>
-                <a href="/GoldTree/admin/notifications.php" class="sidebar-link <?php echo $current_page == 'notifications.php' ? 'active' : ''; ?>">
-                    <i class="bi bi-bell"></i> View Notifications
-                </a>
             </nav>
         </div>
     </div>

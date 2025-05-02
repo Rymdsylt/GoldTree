@@ -10,13 +10,11 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 try {
-    // Get pagination parameters from POST data
     $data = json_decode(file_get_contents('php://input'), true);
     $page = isset($data['page']) ? (int)$data['page'] : 1;
-    $limit = 10; // Items per page
+    $limit = 10;
     $offset = ($page - 1) * $limit;
 
-    // Build the query with filters
     $where = [];
     $params = [];
 
@@ -42,7 +40,6 @@ try {
 
     $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
 
-    // Get total count for pagination
     $countQuery = "SELECT COUNT(DISTINCT n.id) 
                   FROM notifications n 
                   LEFT JOIN notification_recipients nr ON n.id = nr.notification_id 
@@ -55,7 +52,6 @@ try {
     $stmt->execute();
     $total = $stmt->fetchColumn();
     
-    // Main query with pagination
     $query = "SELECT 
                 n.*,
                 COUNT(DISTINCT nr.user_id) as recipient_count,
@@ -68,8 +64,7 @@ try {
             LIMIT :limit OFFSET :offset";
     
     $stmt = $conn->prepare($query);
-    
-    // Bind all parameters
+
     foreach ($params as $key => $value) {
         $stmt->bindValue($key, $value);
     }

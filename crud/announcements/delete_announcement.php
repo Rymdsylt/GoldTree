@@ -18,11 +18,8 @@ try {
 
     $conn->beginTransaction();
 
-    // Delete from notification_recipients first (due to foreign key constraints)
     $stmt = $conn->prepare("DELETE FROM notification_recipients WHERE notification_id = ? AND user_id = ?");
     $stmt->execute([$data['id'], $_SESSION['user_id']]);
-
-    // Then delete from notifications if there are no more recipients
     $stmt = $conn->prepare("
         DELETE n FROM notifications n
         LEFT JOIN notification_recipients nr ON n.id = nr.notification_id

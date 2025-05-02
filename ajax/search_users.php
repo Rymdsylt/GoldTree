@@ -4,7 +4,7 @@ require_once '../db/connection.php';
 header('Content-Type: application/json');
 
 if (isset($_GET['all']) && $_GET['all'] === 'true') {
-    // Fetch all users
+
     $stmt = $conn->prepare("SELECT id, username, email, admin_status FROM users ORDER BY username");
     $stmt->execute();
     echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
@@ -18,7 +18,6 @@ if (empty($search)) {
     exit;
 }
 
-// Search for specific users
 $stmt = $conn->prepare("
     SELECT id, username, email, admin_status 
     FROM users 

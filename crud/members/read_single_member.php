@@ -2,24 +2,32 @@
 require_once '../../db/connection.php';
 header('Content-Type: application/json');
 
-if (!isset($_GET['id'])) {
-    echo json_encode(['success' => false, 'message' => 'Member ID is required']);
-    exit();
-}
-
 try {
-    $stmt = $conn->prepare("SELECT * FROM members WHERE id = ?");
+    if (!isset($_GET['id'])) {
+        throw new Exception('Member ID is required');
+    }
+
+    $query = "SELECT m.*, u.id as user_id, u.username as associated_username 
+              FROM members m 
+              LEFT JOIN users u ON m.user_id = u.id 
+              WHERE m.id = ?";
+              
+    $stmt = $conn->prepare($query);
     $stmt->execute([$_GET['id']]);
     $member = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($member) {
-        if (!empty($member['profile_image'])) {
-            $member['profile_image'] = base64_encode($member['profile_image']);
-        }
-        echo json_encode(['success' => true, 'data' => $member]);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Member not found']);
+    if (!$member) {
+        throw new Exception('Member not found');
     }
-} catch (PDOException $e) {
-    echo json_encode(['success' => false, 'message' => 'Database error']);
+
+    echo json_encode([
+        'success' => true,
+        'data' => $member
+    ]);
+} catch(Exception $e) {
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getMessage()
+    ]);
 }
+?>

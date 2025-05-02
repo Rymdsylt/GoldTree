@@ -21,10 +21,12 @@ try {
         birthdate DATE,
         membership_date DATE DEFAULT CURRENT_DATE,
         gender ENUM('male', 'female', 'other') DEFAULT NULL,
-        category ENUM('regular', 'youth', 'senior', 'visitor') DEFAULT 'regular',
+        category VARCHAR(50) DEFAULT NULL,
         status ENUM('active', 'inactive') DEFAULT 'active',
         profile_image LONGBLOB,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        user_id INT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
     )");
 
     try {
@@ -36,7 +38,9 @@ try {
         
         $conn->exec("ALTER TABLE members ADD COLUMN IF NOT EXISTS profile_image LONGBLOB");
         $conn->exec("ALTER TABLE members ADD COLUMN IF NOT EXISTS gender ENUM('male', 'female', 'other') DEFAULT NULL");
-        $conn->exec("ALTER TABLE members ADD COLUMN IF NOT EXISTS category ENUM('regular', 'youth', 'senior', 'visitor') DEFAULT 'regular'");
+        $conn->exec("ALTER TABLE members MODIFY category VARCHAR(50) DEFAULT NULL");
+        $conn->exec("ALTER TABLE members ADD COLUMN IF NOT EXISTS user_id INT");
+        $conn->exec("ALTER TABLE members ADD FOREIGN KEY IF NOT EXISTS (user_id) REFERENCES users(id) ON DELETE SET NULL");
     } catch(PDOException $e) {
         if($conn->inTransaction()) {
             $conn->rollBack();
@@ -47,6 +51,7 @@ try {
         id INT PRIMARY KEY AUTO_INCREMENT,
         username VARCHAR(50) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
+        reset_password VARCHAR(255) DEFAULT NULL,
         email VARCHAR(100) UNIQUE NOT NULL,
         member_id INT,
         admin_status INT DEFAULT 0,
@@ -55,7 +60,14 @@ try {
         FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
     )");
 
- 
+    try {
+        $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_password VARCHAR(255) DEFAULT NULL");
+    } catch(PDOException $e) {
+        if($conn->inTransaction()) {
+            $conn->rollBack();
+        }
+    }
+
     $checkAdmin = $conn->query("SELECT id FROM users WHERE username = 'root'")->fetch();
     if (!$checkAdmin) {
         $hashedPassword = password_hash('mdradmin', PASSWORD_DEFAULT);
@@ -76,7 +88,7 @@ try {
     )");
 
 
-    try {
+    try {   
         $conn->exec("ALTER TABLE donations ADD COLUMN IF NOT EXISTS donor_name VARCHAR(100)");
     } catch(PDOException $e) {
         if($conn->inTransaction()) {
@@ -110,6 +122,7 @@ try {
         event_id INT NOT NULL,
         member_id INT NOT NULL,
         attendance_status ENUM('present', 'absent', 'late') NOT NULL,
+        attendance_date DATE DEFAULT CURRENT_DATE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
         FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
@@ -145,14 +158,15 @@ try {
         error_log("Error recreating notification tables: " . $e->getMessage());
     }
 
-    $conn->exec("CREATE TABLE IF NOT EXISTS pastoral_care (
+    $conn->exec("CREATE TABLE IF NOT EXISTS member_notes (
         id INT PRIMARY KEY AUTO_INCREMENT,
         member_id INT NOT NULL,
-        notes TEXT NOT NULL,
-        care_date DATE NOT NULL,
-        care_type ENUM('counseling', 'visitation', 'prayer', 'other') NOT NULL,
+        note_text TEXT NOT NULL,
+        note_type ENUM('general', 'pastoral', 'counseling', 'other') NOT NULL,
+        created_by INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
+        FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE,
+        FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
     )");
 
 } catch(PDOException $e) {

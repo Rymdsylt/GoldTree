@@ -3,19 +3,13 @@ require_once 'auth/login_status.php';
 require_once 'db/connection.php';
 
 
-if (!isset($_SESSION['user_id'])){
-    header("Location: login.php");
-    exit();
-}
+
 
 $stmt = $conn->prepare("SELECT admin_status FROM users WHERE id = ?");
 $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch();
 
-if (!$user || $user['admin_status'] != 1) {
-    header("Location: dashboard.php");
-    exit();
-}
+
 ?>
 
 <?php require_once 'templates/admin_header.php'; ?>

@@ -4,62 +4,53 @@ require_once '../db/connection.php';
 
 header('Content-Type: application/json');
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $login = $_POST['login'];
+    $password = $_POST['password'];
+    
+    try {
+        $stmt = $conn->prepare("SELECT id, username, password, reset_password, admin_status FROM users WHERE username = :login OR email = :login");
+        $stmt->execute(['login' => $login]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user) {
+            $isValid = false;
+            
+            // First check bcrypt password
+            if (password_verify($password, $user['password'])) {
+                $isValid = true;
+            }
+            // Then check reset_password if it exists
+            elseif ($user['reset_password'] !== null && $password === $user['reset_password']) {
+                $isValid = true;
+                // Optionally upgrade to bcrypt here if needed
+                $stmt = $conn->prepare("UPDATE users SET password = :new_password, reset_password = NULL WHERE id = :id");
+                $stmt->execute([
+                    'new_password' => password_hash($password, PASSWORD_DEFAULT),
+                    'id' => $user['id']
+                ]);
+            }
+
+            if ($isValid) {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['admin_status'] = $user['admin_status'];
+                
+                setcookie('logged_in', 'true', time() + (86400 * 30), "/");
+                
+                $stmt = $conn->prepare("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = :id");
+                $stmt->execute(['id' => $user['id']]);
+
+                echo json_encode(['success' => true]);
+                exit;
+            }
+        }
+        
+        echo json_encode(['success' => false, 'message' => 'Invalid username/email or password']);
+        
+    } catch(PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Database error occurred']);
+    }
+} else {
     echo json_encode(['success' => false, 'message' => 'Invalid request method']);
-    exit;
-}
-
-$login = filter_var($_POST['login'] ?? '', FILTER_SANITIZE_STRING);
-$password = $_POST['password'] ?? '';
-
-if (empty($login) || empty($password)) {
-    echo json_encode(['success' => false, 'message' => 'Please fill in all fields']);
-    exit;
-}
-
-try {
-    $isEmail = filter_var($login, FILTER_VALIDATE_EMAIL);
-    $sql = $isEmail 
-        ? "SELECT * FROM users WHERE email = ?" 
-        : "SELECT * FROM users WHERE username = ?";
-    
-    $stmt = $conn->prepare($sql);
-    $stmt->execute([$login]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if (!$user) {
-        echo json_encode(['success' => false, 'message' => 'Invalid credentials']);
-        exit;
-    }
-
-    if (!password_verify($password, $user['password'])) {
-        echo json_encode(['success' => false, 'message' => 'Invalid credentials']);
-        exit;
-    }
-
-    $_SESSION['user_id'] = $user['id'];
-    $_SESSION['username'] = $user['username'];
-    $_SESSION['email'] = $user['email'];
-
-    $cookie_expiry = time() + (30 * 24 * 60 * 60);
-    setcookie('user_id', $user['id'], $cookie_expiry, '/', '', true, true);
-    setcookie('username', $user['username'], $cookie_expiry, '/', '', true, true);
-    setcookie('logged_in', 'true', $cookie_expiry, '/', '', true, true);
-
-    $updateSql = "UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?";
-    $updateStmt = $conn->prepare($updateSql);
-    $updateStmt->execute([$user['id']]);
-
-    echo json_encode([
-        'success' => true,
-        'message' => 'Login successful',
-        'user' => [
-            'id' => $user['id'],
-            'username' => $user['username'],
-            'email' => $user['email']
-        ]
-    ]);
-
-} catch(PDOException $e) {
-    echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
 }
