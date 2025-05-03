@@ -9,12 +9,11 @@ try {
         throw new Exception('Member ID is required');
     }
 
-    // Require associated user
+ 
     if (empty($data['associated_user'])) {
         throw new Exception('An associated user is required for each member');
     }
 
-    // Check if selected user is already associated with another member
     $checkQuery = "SELECT id FROM members WHERE user_id = ? AND id != ?";
     $checkStmt = $conn->prepare($checkQuery);
     $checkStmt->execute([$data['associated_user'], $data['id']]);
@@ -29,12 +28,12 @@ try {
 
     $conn->beginTransaction();
 
-    // First, clear the old user association if any
+    
     $clearOldUserQuery = "UPDATE users SET member_id = NULL WHERE member_id = ?";
     $clearStmt = $conn->prepare($clearOldUserQuery);
     $clearStmt->execute([$data['id']]);
 
-    // Update member data
+ 
     $query = "UPDATE members SET 
               first_name = ?,
               last_name = ?,
@@ -63,7 +62,7 @@ try {
         $data['id']
     ]);
 
-    // Update the users table with the new member association
+   
     $updateUserQuery = "UPDATE users SET member_id = ? WHERE id = ?";
     $updateUserStmt = $conn->prepare($updateUserQuery);
     $updateUserStmt->execute([$data['id'], $data['associated_user']]);

@@ -6,6 +6,11 @@ if (session_status() === PHP_SESSION_NONE) {
 $current_page = basename($_SERVER['PHP_SELF']);
 $public_pages = ['register.php', 'login.php', 'forgot_password.php'];
 
+if (isset($_SESSION['user_id']) && $current_page === 'login.php') {
+    header("Location: /GoldTree/dashboard.php");
+    exit();
+}
+
 if (in_array($current_page, $public_pages)) {
     return;
 }

@@ -1,13 +1,20 @@
 <?php
 session_start();
 
-// Clear any existing sessions and cookies first
-$_SESSION = array();
-session_destroy();
-session_start();
 
-if (isset($_COOKIE['logged_in'])) {
-    setcookie('logged_in', '', time() - 3600, '/');
+if (isset($_SESSION['user_id'])) {
+    header("Location: dashboard.php");
+    exit();
+}
+
+
+if (isset($_GET['logout'])) {
+    $_SESSION = array();
+    session_destroy();
+    session_start();
+    if (isset($_COOKIE['logged_in'])) {
+        setcookie('logged_in', '', time() - 3600, '/');
+    }
 }
 
 if (isset($_COOKIE['logged_in']) && $_COOKIE['logged_in'] === 'true') {
@@ -33,6 +40,7 @@ if (isset($_COOKIE['logged_in']) && $_COOKIE['logged_in'] === 'true') {
                 <h3 class="mt-2">Welcome Back</h3>
                 <p class="text-muted">Sign in to your account</p>
             </div>
+            
             <div id="alert-container"></div>
             <form id="loginForm" action="auth/login_user.php" method="POST">
                 <div class="mb-3">

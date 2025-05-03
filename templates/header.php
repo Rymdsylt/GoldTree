@@ -2,24 +2,26 @@
 session_start();
 require_once __DIR__ . '/../db/connection.php';
 
-// Set default active page if not set
 if (!isset($_SESSION['active_page'])) {
     $_SESSION['active_page'] = 'dashboard';
 }
 
-// Update active page if page parameter is present
 if (isset($_GET['page'])) {
     $_SESSION['active_page'] = $_GET['page'];
 }
 
 $current_page = basename($_SERVER['PHP_SELF']);
 $isAdmin = false;
+$username = '';
 
 if (isset($_SESSION['user_id'])) {
-    $stmt = $conn->prepare("SELECT admin_status FROM users WHERE id = ?");
+    $stmt = $conn->prepare("SELECT username, admin_status FROM users WHERE id = ?");
     $stmt->execute([$_SESSION['user_id']]);
     $user = $stmt->fetch();
-    $isAdmin = ($user && $user['admin_status'] > 0);
+    if ($user) {
+        $isAdmin = ($user['admin_status'] > 0);
+        $username = htmlspecialchars($user['username']);
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -60,9 +62,14 @@ if (isset($_SESSION['user_id'])) {
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            
+
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
+                    <?php if (!empty($username)): ?>
+                        <li class="nav-item">
+                            <span class="nav-link">Welcome, <?php echo $username; ?></span>
+                        </li>
+                    <?php endif; ?>
                 </ul>
             </div>
         </div>
@@ -132,7 +139,8 @@ if (isset($_SESSION['user_id'])) {
     <?php endif; ?>
 
     <!-- Main Content Container -->
-    <main class="main-content <?php echo !isset($_SESSION['user_id']) ? 'ml-0' : ''; ?>"><?php ?>
+    <main class="main-content <?php echo !isset($_SESSION['user_id']) ? 'ml-0' : ''; ?>">
+
     <script>
     function updateNotificationBadge() {
         fetch('/GoldTree/crud/notifications/get_unread_count.php')
@@ -151,9 +159,6 @@ if (isset($_SESSION['user_id'])) {
             .catch(console.error);
     }
 
-    // Update badge when page loads
     document.addEventListener('DOMContentLoaded', updateNotificationBadge);
-
-    // Update badge every minute
     setInterval(updateNotificationBadge, 60000);
     </script>
