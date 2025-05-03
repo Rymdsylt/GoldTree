@@ -1,5 +1,15 @@
 <?php
 session_start();
+
+// Clear any existing sessions and cookies first
+$_SESSION = array();
+session_destroy();
+session_start();
+
+if (isset($_COOKIE['logged_in'])) {
+    setcookie('logged_in', '', time() - 3600, '/');
+}
+
 if (isset($_COOKIE['logged_in']) && $_COOKIE['logged_in'] === 'true') {
     header("Location: dashboard.php");
     exit();

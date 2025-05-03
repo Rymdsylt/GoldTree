@@ -3,17 +3,20 @@ session_start();
 
 $_SESSION = array();
 
+if (isset($_COOKIE[session_name()])) {
+    setcookie(session_name(), '', time() - 3600, '/');
+}
 session_destroy();
 
-if (isset($_COOKIE['user_id'])) {
-    setcookie('user_id', '', time() - 3600, '/');
-}
-if (isset($_COOKIE['username'])) {
-    setcookie('username', '', time() - 3600, '/');
-}
-if (isset($_COOKIE['logged_in'])) {
-    setcookie('logged_in', '', time() - 3600, '/');
-}
+setcookie('logged_in', '', [
+    'expires' => time() - 3600,
+    'path' => '/',
+    'httponly' => true,
+    'samesite' => 'Strict'
+]);
+
+setcookie('user_id', '', time() - 3600, '/');
+setcookie('username', '', time() - 3600, '/');
 
 header('Location: ../login.php');
 exit();
