@@ -39,7 +39,7 @@ if (!$user || $user['admin_status'] != 1) {
                                 <th>ID</th>
                                 <th>Username</th>
                                 <th>Email</th>
-                                <th>Member ID</th>
+                                <th>Member Name</th>
                                 <th>Admin Status</th>
                                 <th>Last Login</th>
                                 <th>Actions</th>
@@ -150,7 +150,6 @@ if (!$user || $user['admin_status'] != 1) {
                     let userRole = 'Staff';
                     let badgeClass = 'bg-secondary';
                     
-  
                     if (parseInt(user.admin_status) === 1) {
                         userRole = 'Admin';
                         badgeClass = 'bg-primary';
@@ -161,7 +160,7 @@ if (!$user || $user['admin_status'] != 1) {
                             <td>${user.id}</td>
                             <td>${user.username}</td>
                             <td>${user.email}</td>
-                            <td>-</td>
+                            <td>${user.member_name || 'n/a'}</td>
                             <td><span class="badge ${badgeClass}">${userRole}</span></td>
                             <td>${user.last_login || '-'}</td>
                             <td>

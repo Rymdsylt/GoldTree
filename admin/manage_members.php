@@ -401,9 +401,36 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         const formData = new FormData(this);
         const isEditing = formData.has('id');
-        
 
-        const endpoint = isEditing ? '../crud/members/update_members.php' : '../crud/members/create_member.php';
+        // Validate required fields based on whether we're editing or adding
+        const requiredFields = this.querySelectorAll('[required]');
+        let isValid = true;
+
+        requiredFields.forEach(field => {
+            // Skip validation for email and associated_user fields if editing
+            if (isEditing && (field.name === 'email' || field.name === 'associated_user')) {
+                return;
+            }
+            
+            if (!field.value.trim()) {
+                isValid = false;
+                field.classList.add('is-invalid');
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+
+        if (!isValid) {
+            return;
+        }
+
+        // Remove email and associated_user from formData if editing
+        if (isEditing) {
+            formData.delete('email');
+            formData.delete('associated_user');
+        }
+
+        const endpoint = isEditing ? '../crud/members/update_member.php' : '../crud/members/create_member.php';
         
         fetch(endpoint, {
             method: 'POST',
@@ -447,14 +474,28 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add event listener for form reset (when modal is closed)
     document.getElementById('addMemberModal').addEventListener('hidden.bs.modal', function() {
-        const emailField = document.querySelector('[name="email"]');
-        emailField.disabled = false;  // Re-enable the email field
-        emailField.classList.remove('bg-light');
-        // ...existing code...
         const form = document.getElementById('addMemberForm');
+        
+        // Reset the form
         form.reset();
+        
+        // Remove any id input from edit mode
         const idInput = form.querySelector('[name="id"]');
         if (idInput) idInput.remove();
+        
+        // Show the email and associated user fields again
+        const emailField = form.querySelector('[name="email"]');
+        const associatedUserField = form.querySelector('[name="associated_user"]');
+        if (emailField) {
+            emailField.closest('.col-md-6').style.display = '';
+            emailField.disabled = false;
+            emailField.classList.remove('bg-light');
+        }
+        if (associatedUserField) {
+            associatedUserField.closest('.col-md-6').style.display = '';
+        }
+        
+        // Reset modal title and button text
         document.querySelector('#addMemberModal .modal-title').textContent = 'Add New Member';
         document.querySelector('#addMemberModal button[type="submit"]').textContent = 'Add Member';
     });
@@ -896,22 +937,44 @@ function editMember(id) {
             if (data.success) {
                 const member = data.data;
                 const form = document.getElementById('addMemberForm');
-                // ...existing form population code...
                 
-                // Set associated user if exists
-                if (member.user_id) {
-                    form.querySelector('[name="associated_user"]').value = member.user_id;
+                // Populate form fields
+                form.querySelector('[name="first_name"]').value = member.first_name;
+                form.querySelector('[name="last_name"]').value = member.last_name;
+                form.querySelector('[name="phone"]').value = member.phone || '';
+                form.querySelector('[name="date_of_birth"]').value = member.birthdate || '';
+                form.querySelector('[name="gender"]').value = member.gender || '';
+                form.querySelector('[name="category"]').value = member.category || '';
+                form.querySelector('[name="status"]').value = member.status;
+                form.querySelector('[name="address"]').value = member.address || '';
+
+                // Hide and remove required attribute from email and associated user fields when editing
+                const emailField = form.querySelector('[name="email"]');
+                const associatedUserField = form.querySelector('[name="associated_user"]');
+                if (emailField) {
+                    emailField.closest('.col-md-6').style.display = 'none';
+                    emailField.removeAttribute('required');
+                }
+                if (associatedUserField) {
+                    associatedUserField.closest('.col-md-6').style.display = 'none';
+                    associatedUserField.removeAttribute('required');
                 }
 
-                const idInput = document.createElement('input');
-                idInput.type = 'hidden';
-                idInput.name = 'id';
+                // Add hidden ID field for edit mode
+                let idInput = form.querySelector('[name="id"]');
+                if (!idInput) {
+                    idInput = document.createElement('input');
+                    idInput.type = 'hidden';
+                    idInput.name = 'id';
+                    form.appendChild(idInput);
+                }
                 idInput.value = member.id;
-                form.appendChild(idInput);
 
+                // Update modal title and submit button
                 document.querySelector('#addMemberModal .modal-title').textContent = 'Edit Member';
                 document.querySelector('#addMemberModal button[type="submit"]').textContent = 'Save Changes';
                 
+                // Show the modal
                 new bootstrap.Modal(document.getElementById('addMemberModal')).show();
             } else {
                 alert(data.message || 'Error loading member data');

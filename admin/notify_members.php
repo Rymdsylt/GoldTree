@@ -389,7 +389,7 @@ function handleFormSubmit(e) {
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending (Email is also being sent, do not close or refresh the page!)';
 
     console.log('Sending form data:', Object.fromEntries(formData));
 

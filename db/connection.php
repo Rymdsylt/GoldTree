@@ -11,6 +11,18 @@ try {
     $conn->exec("CREATE DATABASE IF NOT EXISTS " . DB_NAME);
     $conn->exec("USE " . DB_NAME);
 
+    $conn->exec("CREATE TABLE IF NOT EXISTS users (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        username VARCHAR(50) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        reset_password VARCHAR(255) DEFAULT NULL,
+        email VARCHAR(100) UNIQUE NOT NULL,
+        member_id INT,
+        admin_status INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_login TIMESTAMP NULL DEFAULT NULL
+    )");
+
     $conn->exec("CREATE TABLE IF NOT EXISTS members (
         id INT PRIMARY KEY AUTO_INCREMENT,
         first_name VARCHAR(50) NOT NULL,
@@ -25,47 +37,17 @@ try {
         status ENUM('active', 'inactive') DEFAULT 'active',
         profile_image LONGBLOB,
         user_id INT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )");
 
     try {
-
-        $conn->exec("ALTER TABLE members CHANGE COLUMN IF EXISTS date_joined membership_date DATE");
+        $conn->exec("ALTER TABLE users DROP FOREIGN KEY IF EXISTS users_member_id_fk");
+        $conn->exec("ALTER TABLE users ADD CONSTRAINT users_member_id_fk FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE");
         
-
-        $conn->exec("ALTER TABLE members ADD COLUMN IF NOT EXISTS membership_date DATE");
-        
-        $conn->exec("ALTER TABLE members ADD COLUMN IF NOT EXISTS profile_image LONGBLOB");
-        $conn->exec("ALTER TABLE members ADD COLUMN IF NOT EXISTS gender ENUM('male', 'female', 'other') DEFAULT NULL");
-        $conn->exec("ALTER TABLE members MODIFY category VARCHAR(50) DEFAULT NULL");
-        $conn->exec("ALTER TABLE members ADD COLUMN IF NOT EXISTS user_id INT");
-        $conn->exec("ALTER TABLE members ADD FOREIGN KEY IF NOT EXISTS (user_id) REFERENCES users(id) ON DELETE SET NULL");
+        $conn->exec("ALTER TABLE members DROP FOREIGN KEY IF EXISTS members_user_id_fk");
+        $conn->exec("ALTER TABLE members ADD CONSTRAINT members_user_id_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL");
     } catch(PDOException $e) {
-        if($conn->inTransaction()) {
-            $conn->rollBack();
-        }
-    }
-
-    $conn->exec("CREATE TABLE IF NOT EXISTS users (
-        id INT PRIMARY KEY AUTO_INCREMENT,
-        username VARCHAR(50) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        reset_password VARCHAR(255) DEFAULT NULL,
-        email VARCHAR(100) UNIQUE NOT NULL,
-        member_id INT,
-        admin_status INT DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        last_login TIMESTAMP NULL DEFAULT NULL,
-        FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
-    )");
-
-    try {
-        $conn->exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_password VARCHAR(255) DEFAULT NULL");
-    } catch(PDOException $e) {
-        if($conn->inTransaction()) {
-            $conn->rollBack();
-        }
+        error_log("Error adding foreign keys: " . $e->getMessage());
     }
 
     $checkAdmin = $conn->query("SELECT id FROM users WHERE username = 'root'")->fetch();
@@ -86,7 +68,6 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
     )");
-
 
     try {   
         $conn->exec("ALTER TABLE donations ADD COLUMN IF NOT EXISTS donor_name VARCHAR(100)");
@@ -116,7 +97,6 @@ try {
         FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
     )");
 
-
     $conn->exec("CREATE TABLE IF NOT EXISTS event_attendance (
         id INT PRIMARY KEY AUTO_INCREMENT,
         event_id INT NOT NULL,
@@ -128,9 +108,7 @@ try {
         FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
     )");
 
-
     try {
-        
         $conn->exec("CREATE TABLE notifications (
             id INT PRIMARY KEY AUTO_INCREMENT,
             notification_type ENUM('announcement', 'event', 'donation', 'other') NOT NULL,
