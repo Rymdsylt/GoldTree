@@ -17,7 +17,7 @@ try {
     $category = $_POST['category'] ?? null;
     $status = $_POST['status'] ?? 'active';
 
-    // Build update fields excluding email and user_id
+
     $updateFields = [
         'first_name = ?',
         'last_name = ?',
@@ -40,7 +40,7 @@ try {
         $status
     ];
 
-    // Handle profile image upload if provided
+ 
     if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] == 0) {
         $allowed = ['jpg', 'jpeg', 'png', 'gif'];
         $filename = $_FILES['profile_image']['name'];
@@ -53,10 +53,8 @@ try {
         }
     }
 
-    // Add member ID to params
     $params[] = $id;
 
-    // Build and execute update query
     $query = "UPDATE members SET " . implode(', ', $updateFields) . " WHERE id = ?";
     $stmt = $conn->prepare($query);
     $stmt->execute($params);

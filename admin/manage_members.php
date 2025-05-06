@@ -424,7 +424,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Remove email and associated_user from formData if editing
+     
         if (isEditing) {
             formData.delete('email');
             formData.delete('associated_user');
@@ -447,43 +447,42 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => console.error('Error:', error));
     });
 
-    // Load available users for association
     loadAvailableUsers();
 
-    // Add event listener for associated user selection
+
     document.getElementById('associated_user').addEventListener('change', function() {
         const selectedUserId = this.value;
         const emailField = document.querySelector('[name="email"]');
         
         if (selectedUserId) {
-            // Get the selected option's email data
+ 
             const selectedOption = this.options[this.selectedIndex];
             const userEmail = selectedOption.dataset.email;
             
             if (userEmail) {
                 emailField.value = userEmail;
-                emailField.disabled = true;  // Disable the email field
-                emailField.classList.add('bg-light');  // Add visual indicator that field is disabled
+                emailField.disabled = true;  
+                emailField.classList.add('bg-light');  
             }
         } else {
-            // If no user is selected (No Associated User option)
-            emailField.disabled = false;  // Enable the email field
+
+            emailField.disabled = false;  
             emailField.classList.remove('bg-light');
         }
     });
     
-    // Add event listener for form reset (when modal is closed)
+
     document.getElementById('addMemberModal').addEventListener('hidden.bs.modal', function() {
         const form = document.getElementById('addMemberForm');
         
-        // Reset the form
+
         form.reset();
         
-        // Remove any id input from edit mode
+
         const idInput = form.querySelector('[name="id"]');
         if (idInput) idInput.remove();
         
-        // Show the email and associated user fields again
+
         const emailField = form.querySelector('[name="email"]');
         const associatedUserField = form.querySelector('[name="associated_user"]');
         if (emailField) {
@@ -495,7 +494,7 @@ document.addEventListener('DOMContentLoaded', function() {
             associatedUserField.closest('.col-md-6').style.display = '';
         }
         
-        // Reset modal title and button text
+
         document.querySelector('#addMemberModal .modal-title').textContent = 'Add New Member';
         document.querySelector('#addMemberModal button[type="submit"]').textContent = 'Add Member';
     });
@@ -630,8 +629,7 @@ function loadStats() {
 
 
 function initializeCharts() {
-    // Member growth chart initialization
-    const growthCtx = document.getElementById('memberGrowthChart').getContext('2d');
+        const growthCtx = document.getElementById('memberGrowthChart').getContext('2d');
     window.memberGrowthChart = new Chart(growthCtx, {
         type: 'line',
         data: {
@@ -670,7 +668,6 @@ function initializeCharts() {
         }
     });
 
-    // Member categories chart initialization - now dynamic
     const categoriesCtx = document.getElementById('memberCategoriesChart').getContext('2d');
     window.memberCategoriesChart = new Chart(categoriesCtx, {
         type: 'doughnut',
@@ -678,7 +675,7 @@ function initializeCharts() {
             labels: [],
             datasets: [{
                 data: [],
-                backgroundColor: [] // Will be generated dynamically
+                backgroundColor: [] 
             }]
         },
         options: {
@@ -695,7 +692,7 @@ function initializeCharts() {
     updateCharts();
 }
 
-// Helper function to generate colors for chart
+
 function generateChartColors(count) {
     const baseColors = ['#6a1b9a', '#9c27b0', '#ba68c8', '#e1bee7', '#4a148c', '#7b1fa2', '#ab47bc', '#ce93d8'];
     const colors = [];
@@ -704,8 +701,8 @@ function generateChartColors(count) {
         if (i < baseColors.length) {
             colors.push(baseColors[i]);
         } else {
-            // Generate random colors if we need more than base colors
-            const hue = (i * 137.508) % 360; // Use golden angle approximation for better distribution
+
+            const hue = (i * 137.508) % 360; 
             colors.push(`hsl(${hue}, 70%, 60%)`);
         }
     }
@@ -937,8 +934,7 @@ function editMember(id) {
             if (data.success) {
                 const member = data.data;
                 const form = document.getElementById('addMemberForm');
-                
-                // Populate form fields
+
                 form.querySelector('[name="first_name"]').value = member.first_name;
                 form.querySelector('[name="last_name"]').value = member.last_name;
                 form.querySelector('[name="phone"]').value = member.phone || '';
@@ -948,7 +944,7 @@ function editMember(id) {
                 form.querySelector('[name="status"]').value = member.status;
                 form.querySelector('[name="address"]').value = member.address || '';
 
-                // Hide and remove required attribute from email and associated user fields when editing
+
                 const emailField = form.querySelector('[name="email"]');
                 const associatedUserField = form.querySelector('[name="associated_user"]');
                 if (emailField) {
@@ -960,7 +956,6 @@ function editMember(id) {
                     associatedUserField.removeAttribute('required');
                 }
 
-                // Add hidden ID field for edit mode
                 let idInput = form.querySelector('[name="id"]');
                 if (!idInput) {
                     idInput = document.createElement('input');
@@ -970,11 +965,10 @@ function editMember(id) {
                 }
                 idInput.value = member.id;
 
-                // Update modal title and submit button
+           
                 document.querySelector('#addMemberModal .modal-title').textContent = 'Edit Member';
                 document.querySelector('#addMemberModal button[type="submit"]').textContent = 'Save Changes';
-                
-                // Show the modal
+          
                 new bootstrap.Modal(document.getElementById('addMemberModal')).show();
             } else {
                 alert(data.message || 'Error loading member data');
