@@ -76,6 +76,30 @@ if (!$user || $user['admin_status'] != 1) {
                         </div>
 
                         <div class="col-12">
+                            <label class="form-label">Assigned Staff</label>
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAllStaff">
+                                    <label class="form-check-label" for="selectAllStaff">
+                                        Select All Staff
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="search-container position-relative">
+                                <input type="text" 
+                                    class="form-control" 
+                                    id="staffSearch" 
+                                    placeholder="Search staff members..." 
+                                    autocomplete="off">
+                                <div id="staffSearchSuggestions" 
+                                    class="suggestions-dropdown d-none">
+                                </div>
+                            </div>
+                            <div id="selectedStaff" class="selected-users mt-2"></div>
+                            <input type="hidden" name="assigned_staff" id="assignedStaffIds">
+                        </div>
+
+                        <div class="col-12">
                             <label class="form-label">Event Image (Optional)</label>
                             <input type="file" class="form-control" name="event_image" accept="image/*">
                         </div>
@@ -135,16 +159,71 @@ if (!$user || $user['admin_status'] != 1) {
     <div class="col-12">
         <div class="card shadow-sm">
             <div class="card-body">
+                <h5 class="card-title mb-4">Ongoing Events - Mark the Members' attendances</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover" id="ongoingEventsTable">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Date & Time</th>
+                                <th>Location</th>
+                                <th>Attendance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ongoingEventsTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Modal -->
+<div class="modal fade" id="attendanceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Mark Attendances</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6 id="eventTitle" class="mb-3"></h6>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th class="text-center">Mark As Present</th>
+                                <th class="text-center">Mark As Absent</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-body">
                 <h5 class="card-title mb-4">Existing Events</h5>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Title</th>
-                                <th>Date & Time</th>
-                                <th>Type</th>
-                                <th>Location</th>
-                                <th>Status</th>
+                                <th class="sortable" data-sort="title">Title <i class="bi bi-arrow-down-up"></i></th>
+                                <th class="sortable" data-sort="start_datetime">Date & Time <i class="bi bi-arrow-down-up"></i></th>
+                                <th class="sortable" data-sort="event_type">Type <i class="bi bi-arrow-down-up"></i></th>
+                                <th class="sortable" data-sort="location">Location <i class="bi bi-arrow-down-up"></i></th>
+                                <th class="sortable" data-sort="status">Status <i class="bi bi-arrow-down-up"></i></th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -156,7 +235,6 @@ if (!$user || $user['admin_status'] != 1) {
         </div>
     </div>
 </div>
-
 
 <div class="modal fade" id="eventDetailsModal" tabindex="-1" aria-labelledby="eventDetailsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -250,6 +328,29 @@ if (!$user || $user['admin_status'] != 1) {
                             <div class="form-text">Leave empty for unlimited</div>
                         </div>
                         <div class="col-12">
+                            <label class="form-label">Assigned Staff</label>
+                            <div class="mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="editSelectAllStaff">
+                                    <label class="form-check-label" for="editSelectAllStaff">
+                                        Select All Staff
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="search-container position-relative">
+                                <input type="text" 
+                                    class="form-control" 
+                                    id="editStaffSearch" 
+                                    placeholder="Search staff members..." 
+                                    autocomplete="off">
+                                <div id="editStaffSearchSuggestions" 
+                                    class="suggestions-dropdown d-none">
+                                </div>
+                            </div>
+                            <div id="editSelectedStaff" class="selected-users mt-2"></div>
+                            <input type="hidden" name="assigned_staff" id="editAssignedStaffIds">
+                        </div>
+                        <div class="col-12">
                             <label class="form-label">Event Image</label>
                             <input type="file" class="form-control" name="event_image" accept="image/*">
                             <div class="form-text">Leave empty to keep existing image</div>
@@ -299,9 +400,187 @@ if (!$user || $user['admin_status'] != 1) {
     </div>
 </div>
 
+<div class="modal fade" id="markAttendanceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Mark Attendance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <h6 class="event-title"></h6>
+                    <small class="text-muted event-datetime"></small>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Member</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
+// Helper functions
+function getStatusBadge(status) {
+    switch(status) {
+        case 'upcoming': return 'primary';
+        case 'ongoing': return 'success';
+        case 'completed': return 'secondary';
+        case 'cancelled': return 'danger';
+        default: return 'info';
+    }
+}
+
+let currentSort = { column: 'created_at', direction: 'DESC' };
+let selectedStaffMembers = new Set();
+let currentStaffSuggestionIndex = -1;
+let staffDebounceTimeout;
+
+function loadEvents() {
+    // First update event statuses
+    fetch('../cron/update_event_status.php')
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            return response.text().then(text => {
+                try {
+                    const jsonStart = text.indexOf('{');
+                    const jsonEnd = text.lastIndexOf('}');
+                    if (jsonStart >= 0 && jsonEnd >= 0) {
+                        return JSON.parse(text.substring(jsonStart, jsonEnd + 1));
+                    }
+                    throw new Error('No JSON found in response');
+                } catch (e) {
+                    console.error('Response text:', text);
+                    throw new Error('Invalid response format');
+                }
+            });
+        })
+        .then(data => {
+            if (!data.success) {
+                console.error('Status update error:', data.message);
+            }
+            // Add sort parameters to URL
+            const url = new URL('../crud/events/read_events.php', window.location.href);
+            url.searchParams.append('sort', currentSort.column);
+            url.searchParams.append('direction', currentSort.direction);
+            return fetch(url);
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.text().then(text => {
+                try {
+                    // Extract JSON from response, ignoring any notices
+                    const jsonStart = text.indexOf('{');
+                    const jsonEnd = text.lastIndexOf('}');
+                    if (jsonStart >= 0 && jsonEnd >= 0) {
+                        return JSON.parse(text.substring(jsonStart, jsonEnd + 1));
+                    }
+                    throw new Error('No JSON found in response');
+                } catch (e) {
+                    console.error('Response text:', text);
+                    throw new Error('Invalid response format');
+                }
+            });
+        })
+        .then(data => {
+            if (!data.success) {
+                throw new Error(data.message || 'Server returned error');
+            }
+            
+            const tbody = document.getElementById('eventsTableBody');
+            tbody.innerHTML = '';
+            
+            if (!data.events || data.events.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No events found</td></tr>';
+                return;
+            }
+            
+            data.events.forEach(event => {
+                const startDate = new Date(event.start_datetime);
+                const endDate = new Date(event.end_datetime);
+                
+                const row = `
+                    <tr>
+                        <td>${event.title}</td>
+                        <td>
+                            ${startDate.toLocaleDateString()} ${startDate.toLocaleTimeString()} - 
+                            ${endDate.toLocaleDateString()} ${endDate.toLocaleTimeString()}
+                        </td>
+                        <td><span class="badge bg-info">${event.event_type}</span></td>
+                        <td>${event.location}</td>
+                        <td><span class="badge bg-${getStatusBadge(event.status)}">${event.status}</span></td>
+                        <td>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-info" onclick="viewEvent(${JSON.stringify(event).replace(/"/g, '&quot;')})">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-primary" onclick="viewAttendees(${event.id})">
+                                    <i class="bi bi-people-fill"></i>
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="editEvent(${JSON.stringify(event).replace(/"/g, '&quot;')})">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteEvent(${event.id})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            const tbody = document.getElementById('eventsTableBody');
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error loading events: ${error.message}</td></tr>`;
+        });
+}
+
+// Initialize sorting functionality
+document.querySelectorAll('.sortable').forEach(header => {
+    header.addEventListener('click', function() {
+        const column = this.dataset.sort;
+        
+        // Remove sorting classes from all headers
+        document.querySelectorAll('.sortable').forEach(h => {
+            h.classList.remove('asc', 'desc');
+        });
+        
+        // Toggle sort direction
+        if (currentSort.column === column) {
+            currentSort.direction = currentSort.direction === 'ASC' ? 'DESC' : 'ASC';
+        } else {
+            currentSort.column = column;
+            currentSort.direction = 'ASC';
+        }
+        
+        // Add appropriate class to current header
+        this.classList.add(currentSort.direction.toLowerCase());
+        
+        // Reload events with new sorting
+        loadEvents();
+    });
+});
+
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('eventForm');
     const preview = {
@@ -313,6 +592,8 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     loadEvents(); 
+    loadOngoingEvents();
+    setInterval(loadOngoingEvents, 60000);
 
     form.addEventListener('input', function(e) {
         const input = e.target;
@@ -444,20 +725,37 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.text().then(text => {
+                // Extract JSON from the response, ignoring any PHP notices/warnings
+                const jsonStart = text.indexOf('{');
+                const jsonEnd = text.lastIndexOf('}');
+                if (jsonStart >= 0 && jsonEnd >= 0) {
+                    const jsonString = text.substring(jsonStart, jsonEnd + 1);
+                    try {
+                        return JSON.parse(jsonString);
+                    } catch (e) {
+                        console.error('Response text:', text);
+                        throw new Error('Invalid JSON in response');
+                    }
+                } else {
+                    console.error('Response text:', text);
+                    throw new Error('No JSON found in response');
+                }
+            });
+        })
         .then(data => {
             if (data.success) {
                 showAlert('success', 'Event created successfully!');
-                
-
                 preview.image.src = '../images/placeholder-event.jpg';
                 preview.title.textContent = 'Event Title';
                 preview.dateTime.innerHTML = '<i class="bi bi-calendar-event"></i> Date and Time';
                 preview.location.innerHTML = '<i class="bi bi-geo-alt"></i> Location';
                 preview.description.textContent = 'Event description will appear here...';
                 form.reset();
-                
- 
                 loadEvents();
             } else {
                 throw new Error(data.message || 'Failed to create event');
@@ -476,12 +774,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    function loadEvents() {
-        fetch('../crud/events/read_events.php')
+    function loadOngoingEvents() {
+        fetch('../crud/events/read_events.php?status=ongoing')
             .then(response => response.json())
             .then(data => {
-                const tbody = document.getElementById('eventsTableBody');
+                const tbody = document.getElementById('ongoingEventsTableBody');
                 tbody.innerHTML = '';
+                
+                if (!data.events || data.events.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">No ongoing events</td></tr>';
+                    return;
+                }
                 
                 data.events.forEach(event => {
                     const startDate = new Date(event.start_datetime);
@@ -494,31 +797,22 @@ document.addEventListener('DOMContentLoaded', function() {
                                 ${startDate.toLocaleDateString()} ${startDate.toLocaleTimeString()} - 
                                 ${endDate.toLocaleDateString()} ${endDate.toLocaleTimeString()}
                             </td>
-                            <td><span class="badge bg-info">${event.event_type}</span></td>
                             <td>${event.location}</td>
-                            <td><span class="badge bg-${getStatusBadge(event.status)}">${event.status}</span></td>
                             <td>
-                                <div class="btn-group">
-                                    <button class="btn btn-sm btn-info" onclick="viewEvent(${JSON.stringify(event).replace(/"/g, '&quot;')})">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-primary" onclick="viewAttendees(${event.id})">
-                                        <i class="bi bi-people-fill"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-warning" onclick="editEvent(${JSON.stringify(event).replace(/"/g, '&quot;')})">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" onclick="deleteEvent(${event.id})">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
+                                <button class="btn btn-primary" onclick="showAttendanceModal(${event.id})">
+                                    <i class="bi bi-person-check"></i> Mark Attendances
+                                </button>
                             </td>
                         </tr>
                     `;
                     tbody.insertAdjacentHTML('beforeend', row);
                 });
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => {
+                console.error('Error:', error);
+                const tbody = document.getElementById('ongoingEventsTableBody');
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error loading ongoing events</td></tr>';
+            });
     }
 
     window.viewEvent = function(event) {
@@ -551,6 +845,31 @@ document.addEventListener('DOMContentLoaded', function() {
         form.elements['description'].value = event.description || '';
         form.elements['max_attendees'].value = event.max_attendees || '';
 
+        // Clear existing staff selections
+        selectedStaffMembers.clear();
+        document.getElementById('editSelectedStaff').innerHTML = '';
+
+        // If there are assigned staff members
+        if (event.assigned_staff_ids) {
+            const staffIds = event.assigned_staff_ids.split(',');
+            const staffNames = event.assigned_staff_names ? event.assigned_staff_names.split(',') : [];
+            
+            staffIds.forEach((id, index) => {
+                if (id) {
+                    const name = staffNames[index] || `Staff Member ${id}`;
+                    selectedStaffMembers.add(id);
+                    const tag = document.createElement('div');
+                    tag.className = 'user-tag';
+                    tag.innerHTML = `
+                        <span>${name}</span>
+                        <span class="remove" onclick="removeStaffMember('${id}')">&times;</span>
+                    `;
+                    document.getElementById('editSelectedStaff').appendChild(tag);
+                }
+            });
+            document.getElementById('editAssignedStaffIds').value = Array.from(selectedStaffMembers).join(',');
+        }
+
         const modal = new bootstrap.Modal(document.getElementById('editEventModal'));
         modal.show();
     };
@@ -564,7 +883,19 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.text().then(text => {
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error('Server response:', text);
+                    throw new Error('Invalid server response');
+                }
+            });
+        })
         .then(data => {
             if (data.success) {
                 showAlert('success', 'Event updated successfully');
@@ -580,6 +911,189 @@ document.addEventListener('DOMContentLoaded', function() {
             showAlert('danger', error.message || 'An error occurred while updating the event');
         });
     });
+
+    document.getElementById('editStaffSearch').addEventListener('input', handleEditStaffSearch);
+    document.getElementById('editStaffSearch').addEventListener('keydown', handleEditStaffKeyboardNavigation);
+
+    document.getElementById('editSelectAllStaff').addEventListener('change', function(e) {
+        if (e.target.checked) {
+            fetch('../ajax/search_users.php?all=true')
+                .then(response => response.json())
+                .then(users => {
+                    selectedStaffMembers.clear();
+                    document.getElementById('editSelectedStaff').innerHTML = '';
+                    users.forEach(user => {
+                        selectedStaffMembers.add(user.id.toString());
+                        addEditStaffTag(user);
+                    });
+                    updateEditAssignedStaffIds();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error fetching staff members');
+                });
+        } else {
+            selectedStaffMembers.clear();
+            document.getElementById('editSelectedStaff').innerHTML = '';
+            updateEditAssignedStaffIds();
+        }
+    });
+
+    function handleEditStaffSearch(e) {
+        const searchTerm = e.target.value.trim();
+        clearTimeout(staffDebounceTimeout);
+
+        if (searchTerm.length === 0) {
+            hideEditStaffSuggestions();
+            return;
+        }
+
+        const suggestionsBox = document.getElementById('editStaffSearchSuggestions');
+        suggestionsBox.innerHTML = '<div class="suggestion-item text-muted">Searching...</div>';
+        suggestionsBox.classList.remove('d-none');
+
+        staffDebounceTimeout = setTimeout(() => {
+            fetch(`../ajax/search_users.php?search=${encodeURIComponent(searchTerm)}`)
+                .then(response => response.json())
+                .then(handleEditStaffSearchResults)
+                .catch(error => {
+                    console.error('Error:', error);
+                    showEditStaffErrorSuggestion();
+                });
+        }, 300);
+    }
+
+    function handleEditStaffSearchResults(results) {
+        const suggestionsBox = document.getElementById('editStaffSearchSuggestions');
+        
+        if (!results.length) {
+            suggestionsBox.innerHTML = '<div class="suggestion-item text-muted">No staff members found</div>';
+            return;
+        }
+
+        suggestionsBox.innerHTML = '';
+        currentStaffSuggestionIndex = -1;
+
+        results.forEach((user, index) => {
+            if (selectedStaffMembers.has(user.id.toString())) return;
+
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.dataset.index = index;
+            div.dataset.userId = user.id;
+            
+            div.innerHTML = `
+                <div class="suggestion-info">
+                    <div><strong>${user.username}</strong></div>
+                    ${user.email ? `<small class="text-muted">${user.email}</small>` : ''}
+                </div>
+            `;
+            
+            div.addEventListener('click', () => selectEditStaffMember(user));
+            suggestionsBox.appendChild(div);
+        });
+    }
+
+    function handleEditStaffKeyboardNavigation(e) {
+        const suggestionsBox = document.getElementById('editStaffSearchSuggestions');
+        const suggestions = suggestionsBox.querySelectorAll('.suggestion-item');
+        
+        if (suggestionsBox.classList.contains('d-none') || !suggestions.length) return;
+
+        switch(e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                navigateEditStaffSuggestions(1, suggestions);
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                navigateEditStaffSuggestions(-1, suggestions);
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (currentStaffSuggestionIndex >= 0) {
+                    const selectedItem = suggestions[currentStaffSuggestionIndex];
+                    const userId = selectedItem.dataset.userId;
+                    selectEditStaffMemberById(userId);
+                }
+                break;
+            case 'Escape':
+                hideEditStaffSuggestions();
+                break;
+        }
+    }
+
+    function hideEditStaffSuggestions() {
+        document.getElementById('editStaffSearchSuggestions').classList.add('d-none');
+        currentStaffSuggestionIndex = -1;
+    }
+
+    function navigateEditStaffSuggestions(direction, suggestions) {
+        suggestions[currentStaffSuggestionIndex]?.classList.remove('keyboard-selected');
+        
+        currentStaffSuggestionIndex += direction;
+        if (currentStaffSuggestionIndex >= suggestions.length) {
+            currentStaffSuggestionIndex = 0;
+        } else if (currentStaffSuggestionIndex < 0) {
+            currentStaffSuggestionIndex = suggestions.length - 1;
+        }
+
+        const selectedItem = suggestions[currentStaffSuggestionIndex];
+        selectedItem.classList.add('keyboard-selected');
+        selectedItem.scrollIntoView({ block: 'nearest' });
+    }
+
+    function selectEditStaffMemberById(userId) {
+        fetch(`../ajax/search_users.php?search=${userId}`)
+            .then(response => response.json())
+            .then(results => {
+                const user = results.find(u => u.id.toString() === userId);
+                if (user) {
+                    selectEditStaffMember(user);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function selectEditStaffMember(user) {
+        if (selectedStaffMembers.has(user.id.toString())) return;
+        
+        selectedStaffMembers.add(user.id.toString());
+        addEditStaffTag(user);
+        
+        document.getElementById('editStaffSearch').value = '';
+        hideEditStaffSuggestions();
+        updateEditAssignedStaffIds();
+    }
+
+    function addEditStaffTag(user) {
+        const selectedContainer = document.getElementById('editSelectedStaff');
+        
+        const tag = document.createElement('div');
+        tag.className = 'user-tag';
+        tag.innerHTML = `
+            <span>${user.username}</span>
+            <span class="remove" onclick="removeEditStaffMember('${user.id}')">&times;</span>
+        `;
+        
+        selectedContainer.appendChild(tag);
+    }
+
+    function removeEditStaffMember(id) {
+        selectedStaffMembers.delete(id.toString());
+        const tag = document.querySelector(`#editSelectedStaff .user-tag span[onclick*="${id}"]`).parentNode;
+        tag.remove();
+        updateEditAssignedStaffIds();
+    }
+
+    function updateEditAssignedStaffIds() {
+        document.getElementById('editAssignedStaffIds').value = Array.from(selectedStaffMembers).join(',');
+    }
+
+    function showEditStaffErrorSuggestion() {
+        const suggestionsBox = document.getElementById('editStaffSearchSuggestions');
+        suggestionsBox.innerHTML = '<div class="suggestion-item text-danger">Error loading suggestions</div>';
+    }
 
     function getStatusBadge(status) {
         switch(status) {
@@ -646,7 +1160,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('Error loading attendee data:', error);
                 alert('Error loading attendee data');
             });
     }
@@ -676,6 +1190,269 @@ function showAlert(type, message, autoDismiss = true) {
         }, 5000);
     }
 }
+
+function handleStaffSearch(e) {
+    const searchTerm = e.target.value.trim();
+    clearTimeout(staffDebounceTimeout);
+
+    if (searchTerm.length === 0) {
+        hideStaffSuggestions();
+        return;
+    }
+
+    const suggestionsBox = document.getElementById('staffSearchSuggestions');
+    suggestionsBox.innerHTML = '<div class="suggestion-item text-muted">Searching...</div>';
+    suggestionsBox.classList.remove('d-none');
+
+    staffDebounceTimeout = setTimeout(() => {
+        fetch(`../ajax/search_users.php?search=${encodeURIComponent(searchTerm)}`)
+            .then(response => response.json())
+            .then(handleStaffSearchResults)
+            .catch(error => {
+                console.error('Error:', error);
+                showStaffErrorSuggestion();
+            });
+    }, 300);
+}
+
+function handleStaffSearchResults(results) {
+    const suggestionsBox = document.getElementById('staffSearchSuggestions');
+    
+    if (!results.length) {
+        suggestionsBox.innerHTML = '<div class="suggestion-item text-muted">No staff members found</div>';
+        return;
+    }
+
+    suggestionsBox.innerHTML = '';
+    currentStaffSuggestionIndex = -1;
+
+    results.forEach((user, index) => {
+        if (selectedStaffMembers.has(user.id.toString())) return;
+
+        const div = document.createElement('div');
+        div.className = 'suggestion-item';
+        div.dataset.index = index;
+        div.dataset.userId = user.id;
+        
+        div.innerHTML = `
+            <div class="suggestion-info">
+                <div><strong>${user.username}</strong></div>
+                ${user.email ? `<small class="text-muted">${user.email}</small>` : ''}
+            </div>
+        `;
+        
+        div.addEventListener('click', () => selectStaffMember(user));
+        suggestionsBox.appendChild(div);
+    });
+}
+
+function handleStaffKeyboardNavigation(e) {
+    const suggestionsBox = document.getElementById('staffSearchSuggestions');
+    const suggestions = suggestionsBox.querySelectorAll('.suggestion-item');
+    
+    if (suggestionsBox.classList.contains('d-none') || !suggestions.length) return;
+
+    switch(e.key) {
+        case 'ArrowDown':
+            e.preventDefault();
+            navigateStaffSuggestions(1, suggestions);
+            break;
+        case 'ArrowUp':
+            e.preventDefault();
+            navigateStaffSuggestions(-1, suggestions);
+            break;
+        case 'Enter':
+            e.preventDefault();
+            if (currentStaffSuggestionIndex >= 0) {
+                const selectedItem = suggestions[currentStaffSuggestionIndex];
+                const userId = selectedItem.dataset.userId;
+                selectStaffMemberById(userId);
+            }
+            break;
+        case 'Escape':
+            hideStaffSuggestions();
+            break;
+    }
+}
+
+function navigateStaffSuggestions(direction, suggestions) {
+    suggestions[currentStaffSuggestionIndex]?.classList.remove('keyboard-selected');
+    
+    currentStaffSuggestionIndex += direction;
+    if (currentStaffSuggestionIndex >= suggestions.length) {
+        currentStaffSuggestionIndex = 0;
+    } else if (currentStaffSuggestionIndex < 0) {
+        currentStaffSuggestionIndex = suggestions.length - 1;
+    }
+
+    const selectedItem = suggestions[currentStaffSuggestionIndex];
+    selectedItem.classList.add('keyboard-selected');
+    selectedItem.scrollIntoView({ block: 'nearest' });
+}
+
+function selectStaffMemberById(userId) {
+    fetch(`../ajax/search_users.php?search=${userId}`)
+        .then(response => response.json())
+        .then(results => {
+            const user = results.find(u => u.id.toString() === userId);
+            if (user) {
+                selectStaffMember(user);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function selectStaffMember(user) {
+    if (selectedStaffMembers.has(user.id.toString())) return;
+    
+    selectedStaffMembers.add(user.id.toString());
+    addStaffTag(user);
+    
+    document.getElementById('staffSearch').value = '';
+    hideStaffSuggestions();
+    updateAssignedStaffIds();
+}
+
+function addStaffTag(user) {
+    const selectedContainer = document.getElementById('selectedStaff');
+    
+    const tag = document.createElement('div');
+    tag.className = 'user-tag';
+    tag.innerHTML = `
+        <span>${user.username}</span>
+        <span class="remove" onclick="removeStaffMember('${user.id}')">&times;</span>
+    `;
+    
+    selectedContainer.appendChild(tag);
+}
+
+function removeStaffMember(id) {
+    selectedStaffMembers.delete(id.toString());
+    const tag = document.querySelector(`#selectedStaff .user-tag span[onclick*="${id}"]`).parentNode;
+    tag.remove();
+    updateAssignedStaffIds();
+}
+
+function updateAssignedStaffIds() {
+    document.getElementById('assignedStaffIds').value = Array.from(selectedStaffMembers).join(',');
+}
+
+function hideStaffSuggestions() {
+    document.getElementById('staffSearchSuggestions').classList.add('d-none');
+    currentStaffSuggestionIndex = -1;
+}
+
+function showStaffErrorSuggestion() {
+    const suggestionsBox = document.getElementById('staffSearchSuggestions');
+    suggestionsBox.innerHTML = '<div class="suggestion-item text-danger">Error loading suggestions</div>';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('staffSearch');
+    const suggestionsBox = document.getElementById('staffSearchSuggestions');
+
+    searchInput.addEventListener('input', handleStaffSearch);
+    searchInput.addEventListener('keydown', handleStaffKeyboardNavigation);
+
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+            hideStaffSuggestions();
+        }
+    });
+
+    document.getElementById('selectAllStaff').addEventListener('change', function(e) {
+        if (e.target.checked) {
+            fetch('../ajax/search_users.php?all=true')
+                .then(response => response.json())
+                .then(users => {
+                    selectedStaffMembers.clear();
+                    document.getElementById('selectedStaff').innerHTML = '';
+                    users.forEach(user => {
+                        selectedStaffMembers.add(user.id.toString());
+                        addStaffTag(user);
+                    });
+                    updateAssignedStaffIds();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error fetching staff members');
+                });
+        } else {
+            selectedStaffMembers.clear();
+            document.getElementById('selectedStaff').innerHTML = '';
+            updateAssignedStaffIds();
+        }
+    });
+});
 </script>
+
+<style>
+.search-container {
+    position: relative;
+}
+.suggestions-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+.suggestion-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f0f0f0;
+}
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+.suggestion-item:hover {
+    background-color: #f8f9fa;
+}
+.suggestion-item.keyboard-selected {
+    background-color: #e9ecef;
+}
+.selected-users {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.user-tag {
+    background: #e9ecef;
+    border-radius: 16px;
+    padding: 4px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+}
+.user-tag .remove {
+    cursor: pointer;
+    color: #dc3545;
+    font-weight: bold;
+    padding: 0 4px;
+}
+.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+.sortable:hover {
+    background-color: #f8f9fa;
+}
+.sortable i {
+    opacity: 0.5;
+}
+.sortable.asc i, .sortable.desc i {
+    opacity: 1;
+}
+</style>
 
 <?php require_once '../templates/admin_footer.php'; ?>

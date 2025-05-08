@@ -170,113 +170,13 @@ $totalCount = $totalStmt->fetch()['count'];
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-
-    loadEvents();
-    
-
-    setTimeout(checkAttendanceStatus, 500);
-    
-
-    setInterval(checkAttendanceStatus, 15000);
-    
-    document.getElementById('searchEvents').addEventListener('input', debounce(() => {
-        loadEvents();
-    }, 300));
-    
-    document.getElementById('statusFilter').addEventListener('change', () => {
-        loadEvents();
-    });
-    
-    document.getElementById('dateFilter').addEventListener('change', () => {
-        loadEvents();
-    });
-    
-    document.getElementById('clearDate').addEventListener('click', function() {
-        document.getElementById('dateFilter').value = '';
-        loadEvents();
-    });
-
-    document.getElementById('addEventForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        
-        fetch('crud/events/create_event.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide();
-                loadEvents();
-                this.reset();
-            } else {
-                alert(data.message || 'Error adding event');
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    });
-});
-
-function toggleAttendance(eventId) {
-    fetch('crud/events/toggle_attendance.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ event_id: eventId })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const button = document.querySelector(`.attend-btn[data-event-id="${eventId}"]`);
-            if (button) {
-                if (data.status === 'present') {
-                    button.classList.remove('btn-outline-success');
-                    button.classList.add('btn-success');
-                    button.innerHTML = '<i class="bi bi-person-check-fill"></i> Present - Click Again to Mark Absence';
-                } else {
-                    button.classList.remove('btn-success');
-                    button.classList.add('btn-outline-success');
-                    button.innerHTML = '<i class="bi bi-person-check"></i> Mark Attendance';
-                }
-            }
-        } else {
-            alert(data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Failed to update attendance');
-    });
-}
-
-function checkAttendanceStatus() {
-
-    const attendanceButtons = document.querySelectorAll('.attend-btn[data-event-id]');
-    attendanceButtons.forEach(button => {
-        const eventId = button.dataset.eventId;
-        fetch(`crud/events/get_attendance_status.php?event_id=${eventId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    if (data.status === 'present') {
-                        button.classList.remove('btn-outline-success');
-                        button.classList.add('btn-success');
-                        button.innerHTML = '<i class="bi bi-person-check-fill"></i> Present - Click Again to Mark Absence';
-                    } else {
-                        button.classList.remove('btn-success');
-                        button.classList.add('btn-outline-success');
-                        button.innerHTML = '<i class="bi bi-person-check"></i> Mark Attendance';
-                    }
-                }
-            })
-            .catch(error => console.error('Error:', error));
-    });
-}
-
 function loadEvents(page = 1) {
+    // First update event statuses
+    fetch('cron/update_event_status.php')
+        .then(response => response.json())
+        .catch(error => console.error('Error updating event statuses:', error));
+
+    // Then load events as normal
     const search = document.getElementById('searchEvents').value;
     const status = document.getElementById('statusFilter').value;
     const date = document.getElementById('dateFilter').value;
@@ -310,19 +210,6 @@ function loadEvents(page = 1) {
             }
             
             data.events.forEach(event => {
-                const attendanceBtn = event.status === 'ongoing' 
-                    ? `<button class="btn ${event.attendance_status === 'present' ? 'btn-success' : 'btn-outline-success'} attend-btn" 
-                            onclick="toggleAttendance(${event.id})" 
-                            data-event-id="${event.id}"
-                            title="${event.attendance_status === 'present' ? 'Click to mark as absent' : 'Mark your attendance'}">
-                        <i class="bi bi-person-check${event.attendance_status === 'present' ? '-fill' : ''}"></i> 
-                        ${event.attendance_status === 'present' ? 'Present - Click Again to Mark Absence' : 'Mark Attendance'}
-                       </button>`
-                    : `<button class="btn btn-outline-secondary" disabled>
-                        <i class="bi bi-${event.status === 'completed' ? 'person-check' : 'clock'}"></i> 
-                        ${event.status === 'completed' ? 'Event Completed' : 'Not Started'}
-                       </button>`;
-
                 const card = `
                     <div class="col-md-4 mb-4">
                         <div class="card h-100">
@@ -343,6 +230,11 @@ function loadEvents(page = 1) {
                                     <span class="badge bg-info">${capitalizeFirst(event.event_type)}</span>
                                 </div>
                                 <p class="card-text text-truncate">${event.description || 'No description available.'}</p>
+                                ${event.assigned_staff ? 
+                                    `<p class="small text-muted mb-2">
+                                        <i class="bi bi-people"></i> Assigned Staff: ${event.assigned_staff}
+                                    </p>` : ''
+                                }
                                 <div class="mb-3">
                                     <small class="text-muted">
                                         <i class="bi bi-calendar3"></i> ${new Date(event.start_datetime).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -351,14 +243,9 @@ function loadEvents(page = 1) {
                                         ${new Date(event.end_datetime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                                         <br>
                                         <i class="bi bi-geo-alt"></i> ${event.location || 'Location TBA'}
-                                        ${event.max_attendees ? `<br><i class="bi bi-people"></i> Max Attendees: ${event.max_attendees}` : ''}
                                     </small>
                                 </div>
                                 <div class="btn-group w-100">
-                                    ${attendanceBtn}
-                                    <button class="btn btn-outline-primary" onclick="viewAttendance(${event.id})" title="View Attendance">
-                                        <i class="bi bi-people"></i>
-                                    </button>
                                     <button class="btn btn-outline-primary" onclick="viewDescription(${event.id})" title="View Details">
                                         <i class="bi bi-info-circle"></i>
                                     </button>
@@ -405,6 +292,56 @@ function updatePagination(currentPage, totalPages) {
         </li>
     `);
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initial load
+    loadEvents();
+    
+    // Update event statuses every minute
+    setInterval(() => {
+        loadEvents();
+    }, 60000);
+    
+    loadEvents();
+
+    document.getElementById('searchEvents').addEventListener('input', debounce(() => {
+        loadEvents();
+    }, 300));
+    
+    document.getElementById('statusFilter').addEventListener('change', () => {
+        loadEvents();
+    });
+    
+    document.getElementById('dateFilter').addEventListener('change', () => {
+        loadEvents();
+    });
+    
+    document.getElementById('clearDate').addEventListener('click', function() {
+        document.getElementById('dateFilter').value = '';
+        loadEvents();
+    });
+
+    document.getElementById('addEventForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        fetch('crud/events/create_event.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('addEventModal')).hide();
+                loadEvents();
+                this.reset();
+            } else {
+                alert(data.message || 'Error adding event');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+});
 
 function getStatusBadge(status) {
     const badges = {
@@ -465,7 +402,6 @@ function viewDescription(eventId) {
                             End: ${new Date(event.end_datetime).toLocaleString()}</p>
                             <p><strong>Location:</strong> ${event.location || 'Location TBA'}</p>
                             <p><strong>Type:</strong> ${capitalizeFirst(event.event_type)}</p>
-                            ${event.max_attendees ? `<p><strong>Maximum Attendees:</strong> ${event.max_attendees}</p>` : ''}
                         </div>
                     </div>
                 `;
@@ -477,95 +413,6 @@ function viewDescription(eventId) {
         })
         .catch(error => console.error('Error:', error));
 }
-
-function viewAttendance(eventId) {
-    fetch(`crud/events/view_attendance.php?event_id=${eventId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                let content = `
-                    <h6>Event: ${data.event.title}</h6>
-                    <div class="table-responsive mt-3">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Attendance Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>`;
-                
-                if (data.attendance_dates && data.attendance_dates.length > 0) {
-                    data.attendance_dates.forEach(record => {
-                        let statusBadge = '';
-                        switch(record.status) {
-                            case 'present':
-                                statusBadge = '<span class="badge bg-success">Present</span>';
-                                break;
-                            case 'absent':
-                                statusBadge = '<span class="badge bg-danger">Absent</span>';
-                                break;
-                            case 'upcoming':
-                                statusBadge = '<span class="badge bg-info">Upcoming</span>';
-                                break;
-                            default:
-                                statusBadge = `<span class="badge bg-secondary">${record.status}</span>`;
-                        }
-                        
-                        content += `
-                            <tr>
-                                <td>${new Date(record.date).toLocaleDateString('en-US', { 
-                                    weekday: 'long', 
-                                    year: 'numeric', 
-                                    month: 'long', 
-                                    day: 'numeric' 
-                                })}</td>
-                                <td>${statusBadge}</td>
-                            </tr>`;
-                    });
-                } else {
-                    content += '<tr><td colspan="2" class="text-center">No attendance records found</td></tr>';
-                }
-                
-                content += `
-                            </tbody>
-                        </table>
-                    </div>`;
-
-                const modalDiv = document.createElement('div');
-                modalDiv.className = 'modal fade';
-                modalDiv.innerHTML = `
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Attendance Records</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">${content}</div>
-                        </div>
-                    </div>`;
-                document.body.appendChild(modalDiv);
-                
-                const modal = new bootstrap.Modal(modalDiv);
-                modalDiv.addEventListener('hidden.bs.modal', function() {
-                    document.body.removeChild(modalDiv);
-                });
-                modal.show();
-            } else {
-                alert(data.message || 'Error loading attendance records');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error loading attendance records');
-        });
-}
-
-
-document.addEventListener('DOMContentLoaded', function() {
-    checkAttendanceStatus();
-    setInterval(checkAttendanceStatus, 15000); 
-});
 </script>
 
 <?php require_once 'templates/footer.php'; ?>

@@ -31,6 +31,22 @@ try {
         'max_attendees' => $max_attendees
     ];
 
+    // Handle staff assignments
+    if (isset($_POST['assigned_staff'])) {
+        // Delete existing assignments
+        $deleteStmt = $conn->prepare("DELETE FROM event_assignments WHERE event_id = ?");
+        $deleteStmt->execute([$id]);
+
+        // Add new assignments
+        if (!empty($_POST['assigned_staff'])) {
+            $staffIds = explode(',', $_POST['assigned_staff']);
+            $assignStmt = $conn->prepare("INSERT INTO event_assignments (event_id, user_id) VALUES (?, ?)");
+            foreach ($staffIds as $userId) {
+                $assignStmt->execute([$id, $userId]);
+            }
+        }
+    }
+
     if (isset($_FILES['event_image']) && $_FILES['event_image']['error'] === UPLOAD_ERR_OK) {
         $updateFields['image'] = file_get_contents($_FILES['event_image']['tmp_name']);
     }

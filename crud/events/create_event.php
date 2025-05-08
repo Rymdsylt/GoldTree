@@ -2,12 +2,16 @@
 require_once '../../db/connection.php';
 require_once '../../vendor/autoload.php';
 require_once '../../mailer/_credentials.php';
-session_start();
+require_once '../../auth/login_status.php';
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 header('Content-Type: application/json');
 
 if (!isset($_SESSION['user_id'])) {
-    echo json_encode(['success' => false, 'message' => 'Not logged in']);
+    echo json_encode(['success' => false, 'message' => 'Not authorized']);
     exit;
 }
 
@@ -63,6 +67,15 @@ try {
     }
 
     $event_id = $conn->lastInsertId();
+
+    // Handle staff assignments
+    if (!empty($_POST['assigned_staff'])) {
+        $staffIds = explode(',', $_POST['assigned_staff']);
+        $assignStmt = $conn->prepare("INSERT INTO event_assignments (event_id, user_id) VALUES (?, ?)");
+        foreach ($staffIds as $userId) {
+            $assignStmt->execute([$event_id, $userId]);
+        }
+    }
 
     if ($send_notifications || $send_all_emails) {
      

@@ -147,6 +147,16 @@ try {
         FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
     )");
 
+    $conn->exec("CREATE TABLE IF NOT EXISTS event_assignments (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        event_id INT NOT NULL,
+        user_id INT NOT NULL,
+        assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE KEY unique_assignment (event_id, user_id)
+    )");
+
 } catch(PDOException $e) {
     die("Connection failed: " . $e->getMessage());
 }

@@ -14,11 +14,17 @@ try {
         throw new Exception('Invalid event ID');
     }
 
+    $conn->beginTransaction();
 
+    // Delete event assignments first (foreign key constraint)
+    $stmt = $conn->prepare("DELETE FROM event_assignments WHERE event_id = ?");
+    $stmt->execute([$id]);
+
+    // Delete event attendance records
     $stmt = $conn->prepare("DELETE FROM event_attendance WHERE event_id = ?");
     $stmt->execute([$id]);
 
-
+    // Delete the event
     $stmt = $conn->prepare("DELETE FROM events WHERE id = ?");
     $stmt->execute([$id]);
 
@@ -26,12 +32,17 @@ try {
         throw new Exception('Event not found');
     }
 
+    $conn->commit();
+
     echo json_encode([
         'success' => true,
         'message' => 'Event deleted successfully'
     ]);
 
 } catch (Exception $e) {
+    if ($conn->inTransaction()) {
+        $conn->rollBack();
+    }
     echo json_encode([
         'success' => false,
         'message' => $e->getMessage()

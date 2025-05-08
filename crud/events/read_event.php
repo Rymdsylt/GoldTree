@@ -12,11 +12,15 @@ $eventId = intval($_GET['id']);
 
 try {
     $stmt = $conn->prepare("
-        SELECT id, title, description, start_datetime, end_datetime, 
-               event_type, location, max_attendees, 
-               image, status, created_at
-        FROM events 
-        WHERE id = ?
+        SELECT e.*, 
+            GROUP_CONCAT(DISTINCT u.id) as assigned_staff_ids,
+            GROUP_CONCAT(DISTINCT CONCAT(m.first_name, ' ', m.last_name)) as assigned_staff_names
+        FROM events e
+        LEFT JOIN event_assignments ea ON e.id = ea.event_id
+        LEFT JOIN users u ON ea.user_id = u.id
+        LEFT JOIN members m ON u.member_id = m.id
+        WHERE e.id = ?
+        GROUP BY e.id
     ");
     
     $stmt->execute([$eventId]);
