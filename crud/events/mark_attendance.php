@@ -8,74 +8,88 @@ require_once '../../auth/login_status.php';
 
 header('Content-Type: application/json');
 
+if (!isset($_POST['event_id']) || !isset($_POST['member_id']) || !isset($_POST['status'])) {
+    echo json_encode(['success' => false, 'message' => 'Missing required parameters']);
+    exit;
+}
+
+$eventId = $_POST['event_id'];
+$memberId = $_POST['member_id'];
+$status = $_POST['status'];
+
+
+if (!in_array($status, ['present', 'absent'])) {
+    echo json_encode(['success' => false, 'message' => 'Invalid attendance status']);
+    exit;
+}
+
 try {
-    if (!isset($_SESSION['user_id'])) {
-        throw new Exception('Not authorized');
-    }
-
-    $data = json_decode(file_get_contents('php://input'), true);
+    $eventStmt = $conn->prepare("SELECT id FROM events WHERE id = ? AND status = 'ongoing'");
+    $eventStmt->execute([$eventId]);
     
-    if (!isset($data['event_id'], $data['member_id'], $data['status'])) {
-        throw new Exception('Missing required fields');
+    if (!$eventStmt->fetch()) {
+        echo json_encode(['success' => false, 'message' => 'Event not found or not ongoing']);
+        exit;
     }
 
-    // Validate status
-    if (!in_array($data['status'], ['present', 'absent', 'late'])) {
-        throw new Exception('Invalid attendance status');
+    $memberStmt = $conn->prepare("
+        SELECT m.id 
+        FROM members m
+        INNER JOIN users u ON m.user_id = u.id
+        INNER JOIN event_assignments ea ON u.id = ea.user_id
+        WHERE m.id = ? AND ea.event_id = ?
+    ");
+    $memberStmt->execute([$memberId, $eventId]);
+    
+    if (!$memberStmt->fetch()) {
+        echo json_encode(['success' => false, 'message' => 'Member not found or not assigned to this event']);
+        exit;
     }
 
-    // Check if event exists and is ongoing
-    $eventStmt = $conn->prepare("SELECT status FROM events WHERE id = ?");
-    $eventStmt->execute([$data['event_id']]);
-    $event = $eventStmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$event) {
-        throw new Exception('Event not found');
-    }
+    $conn->beginTransaction();
 
-    if ($event['status'] !== 'ongoing') {
-        throw new Exception('Can only mark attendance for ongoing events');
-    }
 
-    // Check if attendance record exists for today
     $checkStmt = $conn->prepare("
         SELECT id 
         FROM event_attendance 
-        WHERE event_id = ? 
-        AND member_id = ? 
-        AND DATE(attendance_date) = CURRENT_DATE
+        WHERE event_id = ? AND member_id = ? AND DATE(attendance_date) = CURRENT_DATE
     ");
-    $checkStmt->execute([$data['event_id'], $data['member_id']]);
-    $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
+    $checkStmt->execute([$eventId, $memberId]);
+    $existingRecord = $checkStmt->fetch();
 
-    if ($existing) {
-        // Update existing attendance record
+    if ($existingRecord) {
+
         $updateStmt = $conn->prepare("
             UPDATE event_attendance 
-            SET attendance_status = ?, 
-                attendance_date = CURRENT_TIMESTAMP 
+            SET attendance_status = ?, attendance_date = CURRENT_DATE 
             WHERE id = ?
         ");
-        $updateStmt->execute([$data['status'], $existing['id']]);
+        $updateStmt->execute([$status, $existingRecord['id']]);
     } else {
-        // Create new attendance record
+ 
         $insertStmt = $conn->prepare("
-            INSERT INTO event_attendance 
-            (event_id, member_id, attendance_status, attendance_date) 
-            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            INSERT INTO event_attendance (event_id, member_id, attendance_status, attendance_date) 
+            VALUES (?, ?, ?, CURRENT_DATE)
         ");
-        $insertStmt->execute([$data['event_id'], $data['member_id'], $data['status']]);
+        $insertStmt->execute([$eventId, $memberId, $status]);
     }
 
+    $conn->commit();
+    
     echo json_encode([
         'success' => true,
         'message' => 'Attendance marked successfully'
     ]);
 
-} catch (Exception $e) {
-    http_response_code(500);
+} catch (PDOException $e) {
+    if ($conn->inTransaction()) {
+        $conn->rollBack();
+    }
+    
     echo json_encode([
         'success' => false,
-        'message' => $e->getMessage()
+        'message' => 'Database error: ' . $e->getMessage()
     ]);
 }
+?>

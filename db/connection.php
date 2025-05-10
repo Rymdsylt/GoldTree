@@ -19,6 +19,7 @@ try {
         email VARCHAR(100) UNIQUE NOT NULL,
         member_id INT,
         admin_status INT DEFAULT 0,
+        privacy_agreement BOOLEAN DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         last_login TIMESTAMP NULL DEFAULT NULL
     )");

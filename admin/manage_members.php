@@ -339,7 +339,7 @@ foreach($members as $member) {
     </div>
 </div>
 
-<!-- Add Notes Modal -->
+
 <div class="modal fade" id="notesModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -368,7 +368,7 @@ foreach($members as $member) {
                 <div class="notes-list">
                     <h6>Previous Notes</h6>
                     <div id="notesList" class="list-group">
-                        <!-- Notes will be loaded here -->
+                     
                     </div>
                 </div>
             </div>
@@ -402,12 +402,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData(this);
         const isEditing = formData.has('id');
 
-        // Validate required fields based on whether we're editing or adding
         const requiredFields = this.querySelectorAll('[required]');
         let isValid = true;
 
         requiredFields.forEach(field => {
-            // Skip validation for email and associated_user fields if editing
+
             if (isEditing && (field.name === 'email' || field.name === 'associated_user')) {
                 return;
             }

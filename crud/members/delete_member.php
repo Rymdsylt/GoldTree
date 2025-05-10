@@ -8,7 +8,7 @@ try {
         throw new Exception('Member ID is required');
     }
 
-    // Check if member exists
+
     $checkStmt = $conn->prepare("SELECT id FROM members WHERE id = ?");
     $checkStmt->execute([$id]);
     if (!$checkStmt->fetch()) {
@@ -17,14 +17,12 @@ try {
 
     $conn->beginTransaction();
 
-    // First, update any associated user to remove the member_id reference
     $conn->prepare("UPDATE users SET member_id = NULL WHERE member_id = ?")->execute([$id]);
 
-    // Clean up related records
+
     $conn->prepare("DELETE FROM event_attendance WHERE member_id = ?")->execute([$id]);
     $conn->prepare("UPDATE donations SET member_id = NULL WHERE member_id = ?")->execute([$id]);
-    
-    // Delete the member record
+  
     $stmt = $conn->prepare("DELETE FROM members WHERE id = ?");
     $stmt->execute([$id]);
 

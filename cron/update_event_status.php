@@ -4,7 +4,7 @@ require_once '../db/connection.php';
 try {
     $now = date('Y-m-d H:i:s');
     
-    // Mark events as upcoming if they haven't started yet
+
     $stmt = $conn->prepare("
         UPDATE events 
         SET status = 'upcoming' 
@@ -14,7 +14,7 @@ try {
     ");
     $stmt->execute([$now]);
     
-    // Mark events as ongoing if they've started but haven't ended
+
     $stmt = $conn->prepare("
         UPDATE events 
         SET status = 'ongoing' 
@@ -25,7 +25,7 @@ try {
     ");
     $stmt->execute([$now, $now]);
     
-    // Mark events as completed if they've ended
+
     $stmt = $conn->prepare("
         UPDATE events 
         SET status = 'completed' 
@@ -35,7 +35,7 @@ try {
     ");
     $stmt->execute([$now]);
     
-    // Log the update
+
     error_log("Event statuses updated successfully at " . $now);
     echo json_encode([
         'success' => true,

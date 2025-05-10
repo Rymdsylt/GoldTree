@@ -1,7 +1,7 @@
 <?php
 require_once '../../db/connection.php';
 
-// Get member growth data
+
 $growthQuery = "SELECT DATE_FORMAT(created_at, '%Y-%m') as month, COUNT(*) as count 
                 FROM members 
                 GROUP BY month 
@@ -18,7 +18,7 @@ foreach($growthData as $data) {
     $values[] = intval($data['count']);
 }
 
-// Get member categories data - now dynamic
+
 $categoriesQuery = "SELECT category, COUNT(*) as count 
                    FROM members 
                    WHERE category IS NOT NULL AND category != '' 
@@ -35,7 +35,6 @@ foreach($categoriesData as $data) {
     $categoryValues[] = intval($data['count']);
 }
 
-// Add "Other" category for members without a category
 $otherQuery = "SELECT COUNT(*) as count 
                FROM members 
                WHERE category IS NULL OR category = ''";

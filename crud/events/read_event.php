@@ -27,7 +27,7 @@ try {
     $event = $stmt->fetch(PDO::FETCH_ASSOC);
     
     if ($event) {
-        // Convert image BLOB to base64 if it exists
+
         if ($event['image']) {
             $event['image'] = base64_encode($event['image']);
         }

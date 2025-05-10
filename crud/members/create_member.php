@@ -14,12 +14,11 @@ try {
     $status = $_POST['status'] ?? 'active';
     $associated_user = $_POST['associated_user'] ?? null;
 
-    // Require associated user
+ 
     if (empty($associated_user)) {
         throw new Exception('An associated user is required for each member');
     }
 
-    // Check if selected user is already associated with another member
     $checkQuery = "SELECT id FROM members WHERE user_id = ?";
     $checkStmt = $conn->prepare($checkQuery);
     $checkStmt->execute([$associated_user]);
@@ -61,7 +60,7 @@ try {
 
     $memberId = $conn->lastInsertId();
 
-    // Update the users table with the member ID
+
     $updateUserQuery = "UPDATE users SET member_id = ? WHERE id = ?";
     $updateUserStmt = $conn->prepare($updateUserQuery);
     $updateUserStmt->execute([$memberId, $associated_user]);

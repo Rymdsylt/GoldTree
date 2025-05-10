@@ -7,7 +7,7 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// Get current date and time for status comparison
+
 $now = date('Y-m-d H:i:s');
 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -20,24 +20,23 @@ $date = isset($_GET['date']) ? $_GET['date'] : '';
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'created_at';
 $direction = isset($_GET['direction']) ? $_GET['direction'] : 'DESC';
 
-// Validate sort column to prevent SQL injection
 $allowedSortColumns = ['title', 'start_datetime', 'end_datetime', 'event_type', 'location', 'status', 'created_at'];
 if (!in_array($sort, $allowedSortColumns)) {
     $sort = 'created_at';
 }
 
-// Validate sort direction
+
 $direction = strtoupper($direction) === 'ASC' ? 'ASC' : 'DESC';
 
 $whereConditions = [];
 $params = [];
 
-// Check if user is admin
+
 $adminCheck = $conn->prepare("SELECT admin_status FROM users WHERE id = ?");
 $adminCheck->execute([$_SESSION['user_id']]);
 $isAdmin = $adminCheck->fetch()['admin_status'] == 1;
 
-// If not admin, only show assigned events
+
 if (!$isAdmin) {
     $whereConditions[] = "EXISTS (
         SELECT 1 FROM event_assignments 
@@ -57,7 +56,6 @@ if ($status) {
     $whereConditions[] = "e.status = ?";
     $params[] = $status;
 } else {
-    // If no status filter, exclude cancelled events by default
     $whereConditions[] = "e.status != 'cancelled'";
 }
 
@@ -66,7 +64,6 @@ if ($date) {
     $params[] = $date;
 }
 
-// Update event status based on current time
 $updateStatusSQL = "
     UPDATE events SET status = 
     CASE 
@@ -81,7 +78,7 @@ $conn->prepare($updateStatusSQL)->execute([$now, $now, $now, $now]);
 
 $whereClause = $whereConditions ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
 
-// Get total count for pagination
+
 $countSql = "SELECT COUNT(*) as total FROM events e $whereClause";
 $countStmt = $conn->prepare($countSql);
 $countStmt->execute($params);
@@ -90,7 +87,7 @@ $total = $countStmt->fetch()['total'];
 $totalPages = ceil($total / $perPage);
 $currentPage = max(1, min($page, $totalPages));
 
-// Base query for events with attendance percentage calculation
+
 $sql = "
     SELECT 
         e.*,
@@ -129,7 +126,7 @@ try {
     $stmt->execute();
     $events = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Calculate attendance percentage for events
+
     foreach ($events as &$event) {
         if ($event['total_members'] > 0) {
             $event['attendance_percentage'] = round(($event['present_count'] / $event['total_members']) * 100);
@@ -137,12 +134,11 @@ try {
             $event['attendance_percentage'] = 0;
         }
 
-        // Convert BLOB image to base64 for the response
+     
         if (isset($event['image']) && $event['image'] !== null) {
             $event['image'] = base64_encode($event['image']);
         }
 
-        // Remove sensitive counts from response
         unset($event['present_count']);
         unset($event['total_members']);
     }

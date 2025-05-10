@@ -15,7 +15,7 @@ try {
         throw new Exception('Event ID is required');
     }
 
-    // Get user's member ID
+
     $userStmt = $conn->prepare("
         SELECT m.id as member_id 
         FROM users u 
@@ -29,7 +29,7 @@ try {
         throw new Exception('Member not found');
     }
 
-    // Check if event is ongoing
+
     $eventStmt = $conn->prepare("SELECT status FROM events WHERE id = ?");
     $eventStmt->execute([$data['event_id']]);
     $event = $eventStmt->fetch(PDO::FETCH_ASSOC);
@@ -42,7 +42,7 @@ try {
         throw new Exception('Can only mark attendance for ongoing events');
     }
 
-    // Check if attendance record exists for today
+ 
     $checkStmt = $conn->prepare("
         SELECT id, attendance_status 
         FROM event_attendance 
@@ -54,7 +54,7 @@ try {
     $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
 
     if ($existing) {
-        // Toggle between present and absent
+
         $newStatus = $existing['attendance_status'] === 'present' ? 'absent' : 'present';
         $updateStmt = $conn->prepare("
             UPDATE event_attendance 
@@ -65,7 +65,7 @@ try {
         $updateStmt->execute([$newStatus, $existing['id']]);
         $status = $newStatus;
     } else {
-        // Create new attendance record
+      
         $insertStmt = $conn->prepare("
             INSERT INTO event_attendance 
             (event_id, member_id, attendance_status, attendance_date) 

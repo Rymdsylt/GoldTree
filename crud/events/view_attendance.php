@@ -18,7 +18,7 @@ try {
         throw new Exception('Invalid event ID');
     }
 
-    // Get event details first, exclude BLOB image field to reduce response size
+ 
     $eventStmt = $conn->prepare("SELECT id, title, description, start_datetime, end_datetime, location, event_type, status, max_attendees FROM events WHERE id = ?");
     $eventStmt->execute([$eventId]);
     $event = $eventStmt->fetch(PDO::FETCH_ASSOC);
@@ -27,7 +27,7 @@ try {
         throw new Exception('Event not found');
     }
 
-    // Check if user exists in users table first
+
     $userStmt = $conn->prepare("SELECT id, member_id FROM users WHERE id = ?");
     $userStmt->execute([$_SESSION['user_id'] ?? 0]);
     $user = $userStmt->fetch(PDO::FETCH_ASSOC);
@@ -36,9 +36,8 @@ try {
         throw new Exception('User not logged in');
     }
 
-    // If user has no member_id, show dates with no attendance
     if (!$user['member_id']) {
-        // Generate all dates between start and end date
+
         $startDate = new DateTime($event['start_datetime']);
         $endDate = new DateTime($event['end_datetime']);
         $interval = new DateInterval('P1D');
@@ -61,12 +60,11 @@ try {
         exit;
     }
 
-    // If we get here, user has a member_id, proceed with attendance check
     $memberStmt = $conn->prepare("SELECT id FROM members WHERE id = ?");
     $memberStmt->execute([$user['member_id']]);
     $memberId = $memberStmt->fetchColumn();
 
-    // Get all attendance records for this event and member
+
     $attendanceStmt = $conn->prepare("
         SELECT 
             DATE(attendance_date) as date,
@@ -77,19 +75,19 @@ try {
     $attendanceStmt->execute([$eventId, $memberId]);
     $attendanceRecords = $attendanceStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Convert to associative array for easier lookup
+
     $attendanceLookup = [];
     foreach ($attendanceRecords as $record) {
         $attendanceLookup[$record['date']] = $record['status'];
     }
 
-    // Generate all dates between start and end date
+
     $startDate = new DateTime($event['start_datetime']);
     $endDate = new DateTime($event['end_datetime']);
     $interval = new DateInterval('P1D');
     $dateRange = new DatePeriod($startDate, $interval, $endDate->modify('+1 day'));
 
-    // Build the attendance dates array
+
     $attendance_dates = [];
     foreach ($dateRange as $date) {
         $dateStr = $date->format('Y-m-d');

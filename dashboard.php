@@ -7,6 +7,11 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+
+$privacyStmt = $conn->prepare("SELECT privacy_agreement FROM users WHERE id = ?");
+$privacyStmt->execute([$_SESSION['user_id']]);
+$privacyStatus = $privacyStmt->fetch();
+
 if (!isset($_SESSION['active_page'])) {
     $_SESSION['active_page'] = 'dashboard';
 }
@@ -24,6 +29,8 @@ $user = $stmt->fetch();
 
 $isAdmin = isset($user['role']) && $user['role'] === 'admin';
 ?>
+
+
 
 <div class="container-fluid py-4">
     <div class="row mb-4">

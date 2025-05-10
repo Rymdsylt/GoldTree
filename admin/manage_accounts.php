@@ -71,10 +71,14 @@ if (!$user || $user['admin_status'] != 1) {
                     <div class="mb-3">
                         <label class="form-label">Email</label>
                         <input type="email" class="form-control" name="email" required>
+                    </div>                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" name="password" id="add_password" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Password</label>
-                        <input type="password" class="form-control" name="password" required>
+                        <label class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" name="confirm_password" id="add_confirm_password" required>
+                        <div class="invalid-feedback">Passwords do not match</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Admin Status</label>
@@ -111,10 +115,14 @@ if (!$user || $user['admin_status'] != 1) {
                     <div class="mb-3">
                         <label class="form-label">Email</label>
                         <input type="email" class="form-control" name="email" id="edit_email" required>
-                    </div>
-                    <div class="mb-3">
+                    </div>                    <div class="mb-3">
                         <label class="form-label">New Password (leave blank to keep current)</label>
                         <input type="password" class="form-control" name="password" id="edit_password">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" name="confirm_password" id="edit_confirm_password">
+                        <div class="invalid-feedback">Passwords do not match</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Admin Status</label>
@@ -137,6 +145,58 @@ if (!$user || $user['admin_status'] != 1) {
 
     document.addEventListener('DOMContentLoaded', () => {
         loadUsers();
+        
+
+        document.getElementById('addUserModal').addEventListener('hidden.bs.modal', function() {
+            const form = document.getElementById('addUserForm');
+            form.reset();
+            document.getElementById('add_confirm_password').classList.remove('is-invalid');
+        });
+
+        document.getElementById('editUserModal').addEventListener('hidden.bs.modal', function() {
+            const form = document.getElementById('editUserForm');
+            form.reset();
+            document.getElementById('edit_confirm_password').classList.remove('is-invalid');
+        });
+
+        
+        document.getElementById('add_confirm_password').addEventListener('input', function() {
+            const password = document.getElementById('add_password').value;
+            if (this.value !== password) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+            }
+        });
+
+    
+        document.getElementById('add_password').addEventListener('input', function() {
+            const confirmPassword = document.getElementById('add_confirm_password');
+            if (confirmPassword.value && this.value !== confirmPassword.value) {
+                confirmPassword.classList.add('is-invalid');
+            } else {
+                confirmPassword.classList.remove('is-invalid');
+            }
+        });
+
+        
+        document.getElementById('edit_confirm_password').addEventListener('input', function() {
+            const password = document.getElementById('edit_password').value;
+            if (this.value !== password) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+            }
+        });
+
+        document.getElementById('edit_password').addEventListener('input', function() {
+            const confirmPassword = document.getElementById('edit_confirm_password');
+            if (confirmPassword.value && this.value !== confirmPassword.value) {
+                confirmPassword.classList.add('is-invalid');
+            } else {
+                confirmPassword.classList.remove('is-invalid');
+            }
+        });
     });
 
     function loadUsers() {
@@ -176,18 +236,40 @@ if (!$user || $user['admin_status'] != 1) {
                 });
             })
             .catch(error => console.error('Error:', error));
-    }
-
-    document.getElementById('saveUserBtn').addEventListener('click', function() {
+    }    document.getElementById('saveUserBtn').addEventListener('click', function() {
         const form = document.getElementById('addUserForm');
+        const password = document.getElementById('add_password');
+        const confirmPassword = document.getElementById('add_confirm_password');
+        
+    
+        if (password.value !== confirmPassword.value) {
+            confirmPassword.classList.add('is-invalid');
+            return;
+        } else {
+            confirmPassword.classList.remove('is-invalid');
+        }        
         const formData = new FormData(form);
+        
 
-        fetch('../crud/users/create_user.php', {
-            method: 'POST',
-            body: formData
-        })
+        fetch('../crud/users/check_email.php?email=' + encodeURIComponent(formData.get('email')))
         .then(response => response.json())
         .then(data => {
+            if (data.exists) {
+                alert('This email is already registered in the system. Please use a different email.');
+                return;
+            }
+
+            return fetch('../crud/users/create_user.php', {
+                method: 'POST',
+                body: formData
+            });
+        })
+        .then(response => {
+            if (!response) return; 
+            return response.json();
+        })
+        .then(data => {
+            if (!data) return; 
             if (data.success) {
                 loadUsers();
                 document.getElementById('addUserModal').querySelector('.btn-close').click();
@@ -196,7 +278,10 @@ if (!$user || $user['admin_status'] != 1) {
                 alert('Error adding user: ' + data.message);
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while processing your request.');
+        });
     });
 
     function editUser(id) {
@@ -213,18 +298,41 @@ if (!$user || $user['admin_status'] != 1) {
                 editModal.show();
             })
             .catch(error => console.error('Error:', error));
-    }
-
-    document.getElementById('updateUserBtn').addEventListener('click', function() {
+    }    document.getElementById('updateUserBtn').addEventListener('click', function() {
         const form = document.getElementById('editUserForm');
-        const formData = new FormData(form);
+        const password = document.getElementById('edit_password');
+        const confirmPassword = document.getElementById('edit_confirm_password');
+        
+        // Only validate passwords if a new password is being set
+        if (password.value || confirmPassword.value) {
+            if (password.value !== confirmPassword.value) {
+                confirmPassword.classList.add('is-invalid');
+                return;
+            } else {
+                confirmPassword.classList.remove('is-invalid');
+            }
+        }
+          const formData = new FormData(form);
+        const userId = formData.get('id');
+        
+        isEmailInUse(formData.get('email'), userId)
+        .then(exists => {
+            if (exists) {
+                alert('This email is already registered in the system. Please use a different email.');
+                return;
+            }
 
-        fetch('../crud/users/update_user.php', {
-            method: 'POST',
-            body: formData
+            return fetch('../crud/users/update_user.php', {
+                method: 'POST',
+                body: formData
+            });
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response) return; 
+            return response.json();
+        })
         .then(data => {
+            if (!data) return; 
             if (data.success) {
                 loadUsers();
                 document.getElementById('editUserModal').querySelector('.btn-close').click();
@@ -233,8 +341,25 @@ if (!$user || $user['admin_status'] != 1) {
                 alert('Error updating user: ' + data.message);
             }
         })
-        .catch(error => console.error('Error:', error));
-    });
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while processing your request.');
+        });
+    });  
+    async function isEmailInUse(email, excludeUserId = null) {
+        try {
+            let url = '../crud/users/check_email.php?email=' + encodeURIComponent(email);
+            if (excludeUserId) {
+                url += '&exclude_id=' + excludeUserId;
+            }
+            const response = await fetch(url);
+            const data = await response.json();
+            return data.exists;
+        } catch (error) {
+            console.error('Error checking email:', error);
+            return false;
+        }
+    }
 
     function deleteUser(id) {
         if (confirm('Are you sure you want to delete this user?')) {

@@ -28,12 +28,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $conn->prepare("INSERT INTO donations (member_id, donor_name, amount, donation_type, donation_date, notes) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([$member_id, $donor_name, $amount, $type, $donation_date, $notes]);
 
-        // Handle notification if checkbox was checked
+       
         if (isset($_POST['send_notification']) && $_POST['send_notification'] === 'on') {
-            // Get donor name for notification
+            
             $display_name = 'Anonymous';
             if ($donor_type === 'member' && $member_id) {
-                // Get member's full name
+             
                 $member_stmt = $conn->prepare("SELECT CONCAT(first_name, ' ', last_name) as full_name FROM members WHERE id = ?");
                 $member_stmt->execute([$member_id]);
                 $member = $member_stmt->fetch(PDO::FETCH_ASSOC);
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $display_name = $_POST['donor_name'];
             }
 
-            // Create notification
+         
             $notification_stmt = $conn->prepare("INSERT INTO notifications (notification_type, subject, message, send_email, created_by) VALUES (?, ?, ?, ?, ?)");
             
             $subject = "New Donation Received";
@@ -53,8 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $notification_stmt->execute(['donation', $subject, $message, true, $_SESSION['user_id'] ?? null]);
             $notification_id = $conn->lastInsertId();
-            
-            // Add all users as recipients
+         
             $user_stmt = $conn->query("SELECT id, email FROM users");
             $recipient_stmt = $conn->prepare("INSERT INTO notification_recipients (notification_id, user_id, user_email) VALUES (?, ?, ?)");
             

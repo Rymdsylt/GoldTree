@@ -22,8 +22,8 @@ try {
     $newStmt->execute();
     $new = $newStmt->fetch(PDO::FETCH_ASSOC)['new'];
 
-
-    $attendanceQuery = "
+ //I CANNOT ANYMORE
+    $attendanceQuery = " 
         WITH EventCount AS (
             SELECT COUNT(*) as total_events
             FROM events

@@ -264,7 +264,10 @@ if (!$user || $user['admin_status'] != 1) {
                 </a>
             </nav>
         </div>
-    </div>
-
-    <!-- Main Content Container -->
+    </div>    <!-- Main Content Container -->
     <main class="main-content admin-content">
+    <?php
+    if (isset($_SESSION['user_id'])) {
+        require_once __DIR__ . '/privacy_policy_modal.php';
+    }
+    ?>

@@ -15,12 +15,13 @@ $isAdmin = false;
 $username = '';
 
 if (isset($_SESSION['user_id'])) {
-    $stmt = $conn->prepare("SELECT username, admin_status FROM users WHERE id = ?");
+    $stmt = $conn->prepare("SELECT username, admin_status, privacy_agreement FROM users WHERE id = ?");
     $stmt->execute([$_SESSION['user_id']]);
     $user = $stmt->fetch();
     if ($user) {
         $isAdmin = ($user['admin_status'] > 0);
         $username = htmlspecialchars($user['username']);
+        $privacyStatus = $user['privacy_agreement'];
     }
 }
 ?>
@@ -51,8 +52,118 @@ if (isset($_SESSION['user_id'])) {
             display: inline-block;
         }
     </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
+
+<!-- Privacy Policy Modal -->
+<?php if (isset($_SESSION['user_id']) && $privacyStatus === null): ?>
+<div class="modal fade" id="privacyPolicyModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="privacyPolicyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="privacyPolicyModalLabel">Privacy Policy</h5>
+            </div>
+            <div class="modal-body privacy-policy-content">
+                <?php 
+                require_once __DIR__ . '/../vendor/autoload.php';
+                $parsedown = new Parsedown();
+                $privacyContent = file_get_contents(__DIR__ . '/../Privacy Policy for Mater Dolorosa Parish.md');
+                echo $parsedown->text($privacyContent);
+                ?>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="disagreeBtn">Disagree</button>
+                <button type="button" class="btn btn-primary" id="agreeBtn">Agree</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.privacy-policy-content {
+    padding: 20px;
+    line-height: 1.6;
+}
+
+.privacy-policy-content h1 {
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+}
+
+.privacy-policy-content h2 {
+    color: #34495e;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.privacy-policy-content ul {
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+}
+
+.privacy-policy-content li {
+    margin-bottom: 0.5rem;
+}
+
+.privacy-policy-content strong {
+    color: #2c3e50;
+}
+
+.privacy-policy-content em {
+    color: #7f8c8d;
+}
+
+.privacy-policy-content hr {
+    margin: 2rem 0;
+    border-top: 1px solid #eee;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('privacyPolicyModal')) {
+        var modal = new bootstrap.Modal(document.getElementById('privacyPolicyModal'));
+        modal.show();
+
+        document.getElementById('agreeBtn').addEventListener('click', function() {
+            handlePrivacyAgreement(true);
+        });
+
+        document.getElementById('disagreeBtn').addEventListener('click', function() {
+            handlePrivacyAgreement(false);
+        });
+
+        function handlePrivacyAgreement(agreed) {
+            fetch('auth/handle_privacy_agreement.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'agreed=' + agreed
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (!agreed) {
+                        window.location.href = 'login.php';
+                    } else {
+                        modal.hide();
+                        location.reload();
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    }
+});
+</script>
+<?php endif; ?>
+
     <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container-fluid">
             <a class="navbar-brand d-flex align-items-center" href="dashboard.php">
@@ -140,6 +251,11 @@ if (isset($_SESSION['user_id'])) {
 
     <!-- Main Content Container -->
     <main class="main-content <?php echo !isset($_SESSION['user_id']) ? 'ml-0' : ''; ?>">
+    <?php 
+    if (isset($_SESSION['user_id'])) {
+        require_once __DIR__ . '/privacy_policy_modal.php';
+    }
+    ?>
 
     <script>
     function updateNotificationBadge() {
@@ -162,3 +278,5 @@ if (isset($_SESSION['user_id'])) {
     document.addEventListener('DOMContentLoaded', updateNotificationBadge);
     setInterval(updateNotificationBadge, 60000);
     </script>
+</body>
+</html>

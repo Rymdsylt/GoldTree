@@ -31,13 +31,13 @@ function outputCSV($filename, $headers, $data) {
     
     $output = fopen('php://output', 'w');
     
-    // Add UTF-8 BOM for proper encoding in Excel
+
     fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
     
-    // Write headers
+
     fputcsv($output, $headers);
     
-    // Write data rows
+
     foreach ($data as $row) {
         fputcsv($output, $row);
     }
@@ -74,7 +74,7 @@ function exportDonations($conn, $start_date, $end_date) {
         ];
     }
     
-    // Add summary rows
+
     $stmt = $conn->prepare("
         SELECT 
             donation_type,
@@ -86,7 +86,7 @@ function exportDonations($conn, $start_date, $end_date) {
     ");
     $stmt->execute([$start_date, $end_date]);
     
-    $data[] = [''];  // Empty row for spacing
+    $data[] = [''];  
     $data[] = ['Summary'];
     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $data[] = [
@@ -129,7 +129,7 @@ function exportMembers($conn) {
         ];
     }
     
-    // Add summary statistics
+
     $stmt = $conn->prepare("
         SELECT 
             COUNT(*) as total,
@@ -140,7 +140,7 @@ function exportMembers($conn) {
     $stmt->execute();
     $stats = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    $data[] = [''];  // Empty row for spacing
+    $data[] = [''];  
     $data[] = ['Summary Statistics'];
     $data[] = ['Total Members:', $stats['total']];
     $data[] = ['Active Members:', $stats['active']];
@@ -180,7 +180,7 @@ function exportEvents($conn, $start_date, $end_date) {
         ];
     }
     
-    // Add summary statistics
+
     $stmt = $conn->prepare("
         SELECT 
             COUNT(*) as total_events,
@@ -195,7 +195,7 @@ function exportEvents($conn, $start_date, $end_date) {
     $stmt->execute([$start_date, $end_date]);
     $stats = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    $data[] = [''];  // Empty row for spacing
+    $data[] = [''];  
     $data[] = ['Event Statistics'];
     $data[] = ['Total Events:', $stats['total_events']];
     $data[] = ['Average Attendance:', round($stats['avg_attendance'], 1)];
@@ -204,10 +204,10 @@ function exportEvents($conn, $start_date, $end_date) {
 }
 
 function exportComplete($conn, $start_date, $end_date) {
-    // Create a combined report with all data
+  
     $data = [];
     
-    // Add Donations Section
+    
     $data[] = ['DONATIONS REPORT'];
     $data[] = ['Date', 'Type', 'Amount', 'Donor', 'Notes'];
     
@@ -235,9 +235,9 @@ function exportComplete($conn, $start_date, $end_date) {
         ];
     }
     
-    $data[] = [''];  // Empty row for spacing
+    $data[] = ['']; 
     
-    // Add Members Section
+    
     $data[] = ['MEMBERS REPORT'];
     $data[] = ['Name', 'Email', 'Phone', 'Status', 'Category', 'Join Date'];
     
@@ -265,9 +265,9 @@ function exportComplete($conn, $start_date, $end_date) {
         ];
     }
     
-    $data[] = [''];  // Empty row for spacing
+    $data[] = [''];  
     
-    // Add Events Section
+
     $data[] = ['EVENTS REPORT'];
     $data[] = ['Event', 'Date', 'Type', 'Location', 'Attendees', 'Status'];
     

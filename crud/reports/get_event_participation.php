@@ -5,7 +5,7 @@ $startDate = $_GET['start'] ?? date('Y-m-d', strtotime('-30 days'));
 $endDate = $_GET['end'] ?? date('Y-m-d');
 
 try {
-    // Use DATE() function to ensure we're comparing just the date portion
+  
     $stmt = $conn->prepare("
         SELECT 
             DATE(attendance_date) as attendance_date,

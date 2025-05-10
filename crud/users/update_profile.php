@@ -12,7 +12,7 @@ if (!isset($_SESSION['user_id'])) {
 try {
     $conn->beginTransaction();
     
-    // Get form data
+
     $username = $_POST['username'] ?? '';
     $first_name = $_POST['first_name'] ?? '';
     $last_name = $_POST['last_name'] ?? '';
@@ -20,30 +20,29 @@ try {
     $phone = $_POST['phone'] ?? '';
     $address = $_POST['address'] ?? '';
 
-    // Check if username exists for other users
+    
     $check_username = $conn->prepare("SELECT id FROM users WHERE username = ? AND id != ?");
     $check_username->execute([$username, $_SESSION['user_id']]);
     if ($check_username->fetch()) {
         throw new Exception('This username is already taken');
     }
 
-    // Check if email exists for other users
     $check_email = $conn->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
     $check_email->execute([$email, $_SESSION['user_id']]);
     if ($check_email->fetch()) {
         throw new Exception('This email is already registered to another user');
     }
 
-    // Update the user record
+  
     $stmt = $conn->prepare("UPDATE users SET username = ?, email = ? WHERE id = ?");
     $stmt->execute([$username, $email, $_SESSION['user_id']]);
 
-    // Find the member record associated with this user
+
     $stmt = $conn->prepare("SELECT member_id FROM users WHERE id = ?");
     $stmt->execute([$_SESSION['user_id']]);
     $member_id = $stmt->fetchColumn();
 
-    // Update the existing member record if it exists
+
     if ($member_id) {
         $stmt = $conn->prepare("
             UPDATE members 
@@ -55,7 +54,6 @@ try {
             WHERE id = ?");
         $stmt->execute([$first_name, $last_name, $email, $phone, $address, $member_id]);
 
-        // Handle profile image update if provided
         if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
             $allowed = ['jpg', 'jpeg', 'png', 'gif'];
             $filename = $_FILES['profile_image']['name'];
@@ -70,7 +68,7 @@ try {
     }
 
     $conn->commit();
-    $_SESSION['username'] = $username; // Update session username
+    $_SESSION['username'] = $username;
     echo json_encode(['success' => true, 'message' => 'Profile updated successfully']);
 
 } catch (Exception $e) {

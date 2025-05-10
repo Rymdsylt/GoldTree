@@ -18,7 +18,7 @@ try {
         throw new Exception('Invalid event ID');
     }
 
-    // Get current user's member ID
+
     $userStmt = $conn->prepare("
         SELECT m.id as member_id 
         FROM users u 
@@ -32,7 +32,7 @@ try {
         throw new Exception('Member not found');
     }
 
-    // Check if user is present today for this event
+
     $attendanceStmt = $conn->prepare("
         SELECT attendance_status 
         FROM event_attendance 

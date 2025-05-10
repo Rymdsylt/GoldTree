@@ -68,7 +68,7 @@ try {
 
     $event_id = $conn->lastInsertId();
 
-    // Handle staff assignments
+    // I cant even understand my own code xd
     if (!empty($_POST['assigned_staff'])) {
         $staffIds = explode(',', $_POST['assigned_staff']);
         $assignStmt = $conn->prepare("INSERT INTO event_assignments (event_id, user_id) VALUES (?, ?)");

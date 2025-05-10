@@ -8,40 +8,47 @@ require_once '../../auth/login_status.php';
 
 header('Content-Type: application/json');
 
-try {
-    if (!isset($_GET['event_id'])) {
-        throw new Exception('Event ID is required');
-    }
+if (!isset($_GET['event_id'])) {
+    echo json_encode(['success' => false, 'message' => 'Event ID is required']);
+    exit;
+}
 
-    // Get event details
+$eventId = $_GET['event_id'];
+
+try {
+
     $eventStmt = $conn->prepare("
-        SELECT id, title, start_datetime, end_datetime, status
+        SELECT title, start_datetime, end_datetime 
         FROM events 
-        WHERE id = ?
+        WHERE id = ? AND status = 'ongoing'
     ");
-    $eventStmt->execute([$_GET['event_id']]);
+    $eventStmt->execute([$eventId]);
     $event = $eventStmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$event) {
-        throw new Exception('Event not found');
+        echo json_encode(['success' => false, 'message' => 'Event not found or not ongoing']);
+        exit;
     }
 
-    // Get all members and their attendance status for today
     $memberStmt = $conn->prepare("
-        SELECT 
+        SELECT DISTINCT 
             m.id,
             m.first_name,
             m.last_name,
-            ea.attendance_status
+            COALESCE(ea.attendance_status, '') as attendance_status
         FROM members m
-        LEFT JOIN event_attendance ea ON 
+        INNER JOIN users u ON m.user_id = u.id
+        INNER JOIN event_assignments ea_link ON u.id = ea_link.user_id
+        LEFT JOIN event_attendance ea ON (
             ea.member_id = m.id 
-            AND ea.event_id = ?
+            AND ea.event_id = ? 
             AND DATE(ea.attendance_date) = CURRENT_DATE
-        WHERE m.status = 'active'
+        )
+        WHERE ea_link.event_id = ?
         ORDER BY m.first_name, m.last_name
     ");
-    $memberStmt->execute([$_GET['event_id']]);
+    
+    $memberStmt->execute([$eventId, $eventId]);
     $members = $memberStmt->fetchAll(PDO::FETCH_ASSOC);
 
     echo json_encode([
@@ -50,10 +57,10 @@ try {
         'members' => $members
     ]);
 
-} catch (Exception $e) {
-    http_response_code(500);
+} catch (PDOException $e) {
     echo json_encode([
         'success' => false,
-        'message' => $e->getMessage()
+        'message' => 'Database error: ' . $e->getMessage()
     ]);
 }
+?>

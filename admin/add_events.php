@@ -179,7 +179,6 @@ if (!$user || $user['admin_status'] != 1) {
     </div>
 </div>
 
-<!-- Attendance Modal -->
 <div class="modal fade" id="attendanceModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -436,7 +435,7 @@ if (!$user || $user['admin_status'] != 1) {
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-// Helper functions
+
 function getStatusBadge(status) {
     switch(status) {
         case 'upcoming': return 'primary';
@@ -447,13 +446,15 @@ function getStatusBadge(status) {
     }
 }
 
-let currentSort = { column: 'created_at', direction: 'DESC' };
+
 let selectedStaffMembers = new Set();
+let editSelectedStaffMembers = new Set();
+
+let currentSort = { column: 'created_at', direction: 'DESC' };
 let currentStaffSuggestionIndex = -1;
 let staffDebounceTimeout;
 
 function loadEvents() {
-    // First update event statuses
     fetch('../cron/update_event_status.php')
         .then(response => {
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -475,7 +476,7 @@ function loadEvents() {
             if (!data.success) {
                 console.error('Status update error:', data.message);
             }
-            // Add sort parameters to URL
+    
             const url = new URL('../crud/events/read_events.php', window.location.href);
             url.searchParams.append('sort', currentSort.column);
             url.searchParams.append('direction', currentSort.direction);
@@ -487,7 +488,7 @@ function loadEvents() {
             }
             return response.text().then(text => {
                 try {
-                    // Extract JSON from response, ignoring any notices
+               
                     const jsonStart = text.indexOf('{');
                     const jsonEnd = text.lastIndexOf('}');
                     if (jsonStart >= 0 && jsonEnd >= 0) {
@@ -555,17 +556,17 @@ function loadEvents() {
         });
 }
 
-// Initialize sorting functionality
+
 document.querySelectorAll('.sortable').forEach(header => {
     header.addEventListener('click', function() {
         const column = this.dataset.sort;
         
-        // Remove sorting classes from all headers
+   
         document.querySelectorAll('.sortable').forEach(h => {
             h.classList.remove('asc', 'desc');
         });
         
-        // Toggle sort direction
+       
         if (currentSort.column === column) {
             currentSort.direction = currentSort.direction === 'ASC' ? 'DESC' : 'ASC';
         } else {
@@ -573,10 +574,10 @@ document.querySelectorAll('.sortable').forEach(header => {
             currentSort.direction = 'ASC';
         }
         
-        // Add appropriate class to current header
+    
         this.classList.add(currentSort.direction.toLowerCase());
         
-        // Reload events with new sorting
+
         loadEvents();
     });
 });
@@ -730,7 +731,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             return response.text().then(text => {
-                // Extract JSON from the response, ignoring any PHP notices/warnings
+                // I FUCKEN HATE THIS
                 const jsonStart = text.indexOf('{');
                 const jsonEnd = text.lastIndexOf('}');
                 if (jsonStart >= 0 && jsonEnd >= 0) {
@@ -775,14 +776,25 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function loadOngoingEvents() {
+        const tbody = document.getElementById('ongoingEventsTableBody');
+        
+
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Loading events...</td></tr>';
+        
         fetch('../crud/events/read_events.php?status=ongoing')
             .then(response => response.json())
             .then(data => {
-                const tbody = document.getElementById('ongoingEventsTableBody');
                 tbody.innerHTML = '';
                 
                 if (!data.events || data.events.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">No ongoing events</td></tr>';
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="text-center">
+                                <div class="alert alert-info mb-0">
+                                    <i class="bi bi-info-circle"></i> No ongoing events at this time
+                                </div>
+                            </td>
+                        </tr>`;
                     return;
                 }
                 
@@ -790,30 +802,47 @@ document.addEventListener('DOMContentLoaded', function() {
                     const startDate = new Date(event.start_datetime);
                     const endDate = new Date(event.end_datetime);
                     
-                    const row = `
-                        <tr>
-                            <td>${event.title}</td>
-                            <td>
-                                ${startDate.toLocaleDateString()} ${startDate.toLocaleTimeString()} - 
-                                ${endDate.toLocaleDateString()} ${endDate.toLocaleTimeString()}
-                            </td>
-                            <td>${event.location}</td>
-                            <td>
-                                <button class="btn btn-primary" onclick="showAttendanceModal(${event.id})">
-                                    <i class="bi bi-person-check"></i> Mark Attendances
-                                </button>
-                            </td>
-                        </tr>
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${event.title}</td>
+                        <td>
+                            ${startDate.toLocaleDateString()} ${startDate.toLocaleTimeString()} - 
+                            ${endDate.toLocaleDateString()} ${endDate.toLocaleTimeString()}
+                        </td>
+                        <td>${event.location}</td>
+                        <td>
+                            <button class="btn btn-primary" onclick="showAttendanceModal(${event.id})">
+                                <i class="bi bi-person-check"></i> Mark Attendances
+                            </button>
+                        </td>
                     `;
-                    tbody.insertAdjacentHTML('beforeend', row);
+                    tbody.appendChild(row);
+
+         
+                    row.style.animation = 'fadeIn 0.5s';
                 });
             })
             .catch(error => {
                 console.error('Error:', error);
-                const tbody = document.getElementById('ongoingEventsTableBody');
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error loading ongoing events</td></tr>';
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center">
+                            <div class="alert alert-danger mb-0">
+                                <i class="bi bi-exclamation-triangle"></i> Error loading ongoing events
+                            </div>
+                        </td>
+                    </tr>`;
             });
     }
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        loadOngoingEvents();
+        
+     
+        setInterval(loadOngoingEvents, 30000);
+    });
 
     window.viewEvent = function(event) {
         document.getElementById('modalEventTitle').textContent = event.title;
@@ -845,33 +874,65 @@ document.addEventListener('DOMContentLoaded', function() {
         form.elements['description'].value = event.description || '';
         form.elements['max_attendees'].value = event.max_attendees || '';
 
-        // Clear existing staff selections
-        selectedStaffMembers.clear();
+        editSelectedStaffMembers.clear();
         document.getElementById('editSelectedStaff').innerHTML = '';
+        document.getElementById('editAssignedStaffIds').value = '';
+        
 
-        // If there are assigned staff members
-        if (event.assigned_staff_ids) {
-            const staffIds = event.assigned_staff_ids.split(',');
-            const staffNames = event.assigned_staff_names ? event.assigned_staff_names.split(',') : [];
-            
-            staffIds.forEach((id, index) => {
-                if (id) {
-                    const name = staffNames[index] || `Staff Member ${id}`;
-                    selectedStaffMembers.add(id);
-                    const tag = document.createElement('div');
-                    tag.className = 'user-tag';
-                    tag.innerHTML = `
-                        <span>${name}</span>
-                        <span class="remove" onclick="removeStaffMember('${id}')">&times;</span>
-                    `;
-                    document.getElementById('editSelectedStaff').appendChild(tag);
+        fetch(`../crud/events/get_event_staff.php?event_id=${event.id}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    data.staff.forEach(staff => {
+                        editSelectedStaffMembers.add(staff.id.toString());
+                        addEditStaffTag(staff);
+                    });
+                    document.getElementById('editAssignedStaffIds').value = Array.from(editSelectedStaffMembers).join(',');
                 }
-            });
-            document.getElementById('editAssignedStaffIds').value = Array.from(selectedStaffMembers).join(',');
-        }
+            })
+            .catch(error => console.error('Error:', error));
 
         const modal = new bootstrap.Modal(document.getElementById('editEventModal'));
         modal.show();
+    };
+
+    function addEditStaffTag(user) {
+        const tag = document.createElement('div');
+        tag.className = 'user-tag';
+        tag.innerHTML = `
+            <span>${user.username}</span>
+            <span class="remove" onclick="removeEditStaffMember('${user.id}')">&times;</span>
+        `;
+        document.getElementById('editSelectedStaff').appendChild(tag);
+    }
+
+
+    window.removeEditStaffMember = function(id) {
+        const eventId = document.getElementById('editEventForm').elements['id'].value;
+        const formData = new FormData();
+        formData.append('event_id', eventId);
+        formData.append('user_id', id);
+
+        fetch('../crud/events/delete_attendance.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                editSelectedStaffMembers.delete(id.toString());
+                const tag = document.querySelector(`#editSelectedStaff .user-tag span[onclick*="${id}"]`).parentNode;
+                tag.remove();
+                document.getElementById('editAssignedStaffIds').value = Array.from(editSelectedStaffMembers).join(',');
+                showAlert('success', 'Staff member and attendance records removed successfully');
+            } else {
+                throw new Error(data.message || 'Failed to remove staff member');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('danger', error.message || 'An error occurred while removing the staff member');
+        });
     };
 
     document.getElementById('editEventForm').addEventListener('submit', function(e) {
@@ -920,78 +981,76 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch('../ajax/search_users.php?all=true')
                 .then(response => response.json())
                 .then(users => {
-                    selectedStaffMembers.clear();
+                    editSelectedStaffMembers.clear();
                     document.getElementById('editSelectedStaff').innerHTML = '';
                     users.forEach(user => {
-                        selectedStaffMembers.add(user.id.toString());
+                        editSelectedStaffMembers.add(user.id.toString());
                         addEditStaffTag(user);
                     });
-                    updateEditAssignedStaffIds();
+                    document.getElementById('editAssignedStaffIds').value = Array.from(editSelectedStaffMembers).join(',');
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error fetching staff members');
+                    showAlert('danger', 'Error fetching staff members');
                 });
         } else {
-            selectedStaffMembers.clear();
+            editSelectedStaffMembers.clear();
             document.getElementById('editSelectedStaff').innerHTML = '';
-            updateEditAssignedStaffIds();
+            document.getElementById('editAssignedStaffIds').value = '';
         }
     });
 
     function handleEditStaffSearch(e) {
         const searchTerm = e.target.value.trim();
-        clearTimeout(staffDebounceTimeout);
+        const suggestionsBox = document.getElementById('editStaffSearchSuggestions');
 
         if (searchTerm.length === 0) {
-            hideEditStaffSuggestions();
+            suggestionsBox.classList.add('d-none');
             return;
         }
 
-        const suggestionsBox = document.getElementById('editStaffSearchSuggestions');
         suggestionsBox.innerHTML = '<div class="suggestion-item text-muted">Searching...</div>';
         suggestionsBox.classList.remove('d-none');
 
-        staffDebounceTimeout = setTimeout(() => {
-            fetch(`../ajax/search_users.php?search=${encodeURIComponent(searchTerm)}`)
-                .then(response => response.json())
-                .then(handleEditStaffSearchResults)
-                .catch(error => {
-                    console.error('Error:', error);
-                    showEditStaffErrorSuggestion();
+        fetch(`../ajax/search_users.php?search=${encodeURIComponent(searchTerm)}`)
+            .then(response => response.json())
+            .then(users => {
+                suggestionsBox.innerHTML = '';
+                
+                if (users.length === 0) {
+                    suggestionsBox.innerHTML = '<div class="suggestion-item text-muted">No staff members found</div>';
+                    return;
+                }
+
+                users.forEach(user => {
+                    if (editSelectedStaffMembers.has(user.id.toString())) return;
+
+                    const div = document.createElement('div');
+                    div.className = 'suggestion-item';
+                    div.innerHTML = `
+                        <div class="suggestion-info">
+                            <div><strong>${user.username}</strong></div>
+                            ${user.email ? `<small class="text-muted">${user.email}</small>` : ''}
+                        </div>
+                    `;
+                    
+                    div.addEventListener('click', () => {
+                        if (!editSelectedStaffMembers.has(user.id.toString())) {
+                            editSelectedStaffMembers.add(user.id.toString());
+                            addEditStaffTag(user);
+                            document.getElementById('editAssignedStaffIds').value = Array.from(editSelectedStaffMembers).join(',');
+                        }
+                        e.target.value = '';
+                        suggestionsBox.classList.add('d-none');
+                    });
+                    
+                    suggestionsBox.appendChild(div);
                 });
-        }, 300);
-    }
-
-    function handleEditStaffSearchResults(results) {
-        const suggestionsBox = document.getElementById('editStaffSearchSuggestions');
-        
-        if (!results.length) {
-            suggestionsBox.innerHTML = '<div class="suggestion-item text-muted">No staff members found</div>';
-            return;
-        }
-
-        suggestionsBox.innerHTML = '';
-        currentStaffSuggestionIndex = -1;
-
-        results.forEach((user, index) => {
-            if (selectedStaffMembers.has(user.id.toString())) return;
-
-            const div = document.createElement('div');
-            div.className = 'suggestion-item';
-            div.dataset.index = index;
-            div.dataset.userId = user.id;
-            
-            div.innerHTML = `
-                <div class="suggestion-info">
-                    <div><strong>${user.username}</strong></div>
-                    ${user.email ? `<small class="text-muted">${user.email}</small>` : ''}
-                </div>
-            `;
-            
-            div.addEventListener('click', () => selectEditStaffMember(user));
-            suggestionsBox.appendChild(div);
-        });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                suggestionsBox.innerHTML = '<div class="suggestion-item text-danger">Error loading suggestions</div>';
+            });
     }
 
     function handleEditStaffKeyboardNavigation(e) {
@@ -1056,53 +1115,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function selectEditStaffMember(user) {
-        if (selectedStaffMembers.has(user.id.toString())) return;
+        if (editSelectedStaffMembers.has(user.id.toString())) return;
         
-        selectedStaffMembers.add(user.id.toString());
+        editSelectedStaffMembers.add(user.id.toString());
         addEditStaffTag(user);
         
         document.getElementById('editStaffSearch').value = '';
         hideEditStaffSuggestions();
-        updateEditAssignedStaffIds();
-    }
-
-    function addEditStaffTag(user) {
-        const selectedContainer = document.getElementById('editSelectedStaff');
-        
-        const tag = document.createElement('div');
-        tag.className = 'user-tag';
-        tag.innerHTML = `
-            <span>${user.username}</span>
-            <span class="remove" onclick="removeEditStaffMember('${user.id}')">&times;</span>
-        `;
-        
-        selectedContainer.appendChild(tag);
-    }
-
-    function removeEditStaffMember(id) {
-        selectedStaffMembers.delete(id.toString());
-        const tag = document.querySelector(`#editSelectedStaff .user-tag span[onclick*="${id}"]`).parentNode;
-        tag.remove();
-        updateEditAssignedStaffIds();
-    }
-
-    function updateEditAssignedStaffIds() {
-        document.getElementById('editAssignedStaffIds').value = Array.from(selectedStaffMembers).join(',');
-    }
-
-    function showEditStaffErrorSuggestion() {
-        const suggestionsBox = document.getElementById('editStaffSearchSuggestions');
-        suggestionsBox.innerHTML = '<div class="suggestion-item text-danger">Error loading suggestions</div>';
-    }
-
-    function getStatusBadge(status) {
-        switch(status) {
-            case 'upcoming': return 'primary';
-            case 'ongoing': return 'success';
-            case 'completed': return 'secondary';
-            case 'cancelled': return 'danger';
-            default: return 'info';
-        }
+        document.getElementById('editAssignedStaffIds').value = Array.from(editSelectedStaffMembers).join(',');
     }
 
     window.deleteEvent = function(id) {
@@ -1384,6 +1404,96 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+function showAttendanceModal(eventId) {
+    fetch(`../crud/events/get_event_attendance.php?event_id=${eventId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const modal = document.getElementById('attendanceModal');
+                document.getElementById('eventTitle').textContent = data.event.title;
+                
+                const tbody = document.getElementById('attendanceTableBody');
+                tbody.innerHTML = '';
+
+                if (!data.members || data.members.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center">No assigned members found for this event</td></tr>';
+                    return;
+                }
+
+                data.members.forEach(member => {
+                    const row = document.createElement('tr');
+                    row.dataset.memberId = member.id; 
+                    row.innerHTML = `
+                        <td>${member.first_name} ${member.last_name}</td>
+                        <td class="text-center">
+                            <button class="btn btn-sm attendance-btn present-btn ${member.attendance_status === 'present' ? 'btn-success' : 'btn-outline-success'}"
+                                onclick="markAttendance(${eventId}, ${member.id}, 'present', this)">
+                                <i class="bi bi-check-circle"></i>
+                            </button>
+                        </td>
+                        <td class="text-center">
+                            <button class="btn btn-sm attendance-btn absent-btn ${member.attendance_status === 'absent' ? 'btn-danger' : 'btn-outline-danger'}"
+                                onclick="markAttendance(${eventId}, ${member.id}, 'absent', this)">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                const bsModal = new bootstrap.Modal(modal);
+                bsModal.show();
+            } else {
+                showAlert('danger', data.message || 'Failed to load attendance data');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('danger', 'An error occurred while loading attendance data');
+        });
+}
+
+function markAttendance(eventId, memberId, status, buttonElement) {
+    const formData = new FormData();
+    formData.append('event_id', eventId);
+    formData.append('member_id', memberId);
+    formData.append('status', status);
+
+    fetch('../crud/events/mark_attendance.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+         
+            const row = buttonElement.closest('tr');
+            const presentBtn = row.querySelector('.present-btn');
+            const absentBtn = row.querySelector('.absent-btn');
+            
+            if (status === 'present') {
+                presentBtn.classList.remove('btn-outline-success');
+                presentBtn.classList.add('btn-success');
+                absentBtn.classList.remove('btn-danger');
+                absentBtn.classList.add('btn-outline-danger');
+            } else {
+                presentBtn.classList.remove('btn-success');
+                presentBtn.classList.add('btn-outline-success');
+                absentBtn.classList.remove('btn-outline-danger');
+                absentBtn.classList.add('btn-danger');
+            }
+            
+            showAlert('success', 'Attendance marked successfully');
+        } else {
+            showAlert('danger', data.message || 'Failed to mark attendance');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showAlert('danger', 'An error occurred while marking attendance');
+    });
+}
 </script>
 
 <style>
@@ -1452,6 +1562,20 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 .sortable.asc i, .sortable.desc i {
     opacity: 1;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#ongoingEventsTableBody tr {
+    transition: all 0.3s ease;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0,0,0,.075);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
 }
 </style>
 

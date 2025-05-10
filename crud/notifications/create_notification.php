@@ -53,7 +53,7 @@ try {
     $notification_id = $conn->lastInsertId();
     error_log("Notification created with ID: $notification_id");
 
-    // Get user emails along with IDs
+
     $placeholders = str_repeat('?,', count($recipients) - 1) . '?';
     $stmt = $conn->prepare("
         SELECT id, email 
@@ -63,7 +63,7 @@ try {
     $stmt->execute($recipients);
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Insert recipients with their emails
+
     $stmt = $conn->prepare("
         INSERT INTO notification_recipients (notification_id, user_id, user_email) 
         VALUES (?, ?, ?)
@@ -114,7 +114,7 @@ try {
                     if (!empty($user['email'])) {
                         try {
                             $mail->clearAddresses();
-                            $mail->addAddress($user['email']); // Removed username parameter
+                            $mail->addAddress($user['email']);
                             $mail->send();
 
                             $stmt = $conn->prepare("

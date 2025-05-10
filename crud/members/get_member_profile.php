@@ -8,7 +8,7 @@ try {
         throw new Exception('Member ID is required');
     }
 
-    // Get member basic info
+
     $stmt = $conn->prepare("
         SELECT m.*, 
             (SELECT COUNT(*) FROM event_attendance ea 
