@@ -293,7 +293,12 @@ if (!$user || $user['admin_status'] != 1) {
                 document.getElementById('edit_email').value = user.email;
                 document.getElementById('edit_admin_status').value = user.admin_status;
                 document.getElementById('edit_password').value = '';
-                
+
+                // Disable username/email for root, enable otherwise
+                const isRoot = user.username === 'root';
+                document.getElementById('edit_username').readOnly = isRoot;
+                document.getElementById('edit_email').readOnly = isRoot;
+
                 const editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
                 editModal.show();
             })
@@ -302,7 +307,7 @@ if (!$user || $user['admin_status'] != 1) {
         const form = document.getElementById('editUserForm');
         const password = document.getElementById('edit_password');
         const confirmPassword = document.getElementById('edit_confirm_password');
-        
+        const username = document.getElementById('edit_username').value;
         // Only validate passwords if a new password is being set
         if (password.value || confirmPassword.value) {
             if (password.value !== confirmPassword.value) {
@@ -312,16 +317,22 @@ if (!$user || $user['admin_status'] != 1) {
                 confirmPassword.classList.remove('is-invalid');
             }
         }
-          const formData = new FormData(form);
+        const formData = new FormData(form);
         const userId = formData.get('id');
-        
+
+        // Prevent username/email change for root
+        if (username === 'root') {
+            formData.set('username', 'root');
+            // Optionally, set email to the original value (from the field)
+            formData.set('email', document.getElementById('edit_email').value);
+        }
+
         isEmailInUse(formData.get('email'), userId)
         .then(exists => {
-            if (exists) {
+            if (exists && username !== 'root') { // allow root to keep its own email
                 alert('This email is already registered in the system. Please use a different email.');
                 return;
             }
-
             return fetch('../crud/users/update_user.php', {
                 method: 'POST',
                 body: formData
