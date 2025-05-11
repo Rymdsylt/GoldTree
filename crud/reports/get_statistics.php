@@ -7,29 +7,38 @@ $endDate = $_GET['end'] ?? date('Y-m-d');
 
 try {
 
-    $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total FROM donations 
-                           WHERE donation_date BETWEEN ? AND ?");
-    $stmt->execute([$startDate, $endDate]);
+    $stmt = $conn->query("SELECT COALESCE(SUM(amount), 0) as total FROM donations");
     $totalDonations = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-
-
     $stmt = $conn->prepare("SELECT COUNT(*) as count FROM members WHERE status = 'active'");
     $stmt->execute();
-    $activeMembers = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
-
-    $stmt = $conn->prepare("SELECT 
-        (COUNT(CASE WHEN attendance_status IN ('present', 'late') THEN 1 END) * 100.0 / COUNT(*)) as avg_rate
+    $activeMembers = $stmt->fetch(PDO::FETCH_ASSOC)['count'];    $stmt = $conn->prepare("SELECT 
+        COUNT(CASE WHEN attendance_status IN ('present', 'late') THEN 1 END) as present_count,
+        COUNT(CASE WHEN attendance_status = 'absent' THEN 1 END) as absent_count,
+        COUNT(*) as total_count
         FROM event_attendance 
-        INNER JOIN events ON event_attendance.event_id = events.id
-        WHERE events.start_datetime BETWEEN ? AND ?");
+        WHERE attendance_date BETWEEN ? AND ?");
     $stmt->execute([$startDate, $endDate]);
-    $avgAttendance = round($stmt->fetch(PDO::FETCH_ASSOC)['avg_rate'] ?? 0, 1);
-
-    echo json_encode([
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    $totalCount = (int)$result['total_count'];
+    $presentCount = (int)$result['present_count'];
+    $absentCount = (int)$result['absent_count'];
+    
+    $avgAttendance = $totalCount > 0 ? round(($presentCount / $totalCount) * 100) : 0;
+    $avgAbsence = $totalCount > 0 ? round(($absentCount / $totalCount) * 100) : 0;    $response = [
         'totalDonations' => $totalDonations,
         'activeMembers' => $activeMembers,
-        'avgAttendance' => $avgAttendance
-    ]);
+        'avgAttendance' => $avgAttendance,
+        'avgAbsence' => $avgAbsence,
+        'debug' => [
+            'totalCount' => $totalCount,
+            'presentCount' => $presentCount,
+            'absentCount' => $absentCount,
+            'startDate' => $startDate,
+            'endDate' => $endDate
+        ]
+    ];
+    echo json_encode($response);
 
 } catch(PDOException $e) {
     http_response_code(500);

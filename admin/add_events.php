@@ -631,26 +631,48 @@ document.addEventListener('DOMContentLoaded', function() {
         const start = form.elements['start_datetime'].value;
         const end = form.elements['end_datetime'].value;
         
-        if (start || end) {
-            const startDate = start ? new Date(start) : null;
-            const endDate = end ? new Date(end) : null;
+    
+        if (start && end) {
+            const startDate = new Date(start);
+            const endDate = new Date(end);
             
-            let dateTimeText = '<i class="bi bi-calendar-event"></i> ';
-            if (startDate && endDate) {
-                if (startDate.toDateString() === endDate.toDateString()) {
-                    dateTimeText += formatDate(startDate) + ' ' + 
-                        formatTime(startDate) + ' - ' + formatTime(endDate);
-                } else {
-                    dateTimeText += formatDate(startDate) + ' ' + formatTime(startDate) + 
-                        ' - ' + formatDate(endDate) + ' ' + formatTime(endDate);
+            if (startDate > endDate) {
+                const endInput = form.elements['end_datetime'];
+                endInput.classList.add('is-invalid');
+                let feedback = endInput.nextElementSibling;
+                if (!feedback || !feedback.classList.contains('invalid-feedback')) {
+                    feedback = document.createElement('div');
+                    feedback.className = 'invalid-feedback';
+                    endInput.parentNode.appendChild(feedback);
                 }
-            } else if (startDate) {
-                dateTimeText += formatDate(startDate) + ' ' + formatTime(startDate);
+                feedback.textContent = 'End date must be after start date';
+                return;
+            } else {
+                const endInput = form.elements['end_datetime'];
+                endInput.classList.remove('is-invalid');
+                const feedback = endInput.nextElementSibling;
+                if (feedback && feedback.classList.contains('invalid-feedback')) {
+                    feedback.remove();
+                }
             }
-            preview.dateTime.innerHTML = dateTimeText;
-        } else {
-            preview.dateTime.innerHTML = '<i class="bi bi-calendar-event"></i> Date and Time';
         }
+        
+        let dateTimeText = '<i class="bi bi-calendar-event"></i> ';
+        if (start && end) {
+            const startDate = new Date(start);
+            const endDate = new Date(end);
+            if (startDate.toDateString() === endDate.toDateString()) {
+                dateTimeText += formatDate(startDate) + ' ' + 
+                    formatTime(startDate) + ' - ' + formatTime(endDate);
+            } else {
+                dateTimeText += formatDate(startDate) + ' ' + formatTime(startDate) + 
+                    ' - ' + formatDate(endDate) + ' ' + formatTime(endDate);
+            }
+        } else if (start) {
+            const startDate = new Date(start);
+            dateTimeText += formatDate(startDate) + ' ' + formatTime(startDate);
+        }
+        preview.dateTime.innerHTML = dateTimeText;
     }
 
     function formatDate(date) {
@@ -671,6 +693,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
     form.addEventListener('submit', function(e) {
         e.preventDefault();
+        
+      
+        const startDate = new Date(form.elements['start_datetime'].value);
+        const endDate = new Date(form.elements['end_datetime'].value);
+        
+        if (startDate > endDate) {
+            const endInput = form.elements['end_datetime'];
+            endInput.classList.add('is-invalid');
+            let feedback = endInput.nextElementSibling;
+            if (!feedback || !feedback.classList.contains('invalid-feedback')) {
+                feedback = document.createElement('div');
+                feedback.className = 'invalid-feedback';
+                endInput.parentNode.appendChild(feedback);
+            }
+            feedback.textContent = 'End date must be after start date';
+            return; 
+        }
         
         const requiredFields = form.querySelectorAll('[required]');
         let isValid = true;
@@ -938,6 +977,23 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('editEventForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
+        // Validate start and end dates
+        const startDate = new Date(this.elements['start_datetime'].value);
+        const endDate = new Date(this.elements['end_datetime'].value);
+        
+        if (startDate > endDate) {
+            const endInput = this.elements['end_datetime'];
+            endInput.classList.add('is-invalid');
+            let feedback = endInput.nextElementSibling;
+            if (!feedback || !feedback.classList.contains('invalid-feedback')) {
+                feedback = document.createElement('div');
+                feedback.className = 'invalid-feedback';
+                endInput.parentNode.appendChild(feedback);
+            }
+            feedback.textContent = 'End date must be after start date';
+            return; // Block form submission
+        }
+
         const formData = new FormData(this);
         
         fetch('../crud/events/update_event.php', {

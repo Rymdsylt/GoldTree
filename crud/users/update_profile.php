@@ -12,6 +12,11 @@ if (!isset($_SESSION['user_id'])) {
 try {
     $conn->beginTransaction();
     
+    $stmt = $conn->prepare("SELECT username, email FROM users WHERE id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $currentUser = $stmt->fetch();
+    
+    $isAdminUser = ($currentUser['username'] === 'root' || $currentUser['email'] === 'admin@materdolorosa.com');
 
     $username = $_POST['username'] ?? '';
     $first_name = $_POST['first_name'] ?? '';
@@ -20,23 +25,26 @@ try {
     $phone = $_POST['phone'] ?? '';
     $address = $_POST['address'] ?? '';
 
-    
-    $check_username = $conn->prepare("SELECT id FROM users WHERE username = ? AND id != ?");
-    $check_username->execute([$username, $_SESSION['user_id']]);
-    if ($check_username->fetch()) {
-        throw new Exception('This username is already taken');
+    if ($isAdminUser) {
+        if ($username !== 'root' || $email !== 'admin@materdolorosa.com') {
+            throw new Exception('Admin username and email cannot be changed');
+        }
+    } else {
+        $check_username = $conn->prepare("SELECT id FROM users WHERE username = ? AND id != ?");
+        $check_username->execute([$username, $_SESSION['user_id']]);
+        if ($check_username->fetch()) {
+            throw new Exception('This username is already taken');
+        }
+
+        $check_email = $conn->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
+        $check_email->execute([$email, $_SESSION['user_id']]);
+        if ($check_email->fetch()) {
+            throw new Exception('This email is already registered to another user');
+        }
+
+        $stmt = $conn->prepare("UPDATE users SET username = ?, email = ? WHERE id = ?");
+        $stmt->execute([$username, $email, $_SESSION['user_id']]);
     }
-
-    $check_email = $conn->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
-    $check_email->execute([$email, $_SESSION['user_id']]);
-    if ($check_email->fetch()) {
-        throw new Exception('This email is already registered to another user');
-    }
-
-  
-    $stmt = $conn->prepare("UPDATE users SET username = ?, email = ? WHERE id = ?");
-    $stmt->execute([$username, $email, $_SESSION['user_id']]);
-
 
     $stmt = $conn->prepare("SELECT member_id FROM users WHERE id = ?");
     $stmt->execute([$_SESSION['user_id']]);

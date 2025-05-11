@@ -90,11 +90,10 @@ foreach($members as $member) {
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card stat-card">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2">Regular Attendance</h6>
-                    <h2 class="card-title mb-0"><?php echo "0"; ?>%</h2>
-                    <small>Past 3 months</small>
+            <div class="card stat-card">                <div class="card-body">
+                    <h6 class="card-subtitle mb-2">Attendance Rate</h6>
+                    <h2 class="card-title mb-0"><span id="attendanceRate">0</span>%</h2>
+                    <small>Absence <span id="absenceRate">0</span>%</small>
                 </div>
             </div>
         </div>
@@ -617,12 +616,22 @@ function loadStats() {
     fetch('../crud/members/get_stats.php')
         .then(response => response.json())
         .then(data => {
-            document.getElementById('totalMembers').textContent = data.total;
-            document.getElementById('activeMembers').textContent = data.active;
-            document.getElementById('newMembers').textContent = data.new;
-            document.getElementById('regularAttendance').textContent = data.regularAttendance + '%';
+            const updateElementText = (id, value) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = value;
+                }
+            };
+
+            updateElementText('totalMembers', data.total);
+            updateElementText('activeMembers', data.active);
+            updateElementText('newMembers', data.new);
+            updateElementText('attendanceRate', data.attendance_rate);
+            updateElementText('absenceRate', data.absence_rate);
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error loading stats:', error);
+        });
 }
 
 
@@ -1019,17 +1028,43 @@ function loadMemberNotes(memberId) {
                         'counseling': 'danger',
                         'other': 'secondary'
                     }[note.note_type];
-                    
-                    notesList.insertAdjacentHTML('beforeend', `
-                        <div class="list-group-item">
+                      notesList.insertAdjacentHTML('beforeend', `
+                        <div class="list-group-item" id="note-${note.id}">
                             <div class="d-flex w-100 justify-content-between">
                                 <h6 class="mb-1">
                                     <span class="badge bg-${noteTypeClass}">${capitalizeFirst(note.note_type)}</span>
                                 </h6>
-                                <small>${date}</small>
+                                <div>
+                                    <small class="me-2">${date}</small>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="editNote(${note.id})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteNote(${note.id})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <p class="mb-1">${note.note_text}</p>
-                            <small>Added by: ${note.created_by_name || 'System'}</small>
+                            <div class="note-content">
+                                <p class="mb-1">${note.note_text}</p>
+                                <small>Added by: ${note.created_by_name || 'System'}</small>
+                            </div>
+                            <div class="edit-form" style="display: none;">
+                                <form class="edit-note-form" onsubmit="return updateNote(event, ${note.id})">
+                                    <div class="mb-3">
+                                        <select class="form-select" name="note_type" required>
+                                            <option value="general" ${note.note_type === 'general' ? 'selected' : ''}>General</option>
+                                            <option value="pastoral" ${note.note_type === 'pastoral' ? 'selected' : ''}>Pastoral</option>
+                                            <option value="counseling" ${note.note_type === 'counseling' ? 'selected' : ''}>Counseling</option>
+                                            <option value="other" ${note.note_type === 'other' ? 'selected' : ''}>Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <textarea class="form-control" name="note_text" rows="3" required>${note.note_text}</textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                    <button type="button" class="btn btn-link" onclick="cancelEdit(${note.id})">Cancel</button>
+                                </form>
+                            </div>
                         </div>
                     `);
                 });
@@ -1061,6 +1096,62 @@ document.getElementById('addNoteForm').addEventListener('submit', function(e) {
     })
     .catch(error => console.error('Error:', error));
 });
+
+function editNote(noteId) {
+    const noteElement = document.getElementById(`note-${noteId}`);
+    noteElement.querySelector('.note-content').style.display = 'none';
+    noteElement.querySelector('.edit-form').style.display = 'block';
+}
+
+function cancelEdit(noteId) {
+    const noteElement = document.getElementById(`note-${noteId}`);
+    noteElement.querySelector('.note-content').style.display = 'block';
+    noteElement.querySelector('.edit-form').style.display = 'none';
+}
+
+function updateNote(event, noteId) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    formData.append('id', noteId);
+
+    fetch('../crud/members/edit_member_note.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadMemberNotes(document.getElementById('note_member_id').value);
+        } else {
+            alert(data.message || 'Error updating note');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+
+    return false;
+}
+
+function deleteNote(noteId) {
+    if (confirm('Are you sure you want to delete this note? This action cannot be undone.')) {
+        const formData = new FormData();
+        formData.append('id', noteId);
+
+        fetch('../crud/members/delete_member_note.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadMemberNotes(document.getElementById('note_member_id').value);
+            } else {
+                alert(data.message || 'Error deleting note');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+}
 
 document.getElementById('addMemberModal').addEventListener('hidden.bs.modal', function() {
     const form = document.getElementById('addMemberForm');

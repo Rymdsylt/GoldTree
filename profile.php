@@ -18,6 +18,7 @@ $stmt->execute([$_SESSION['user_id']]);
 $userData = $stmt->fetch();
 
 $displayEmail = $userData['user_email'] ?? $userData['email'] ?? '';
+$isAdminUser = ($userData['username'] === 'root' || $userData['email'] === 'admin@materdolorosa.com');
 ?>
 
 <div class="container-fluid py-4">
@@ -65,7 +66,11 @@ $displayEmail = $userData['user_email'] ?? $userData['email'] ?? '';
                                             <div class="col-md-6">
                                                 <label class="form-label">Username</label>
                                                 <input type="text" class="form-control" name="username" id="username" 
-                                                       value="<?php echo htmlspecialchars($userData['username']); ?>" required>
+                                                       value="<?php echo htmlspecialchars($userData['username']); ?>" 
+                                                       <?php echo $isAdminUser ? 'readonly disabled' : 'required'; ?>>
+                                                <?php if ($isAdminUser): ?>
+                                                    <small class="text-muted">Admin username cannot be changed</small>
+                                                <?php endif; ?>
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label">First Name</label>
@@ -80,7 +85,11 @@ $displayEmail = $userData['user_email'] ?? $userData['email'] ?? '';
                                             <div class="col-md-6">
                                                 <label class="form-label">Email</label>
                                                 <input type="email" class="form-control" name="email" id="email"
-                                                       value="<?php echo htmlspecialchars($displayEmail); ?>" required>
+                                                       value="<?php echo htmlspecialchars($displayEmail); ?>" 
+                                                       <?php echo $isAdminUser ? 'readonly disabled' : 'required'; ?>>
+                                                <?php if ($isAdminUser): ?>
+                                                    <small class="text-muted">Admin email cannot be changed</small>
+                                                <?php endif; ?>
                                             </div>
                                             <div class="col-md-6">
                                                 <label class="form-label">Phone</label>

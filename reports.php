@@ -57,12 +57,13 @@ require_once 'auth/login_status.php';?>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card stat-card">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2">Event Attendance</h6>
-                    <h2 class="card-title mb-0" id="avgAttendance">0%</h2>
-                    <small>Average rate</small>
+        <div class="col-md-4">            <div class="card stat-card">
+                <div class="card-body">                    <h6 class="card-subtitle mb-2">Attendance Rate</h6>
+                    <h2 class="card-title mb-0"><span id="avgAttendance">0</span>%</h2>
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-person-x"></i>
+                        <span id="avgAbsence">0</span>% Absence Rate
+                    </div>
                 </div>
             </div>
         </div>
@@ -181,15 +182,28 @@ function initializeDateRange() {
 function loadStatistics() {
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
-    
-    fetch(`crud/reports/get_statistics.php?start=${startDate}&end=${endDate}`)
+      fetch(`crud/reports/get_statistics.php?start=${startDate}&end=${endDate}`)
         .then(response => response.json())
         .then(data => {
-            document.getElementById('totalDonations').textContent = formatCurrency(data.totalDonations);
-            document.getElementById('activeMembers').textContent = data.activeMembers;
-            document.getElementById('avgAttendance').textContent = data.avgAttendance + '%';
+            console.log('Statistics data received:', data);
+            console.log('Total donations:', data.totalDonations);
+            
+            const updateElement = (id, value) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = value;
+                    console.log(`Updated ${id} with value:`, value);
+                } else {
+                    console.warn(`Element ${id} not found`);
+                }
+            };
+
+            updateElement('totalDonations', formatCurrency(data.totalDonations));
+            updateElement('activeMembers', data.activeMembers);
+            updateElement('avgAttendance', data.avgAttendance);
+            updateElement('avgAbsence', data.avgAbsence);
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => console.error('Error loading statistics:', error));
 }
 
 function initializeCharts() {

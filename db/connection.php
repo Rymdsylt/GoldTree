@@ -5,6 +5,7 @@ define('DB_PASS', '');
 define('DB_NAME', 'goldtree');
 
 try {
+    date_default_timezone_set('Asia/Manila');
     $conn = new PDO("mysql:host=" . DB_HOST, DB_USER, DB_PASS);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     

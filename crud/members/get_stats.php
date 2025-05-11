@@ -22,8 +22,25 @@ try {
     $newStmt->execute();
     $new = $newStmt->fetch(PDO::FETCH_ASSOC)['new'];
 
- //I CANNOT ANYMORE
-    $attendanceQuery = " 
+    $attendanceRateQuery = "SELECT 
+        COUNT(CASE WHEN attendance_status = 'present' THEN 1 END) as present_count,
+        COUNT(CASE WHEN attendance_status = 'absent' THEN 1 END) as absent_count
+    FROM event_attendance 
+    WHERE attendance_date >= DATE_SUB(CURRENT_DATE, INTERVAL 30 DAY)";
+    
+    $attendanceRateStmt = $conn->prepare($attendanceRateQuery);
+    $attendanceRateStmt->execute();
+    $attendanceResult = $attendanceRateStmt->fetch(PDO::FETCH_ASSOC);
+    
+    $presentCount = (int)$attendanceResult['present_count'];
+    $absentCount = (int)$attendanceResult['absent_count'];
+    $totalAttendance = $presentCount + $absentCount;
+    
+    $attendanceRate = $totalAttendance > 0 ? round(($presentCount / $totalAttendance) * 100) : 0;
+    $absenceRate = 100 - $attendanceRate;
+
+
+    $regularAttendanceQuery = " 
         WITH EventCount AS (
             SELECT COUNT(*) as total_events
             FROM events
@@ -48,16 +65,16 @@ try {
         LEFT JOIN MemberAttendance ma ON m.id = ma.id
         WHERE m.status = 'active'";
     
-    $attendanceStmt = $conn->prepare($attendanceQuery);
+    $attendanceStmt = $conn->prepare($regularAttendanceQuery);
     $attendanceStmt->execute();
-    $regularAttendance = $attendanceStmt->fetch(PDO::FETCH_ASSOC)['regular_attendance'];
-
-    echo json_encode([
+    $regularAttendance = $attendanceStmt->fetch(PDO::FETCH_ASSOC)['regular_attendance'];    echo json_encode([
         'success' => true,
         'total' => $total,
         'active' => $active,
         'new' => $new,
-        'regularAttendance' => $regularAttendance ?? 0
+        'regularAttendance' => $regularAttendance ?? 0,
+        'attendance_rate' => $attendanceRate,
+        'absence_rate' => $absenceRate
     ]);
 
 } catch (PDOException $e) {
