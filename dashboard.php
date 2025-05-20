@@ -69,18 +69,7 @@ $isAdmin = isset($user['role']) && $user['role'] === 'admin';
                 </div>
             </div>
         </div>
-        
-        <div class="col-12 col-sm-6 col-lg-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">Donations</h5>
-                    <p class="card-text flex-grow-1">Track donations and contributions.</p>
-                    <a href="donations.php?page=donations" class="btn btn-primary mt-auto w-100 <?php echo ($_SESSION['active_page'] === 'donations') ? 'active' : ''; ?>">
-                        <i class="bi bi-cash"></i> Go to Donations
-                    </a>
-                </div>
-            </div>
-        </div>
+  
 
         <?php if ($isAdmin): ?>
         <div class="col-12">

@@ -8,13 +8,7 @@ $stmt = $conn->query("SELECT COUNT(*) as total_members,
 $memberStats = $stmt->fetch(PDO::FETCH_ASSOC);
 
 
-$stmt = $conn->query("SELECT 
-    COALESCE(SUM(amount), 0) as total_donations,
-    COUNT(*) as unique_donors
-    FROM donations 
-    WHERE donation_date >= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01') 
-    AND donation_date <= LAST_DAY(CURRENT_DATE)");
-$donationStats = $stmt->fetch(PDO::FETCH_ASSOC);
+
 
 $stmt = $conn->prepare("SELECT * FROM events 
     WHERE start_datetime >= CURRENT_DATE 
@@ -58,16 +52,7 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
         </div>
-        
-        <div class="col-md-3">
-            <div class="card stat-card h-100">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2">Monthly Donations</h6>
-                    <h2 class="card-title mb-0">₱<?php echo number_format($donationStats['total_donations'], 2); ?></h2>
-                    <small><?php echo $donationStats['unique_donors']; ?> donations this month</small>
-                </div>
-            </div>
-        </div>
+  
         <div class="col-md-3">
             <div class="card stat-card h-100">
                 <div class="card-body">

@@ -1,27 +1,30 @@
 <?php
-require_once '../../db/connection.php';
+require_once '../../../db/connection.php';
 
 $startDate = $_GET['start'] ?? date('Y-m-d', strtotime('-30 days'));
 $endDate = $_GET['end'] ?? date('Y-m-d');
 
 try {
     $stmt = $conn->prepare("
-        SELECT donation_type, SUM(amount) as total
+        SELECT DATE(donation_date) as date, SUM(amount) as total
         FROM donations 
         WHERE donation_date BETWEEN ? AND ?
-        GROUP BY donation_type
-        ORDER BY donation_type
+        GROUP BY DATE(donation_date)
+        ORDER BY date ASC
     ");
     $stmt->execute([$startDate, $endDate]);
     
-    $values = array_fill_keys(['tithe', 'offering', 'project', 'other'], 0);
+    $labels = [];
+    $values = [];
     
     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $values[$row['donation_type']] = floatval($row['total']);
+        $labels[] = date('M d', strtotime($row['date']));
+        $values[] = floatval($row['total']);
     }
     
     echo json_encode([
-        'values' => array_values($values) 
+        'labels' => $labels,
+        'values' => $values
     ]);
 
 } catch(PDOException $e) {

@@ -51,10 +51,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = "A new " . $type . " donation of ₱" . number_format($amount, 2) . " has been received from " . $display_name;
             $message .= " on " . date('F j, Y', strtotime($donation_date));
             
-            $notification_stmt->execute(['donation', $subject, $message, true, $_SESSION['user_id'] ?? null]);
-            $notification_id = $conn->lastInsertId();
+            $notification_stmt->execute(['donation', $subject, $message, true, $_SESSION['user_id'] ?? null]);            $notification_id = $conn->lastInsertId();
          
-            $user_stmt = $conn->query("SELECT id, email FROM users");
+            // Only send notifications to admin users
+            $user_stmt = $conn->query("SELECT id, email FROM users WHERE admin_status = 1");
             $recipient_stmt = $conn->prepare("INSERT INTO notification_recipients (notification_id, user_id, user_email) VALUES (?, ?, ?)");
             
             while ($user = $user_stmt->fetch(PDO::FETCH_ASSOC)) {

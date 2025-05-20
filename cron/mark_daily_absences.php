@@ -14,9 +14,14 @@ try {
         AND e.end_datetime >= NOW()
     ");
     $stmt->execute();
-    $membersEvents = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    foreach ($membersEvents as $record) {
+    $membersEvents = $stmt->fetchAll(PDO::FETCH_ASSOC);    foreach ($membersEvents as $record) {
+        $eventStartDateStmt = $conn->prepare("
+            SELECT start_datetime 
+            FROM events 
+            WHERE id = ?
+        ");
+        $eventStartDateStmt->execute([$record['id']]);
+        $eventStartDate = $eventStartDateStmt->fetchColumn();
 
         $stmt = $conn->prepare("
             SELECT id 
@@ -28,13 +33,15 @@ try {
         $stmt->execute([$record['id'], $record['member_id'], $today]);
         
         if (!$stmt->fetch()) {
+  
+            $status = (strtotime($today) < strtotime($eventStartDate)) ? 'no_record' : 'absent';
           
             $stmt = $conn->prepare("
                 INSERT INTO event_attendance 
                 (event_id, member_id, attendance_status, attendance_date) 
-                VALUES (?, ?, 'absent', ?)
+                VALUES (?, ?, ?, ?)
             ");
-            $stmt->execute([$record['id'], $record['member_id'], $today]);
+            $stmt->execute([$record['id'], $record['member_id'], $status, $today]);
         }
     }
     

@@ -3,6 +3,24 @@ require_once '../../db/connection.php';
 
 header('Content-Type: application/json');
 
+// If a specific donation ID is requested
+if (isset($_GET['id'])) {
+    $stmt = $conn->prepare("
+        SELECT d.*, COALESCE(CONCAT(m.first_name, ' ', m.last_name), d.donor_name) as donor_name
+        FROM donations d
+        LEFT JOIN members m ON d.member_id = m.id
+        WHERE d.id = ?
+    ");
+    $stmt->execute([$_GET['id']]);
+    $donation = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    echo json_encode([
+        'success' => true,
+        'donations' => $donation ? [$donation] : []
+    ]);
+    exit;
+}
+
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $limit = 10;
 $offset = ($page - 1) * $limit;
@@ -21,16 +39,33 @@ if (!empty($_GET['type'])) {
     $params[] = $_GET['type'];
 }
 
-if (!empty($_GET['start_date'])) {
+if (!empty($_GET['start_date']) || !empty($_GET['start'])) {
     $where_clauses[] = "d.donation_date >= ?";
-    $params[] = $_GET['start_date'];
+    $params[] = $_GET['start_date'] ?? $_GET['start'];
 }
-if (!empty($_GET['end_date'])) {
+if (!empty($_GET['end_date']) || !empty($_GET['end'])) {
     $where_clauses[] = "d.donation_date <= ?";
-    $params[] = $_GET['end_date'] . ' 23:59:59';
+    $params[] = ($_GET['end_date'] ?? $_GET['end']) . ' 23:59:59';
 }
 
 $where_sql = !empty($where_clauses) ? 'WHERE ' . implode(' AND ', $where_clauses) : '';
+
+if (isset($_GET['id'])) {
+    $stmt = $conn->prepare("
+        SELECT d.*, COALESCE(CONCAT(m.first_name, ' ', m.last_name), d.donor_name) as donor_name
+        FROM donations d
+        LEFT JOIN members m ON d.member_id = m.id
+        WHERE d.id = ?
+    ");
+    $stmt->execute([$_GET['id']]);
+    $donation = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    echo json_encode([
+        'success' => true,
+        'donations' => $donation ? [$donation] : []
+    ]);
+    exit;
+}
 
 if (isset($_GET['stats'])) {
     $stats_sql = "SELECT 

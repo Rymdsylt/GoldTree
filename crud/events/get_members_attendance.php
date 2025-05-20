@@ -33,7 +33,7 @@ try {
             m.id,
             m.first_name,
             m.last_name,
-            COALESCE(ea.attendance_status, 'absent') as attendance_status
+            COALESCE(ea.attendance_status, 'no_record') as attendance_status
         FROM members m
         LEFT JOIN event_attendance ea ON 
             ea.member_id = m.id 

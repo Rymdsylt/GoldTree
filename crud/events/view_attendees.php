@@ -64,13 +64,18 @@ try {
             
 
             $presentMemberIds = array_column($presentMembers, 'id');
-            
-
-            foreach ($allMembers as $member) {
-                if (!in_array($member['id'], $presentMemberIds)) {
-                    $absentees[] = $member['full_name'];
-                }
-            }
+           
+            $absentStmt = $conn->prepare("
+                SELECT DISTINCT m.id, CONCAT(m.first_name, ' ', m.last_name) as full_name
+                FROM members m
+                JOIN event_attendance ea ON m.id = ea.member_id
+                WHERE ea.event_id = ? 
+                AND DATE(ea.attendance_date) = ?
+                AND ea.attendance_status = 'absent'
+                ORDER BY m.first_name, m.last_name
+            ");
+            $absentStmt->execute([$event_id, $currentDate]);
+            $absentees = array_column($absentStmt->fetchAll(PDO::FETCH_ASSOC), 'full_name');
         }
 
 

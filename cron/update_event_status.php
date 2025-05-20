@@ -2,7 +2,7 @@
 require_once '../db/connection.php';
 
 try {
-    date_default_timezone_set('Asia/Manila'); // Setting timezone explicitly
+    date_default_timezone_set('Asia/Manila'); 
     $now = date('Y-m-d H:i:s');
     
 

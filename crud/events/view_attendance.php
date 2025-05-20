@@ -92,9 +92,8 @@ try {
     foreach ($dateRange as $date) {
         $dateStr = $date->format('Y-m-d');
         $attendance_dates[] = [
-            'date' => $dateStr,
-            'status' => $attendanceLookup[$dateStr] ?? 
-                       ($date > new DateTime('now') ? 'upcoming' : 'absent')
+            'date' => $dateStr,            'status' => $attendanceLookup[$dateStr] ?? 
+                       ($date > new DateTime('now') ? 'upcoming' : 'no_record')
         ];
     }
 

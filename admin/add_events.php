@@ -442,6 +442,9 @@ function getStatusBadge(status) {
         case 'ongoing': return 'success';
         case 'completed': return 'secondary';
         case 'cancelled': return 'danger';
+        case 'no_record': return 'secondary';
+        case 'absent': return 'danger';
+        case 'present': return 'success';
         default: return 'info';
     }
 }
@@ -977,7 +980,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('editEventForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
-        // Validate start and end dates
+     
         const startDate = new Date(this.elements['start_datetime'].value);
         const endDate = new Date(this.elements['end_datetime'].value);
         
@@ -991,7 +994,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 endInput.parentNode.appendChild(feedback);
             }
             feedback.textContent = 'End date must be after start date';
-            return; // Block form submission
+            return; 
         }
 
         const formData = new FormData(this);

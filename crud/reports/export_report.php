@@ -5,11 +5,7 @@ $type = $_GET['type'] ?? 'complete';
 $start_date = $_GET['start'] ?? date('Y-m-d', strtotime('-1 month'));
 $end_date = $_GET['end'] ?? date('Y-m-d');
 
-try {
-    switch($type) {
-        case 'donations':
-            exportDonations($conn, $start_date, $end_date);
-            break;
+try {    switch($type) {
         case 'members':
             exportMembers($conn);
             break;
@@ -46,60 +42,7 @@ function outputCSV($filename, $headers, $data) {
     exit();
 }
 
-function exportDonations($conn, $start_date, $end_date) {
-    $headers = ['Date', 'Type', 'Amount', 'Donor', 'Notes'];
-    
-    $stmt = $conn->prepare("
-        SELECT 
-            donation_date,
-            donation_type,
-            amount,
-            COALESCE(donor_name, CONCAT(m.first_name, ' ', m.last_name)) as donor,
-            notes
-        FROM donations d
-        LEFT JOIN members m ON d.member_id = m.id
-        WHERE donation_date BETWEEN ? AND ?
-        ORDER BY donation_date DESC
-    ");
-    $stmt->execute([$start_date, $end_date]);
-    
-    $data = [];
-    while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $data[] = [
-            $row['donation_date'],
-            ucfirst($row['donation_type']),
-            $row['amount'],
-            $row['donor'],
-            $row['notes']
-        ];
-    }
-    
 
-    $stmt = $conn->prepare("
-        SELECT 
-            donation_type,
-            COUNT(*) as count,
-            SUM(amount) as total
-        FROM donations
-        WHERE donation_date BETWEEN ? AND ?
-        GROUP BY donation_type
-    ");
-    $stmt->execute([$start_date, $end_date]);
-    
-    $data[] = [''];  
-    $data[] = ['Summary'];
-    while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $data[] = [
-            ucfirst($row['donation_type']),
-            $row['count'] . ' donations',
-            $row['total'],
-            '',
-            ''
-        ];
-    }
-    
-    outputCSV('donations_report.csv', $headers, $data);
-}
 
 function exportMembers($conn) {
     $headers = ['Name', 'Email', 'Phone', 'Status', 'Category', 'Join Date'];
@@ -206,37 +149,6 @@ function exportEvents($conn, $start_date, $end_date) {
 function exportComplete($conn, $start_date, $end_date) {
   
     $data = [];
-    
-    
-    $data[] = ['DONATIONS REPORT'];
-    $data[] = ['Date', 'Type', 'Amount', 'Donor', 'Notes'];
-    
-    $stmt = $conn->prepare("
-        SELECT 
-            donation_date,
-            donation_type,
-            amount,
-            COALESCE(donor_name, CONCAT(m.first_name, ' ', m.last_name)) as donor,
-            notes
-        FROM donations d
-        LEFT JOIN members m ON d.member_id = m.id
-        WHERE donation_date BETWEEN ? AND ?
-        ORDER BY donation_date DESC
-    ");
-    $stmt->execute([$start_date, $end_date]);
-    
-    while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $data[] = [
-            $row['donation_date'],
-            ucfirst($row['donation_type']),
-            $row['amount'],
-            $row['donor'],
-            $row['notes']
-        ];
-    }
-    
-    $data[] = ['']; 
-    
     
     $data[] = ['MEMBERS REPORT'];
     $data[] = ['Name', 'Email', 'Phone', 'Status', 'Category', 'Join Date'];

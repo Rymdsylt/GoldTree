@@ -32,10 +32,9 @@ try {
 
     $memberStmt = $conn->prepare("
         SELECT DISTINCT 
-            m.id,
-            m.first_name,
+            m.id,            m.first_name,
             m.last_name,
-            COALESCE(ea.attendance_status, '') as attendance_status
+            COALESCE(ea.attendance_status, 'no_record') as attendance_status
         FROM members m
         INNER JOIN users u ON m.user_id = u.id
         INNER JOIN event_assignments ea_link ON u.id = ea_link.user_id

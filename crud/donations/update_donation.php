@@ -51,10 +51,28 @@ try {
         notes = ?
         WHERE id = ?");
         
-    $stmt->execute([$member_id, $donor_name, $amount, $donation_type, $donation_date, $notes, $donation_id]);
-
-    if ($stmt->rowCount() === 0) {
+    $stmt->execute([$member_id, $donor_name, $amount, $donation_type, $donation_date, $notes, $donation_id]);    if ($stmt->rowCount() === 0) {
         throw new Exception('No donation found with the given ID');
+    }
+
+    if (isset($_POST['send_notification']) && $_POST['send_notification'] === 'on') {
+        $notificationTitle = "Donation Updated";
+        $notificationMessage = sprintf(
+            "A %s donation of ₱%s has been updated%s.", 
+            $donation_type, 
+            number_format($amount, 2),
+            $donor_type === 'member' ? " from a member" : ""
+        );
+        
+        $stmt = $conn->prepare("INSERT INTO notifications (notification_type, subject, message, created_at) VALUES (?, ?, ?, NOW())");
+        $stmt->execute(['donation', $notificationTitle, $notificationMessage]);
+        
+        $notification_id = $conn->lastInsertId();
+        
+
+        $stmt = $conn->prepare("INSERT INTO notification_recipients (notification_id, user_id)
+            SELECT ?, id FROM users WHERE admin_status = 1");
+        $stmt->execute([$notification_id]);
     }
 
     $response['success'] = true;
