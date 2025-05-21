@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCharts();
     });
 
-    // Add input event listeners for date validation
+   
     document.getElementById('startDate').addEventListener('change', function() {
         document.getElementById('endDate').min = this.value;
     });
@@ -148,11 +148,11 @@ function initializeDateRange() {
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - 1);
     
-    // Format dates properly for input type="date"
+
     document.getElementById('startDate').value = formatDateForInput(startDate);
     document.getElementById('endDate').value = formatDateForInput(endDate);
 
-    // Add validation for date inputs
+
     document.getElementById('startDate').max = formatDateForInput(endDate);
     document.getElementById('endDate').max = formatDateForInput(endDate);
 }

@@ -6,12 +6,12 @@ $startDate = $_GET['start'] ?? date('Y-m-d', strtotime('-30 days'));
 $endDate = $_GET['end'] ?? date('Y-m-d');
 
 try {
-    // Validate date format
+
     if (!preg_match("/^\d{4}-\d{2}-\d{2}$/", $startDate) || !preg_match("/^\d{4}-\d{2}-\d{2}$/", $endDate)) {
         throw new Exception('Invalid date format. Use YYYY-MM-DD');
     }
 
-    // Validate date range
+    
     $start = new DateTime($startDate);
     $end = new DateTime($endDate);
     $today = new DateTime();
@@ -24,12 +24,12 @@ try {
         throw new Exception('End date cannot be in the future');
     }
 
-    // Get active members count
+ 
     $stmt = $conn->prepare("SELECT COUNT(*) as count FROM members WHERE status = 'active'");
     $stmt->execute();
     $activeMembers = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 
-    // Get attendance stats for the date range
+
     $stmt = $conn->prepare("SELECT 
         COUNT(CASE WHEN attendance_status IN ('present', 'late') THEN 1 END) as present_count,
         COUNT(CASE WHEN attendance_status = 'absent' THEN 1 END) as absent_count,
