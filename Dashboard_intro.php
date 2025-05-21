@@ -17,14 +17,6 @@ $stmt = $conn->prepare("SELECT * FROM events
 $stmt->execute();
 $upcomingEvents = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-
-$stmt = $conn->query("SELECT d.*, m.first_name, m.last_name 
-    FROM donations d
-    LEFT JOIN members m ON d.member_id = m.id
-    WHERE d.donation_date > DATE_SUB(CURRENT_DATE, INTERVAL 2 DAY)
-    ORDER BY d.donation_date DESC LIMIT 5");
-$recentDonations = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
 $stmt = $conn->query("SELECT COUNT(*) as total_unread 
     FROM notifications n
     INNER JOIN notification_recipients nr ON n.id = nr.notification_id
@@ -40,10 +32,8 @@ $stmt = $conn->query("SELECT n.*, nr.is_read
 $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<div class="container-fluid py-4">
-
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
+<div class="container-fluid py-4">    <div class="row g-4 mb-4">
+        <div class="col-md-4">
             <div class="card stat-card h-100">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Total Members</h6>
@@ -52,8 +42,7 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
         </div>
-  
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card stat-card h-100">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Upcoming Events</h6>
@@ -62,7 +51,7 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card stat-card h-100">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Unread Notifications</h6>
@@ -74,7 +63,7 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 
     <div class="row g-4">
-        <div class="col-md-6">
+        <div class="col-md-12">
             <div class="card">
                 <div class="card-header bg-white">
                     <h5 class="card-title mb-0">Upcoming Events</h5>
@@ -101,45 +90,7 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </div>
                     <?php endif; ?>
                 </div>
-            </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header bg-white">
-                    <h5 class="card-title mb-0">Recent Donations</h5>
-                </div>
-                <div class="card-body">
-                    <?php if (empty($recentDonations)): ?>
-                        <p class="text-muted text-center">No recent donations</p>
-                    <?php else: ?>
-                        <div class="list-group list-group-flush">
-                        <?php foreach ($recentDonations as $donation): ?>
-                            <div class="list-group-item">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">
-                                        <?php 
-                                        if (!empty($donation['first_name']) || !empty($donation['last_name'])) {
-                                            echo htmlspecialchars($donation['first_name'] . ' ' . $donation['last_name']);
-                                        } else {
-                                            echo 'Anonymous';
-                                        }
-                                        ?>
-                                    </h6>
-                                    <span class="badge bg-success">₱<?php echo number_format($donation['amount'], 2); ?></span>
-                                </div>
-                                <p class="mb-1"><?php echo ucfirst($donation['donation_type']); ?></p>
-                                <small class="text-muted">
-                                    <?php echo date('M d, Y', strtotime($donation['donation_date'])); ?>
-                                </small>
-                            </div>
-                        <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-        
+            </div>        </div>
         <div class="col-12">
             <div class="card">
                 <div class="card-header bg-white">

@@ -25,6 +25,7 @@ if (isset($_SESSION['user_id'])) {
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -203,14 +204,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <a href="/GoldTree/Dashboard_intro.php?page=dashboard" 
                    class="sidebar-link <?php echo $_SESSION['active_page'] == 'dashboard' ? 'active' : ''; ?>">
                     <i class="bi bi-speedometer2"></i> Dashboard
-                </a>
-                <a href="/GoldTree/members.php?page=members" 
+                </a>                <a href="/GoldTree/members.php?page=members" 
                    class="sidebar-link <?php echo $_SESSION['active_page'] == 'members' ? 'active' : ''; ?>">
                     <i class="bi bi-people-fill"></i> Members
-                </a>
-                <a href="/GoldTree/donations.php?page=donations" 
-                   class="sidebar-link <?php echo $_SESSION['active_page'] == 'donations' ? 'active' : ''; ?>">
-                    <i class="bi bi-cash"></i> Donations
                 </a>
                 <a href="/GoldTree/events.php?page=events" 
                    class="sidebar-link <?php echo $_SESSION['active_page'] == 'events' ? 'active' : ''; ?>">

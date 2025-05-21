@@ -1,5 +1,6 @@
 <?php
 require_once '../../db/connection.php';
+header('Content-Type: application/json');
 
 try {
     $stmt = $conn->prepare("
@@ -16,6 +17,7 @@ try {
             SELECT TIMESTAMPDIFF(YEAR, birthdate, CURDATE()) as age
             FROM members
             WHERE status = 'active'
+            AND birthdate IS NOT NULL
         ) age_calc
         GROUP BY age_group
         ORDER BY age_group
@@ -29,10 +31,14 @@ try {
     }
     
     echo json_encode([
+        'success' => true,
         'values' => array_values($values) 
     ]);
 
-} catch(PDOException $e) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+} catch(Exception $e) {
+    http_response_code(400);
+    echo json_encode([
+        'success' => false,
+        'error' => $e->getMessage()
+    ]);
 }

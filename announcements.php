@@ -2,6 +2,28 @@
 
 <div class="container-fluid py-4">
     <div class="row g-3 mb-4">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4 text-center">
+                            <h6 class="text-muted mb-1">Total Notifications</h6>
+                            <h3 id="totalAnnouncements">0</h3>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <h6 class="text-muted mb-1">Active Notifications</h6>
+                            <h3 id="activeAnnouncements">0</h3>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <h6 class="text-muted mb-1">Read Rate</h6>
+                            <h3 id="readRate">0%</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row g-3 mb-4">
         <div class="col-md-8">
             <div class="card">
                 <div class="card-body">
@@ -97,6 +119,14 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.dropdown')) {
+            document.querySelectorAll('.dropdown-menu.show').forEach(menu => {
+                menu.classList.remove('show');
+            });
+        }
+    });
+
     loadAnnouncements();
     loadStats();
 
@@ -175,19 +205,18 @@ function loadAnnouncements(page = 1) {
                                     <span class="badge bg-secondary ms-1 ${readStatusClass}">
                                         ${readStatus}
                                     </span>
-                                </div>
-                                <div class="dropdown">
-                                    <button class="btn btn-link btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                </div>                                <div class="dropdown" onclick="this.querySelector('.dropdown-menu').classList.toggle('show')">
+                                    <button class="btn btn-link btn-sm" type="button">
                                         <i class="bi bi-three-dots-vertical"></i>
                                     </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
+                                    <ul class="dropdown-menu dropdown-menu-end" style="position: absolute;">
                                         <li>
-                                            <button class="dropdown-item" onclick="markAsRead(${announcement.notification_id})">
+                                            <button class="dropdown-item" onclick="event.stopPropagation(); markAsRead(${announcement.notification_id})">
                                                 <i class="bi bi-check2 me-2"></i> Mark as Read
                                             </button>
                                         </li>
                                         <li>
-                                            <button class="dropdown-item text-danger" onclick="deleteAnnouncement(${announcement.notification_id})">
+                                            <button class="dropdown-item text-danger" onclick="event.stopPropagation(); deleteAnnouncement(${announcement.notification_id})">
                                                 <i class="bi bi-trash me-2"></i> Delete
                                             </button>
                                         </li>
@@ -212,9 +241,7 @@ function loadAnnouncements(page = 1) {
                     </div>
                 `;
                 grid.insertAdjacentHTML('beforeend', card);
-            });
-            
-            updatePagination(data.currentPage || 1, data.totalPages || 1);
+            });            updatePagination(data.currentPage || 1, data.totalPages || 1);
             updateCounters(data.showing || 0, data.total || 0);
         })
         .catch(error => {
