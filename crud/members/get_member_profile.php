@@ -7,10 +7,9 @@ try {
     if (!$id) {
         throw new Exception('Member ID is required');
     }
-
-
     $stmt = $conn->prepare("
         SELECT m.*, 
+            u.email as user_email,
             (SELECT COUNT(*) FROM event_attendance ea 
              WHERE ea.member_id = m.id AND ea.attendance_status = 'present') as total_attendances,
             (SELECT COUNT(*) FROM donations d 
@@ -18,6 +17,7 @@ try {
             (SELECT SUM(amount) FROM donations d 
              WHERE d.member_id = m.id) as total_contribution
         FROM members m 
+        LEFT JOIN users u ON m.user_id = u.id
         WHERE m.id = ?
     ");
     $stmt->execute([$id]);

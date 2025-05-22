@@ -379,11 +379,13 @@ foreach($members as $member) {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-
     loadStats();
     initializeCharts();
-    
 
+    // Initialize all tooltips
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+    
     document.getElementById('searchMembers').addEventListener('input', debounce(() => loadMembers(1, true), 300));
     document.getElementById('statusFilter').addEventListener('change', () => loadMembers(1, true));
     document.getElementById('ministryFilter').addEventListener('input', debounce(() => loadMembers(1, true), 300));
@@ -558,8 +560,7 @@ function loadMembers(page = 1, refreshTable = false) {
                                 </div>
                             </td>
                             <td>
-                                <div class="member-contact">
-                                    ${member.email ? `<div><i class="bi bi-envelope"></i> ${member.email}</div>` : ''}
+                                <div class="member-contact">                                    ${member.email ? `<div><i class="bi bi-envelope"></i> ${member.email}</div>` : ''}
                                     ${member.phone ? `<div><i class="bi bi-telephone"></i> ${member.phone}</div>` : ''}
                                 </div>
                             </td>
@@ -579,11 +580,15 @@ function loadMembers(page = 1, refreshTable = false) {
                                     <button type="button" onclick="viewProfile(${member.id})" 
                                             class="btn btn-sm btn-outline-primary">
                                         <i class="bi bi-eye"></i>
-                                    </button>
+                                    </button>                                    ${<?php echo isset($_SESSION['username']) && $_SESSION['username'] === 'root' ? 'false' : 'true'; ?> ? `
                                     <button type="button" onclick="editMember(${member.id})" 
                                             class="btn btn-sm btn-outline-secondary">
                                         <i class="bi bi-pencil"></i>
                                     </button>
+                                    ` : `<button type="button" class="btn btn-sm btn-outline-secondary disabled" 
+                                           data-bs-toggle="tooltip" data-bs-title="Root user cannot edit members">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>`}
                                     <button type="button" onclick="viewNotes(${member.id})" 
                                             class="btn btn-sm btn-outline-info">
                                         <i class="bi bi-journal-text"></i>
@@ -602,9 +607,11 @@ function loadMembers(page = 1, refreshTable = false) {
                 updatePagination(data.data.currentPage, data.data.totalPages);
                 
    
-                document.getElementById('showing').textContent = data.data.members.length;
-                document.getElementById('total').textContent = data.data.total;
+                document.getElementById('showing').textContent = data.data.members.length;                document.getElementById('total').textContent = data.data.total;
                 
+                // Reinitialize tooltips for new content
+                const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
 
                 updateCharts();
             }
@@ -612,10 +619,9 @@ function loadMembers(page = 1, refreshTable = false) {
         .catch(error => console.error('Error:', error));
 }
 
-function loadStats() {
-    fetch('../crud/members/get_stats.php')
+function loadStats() {    fetch('../crud/members/get_stats.php')
         .then(response => response.json())
-        .then(data => {
+        .then((data) => {
             const updateElementText = (id, value) => {
                 const element = document.getElementById(id);
                 if (element) {
@@ -718,10 +724,9 @@ function generateChartColors(count) {
     return colors;
 }
 
-function updateCharts() {
-    fetch('../crud/members/get_charts_data.php')
+function updateCharts() {    fetch('../crud/members/get_charts_data.php')
         .then(response => response.json())
-        .then(data => {
+        .then((data) => {
 
             window.memberGrowthChart.data.labels = data.growth.labels;
             window.memberGrowthChart.data.datasets[0].data = data.growth.values;
@@ -832,9 +837,8 @@ function viewProfile(id) {
                                             <span class="badge bg-${getStatusBadge(member.status)}">${capitalizeFirst(member.status)}</span>
                                         </div>
                                     </div>
-                                    <div class="col-md-8">
-                                        <h5>Contact Information</h5>
-                                        <p><i class="bi bi-envelope"></i> ${member.email || 'No email'}</p>
+                                    <div class="col-md-8">                                        <h5>Contact Information</h5>
+                                        <p><i class="bi bi-envelope"></i> ${member.email ? member.email : (member.user_email ? member.user_email : 'No email')}</p>
                                         <p><i class="bi bi-telephone"></i> ${member.phone || 'No phone'}</p>
                                         <p><i class="bi bi-geo-alt"></i> ${member.address || 'No address'}</p>
                                         
@@ -937,52 +941,63 @@ function viewProfile(id) {
 
 function editMember(id) {
     fetch(`../crud/members/read_single_member.php?id=${id}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const member = data.data;
-                const form = document.getElementById('addMemberForm');
-
-                form.querySelector('[name="first_name"]').value = member.first_name;
-                form.querySelector('[name="last_name"]').value = member.last_name;
-                form.querySelector('[name="phone"]').value = member.phone || '';
-                form.querySelector('[name="date_of_birth"]').value = member.birthdate || '';
-                form.querySelector('[name="gender"]').value = member.gender || '';
-                form.querySelector('[name="category"]').value = member.category || '';
-                form.querySelector('[name="status"]').value = member.status;
-                form.querySelector('[name="address"]').value = member.address || '';
-
-
-                const emailField = form.querySelector('[name="email"]');
-                const associatedUserField = form.querySelector('[name="associated_user"]');
-                if (emailField) {
-                    emailField.closest('.col-md-6').style.display = 'none';
-                    emailField.removeAttribute('required');
-                }
-                if (associatedUserField) {
-                    associatedUserField.closest('.col-md-6').style.display = 'none';
-                    associatedUserField.removeAttribute('required');
-                }
-
-                let idInput = form.querySelector('[name="id"]');
-                if (!idInput) {
-                    idInput = document.createElement('input');
-                    idInput.type = 'hidden';
-                    idInput.name = 'id';
-                    form.appendChild(idInput);
-                }
-                idInput.value = member.id;
-
-           
-                document.querySelector('#addMemberModal .modal-title').textContent = 'Edit Member';
-                document.querySelector('#addMemberModal button[type="submit"]').textContent = 'Save Changes';
-          
-                new bootstrap.Modal(document.getElementById('addMemberModal')).show();
-            } else {
-                alert(data.message || 'Error loading member data');
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
             }
+            return response.json().catch(() => {
+                throw new Error('Invalid JSON response');
+            });
         })
-        .catch(error => console.error('Error:', error));
+        .then((data) => {
+            if (!data || !data.success || !data.data) {
+                throw new Error(data.message || 'Invalid data received from server');
+            }
+            if (!data.canEdit) {
+                throw new Error('For security reasons, the root user is not permitted to edit member information. Please use a different administrative account to make member edits.');
+            }
+            const member = data.data;
+            const form = document.getElementById('addMemberForm');
+
+            form.querySelector('[name="first_name"]').value = member.first_name;
+            form.querySelector('[name="last_name"]').value = member.last_name;
+            form.querySelector('[name="phone"]').value = member.phone || '';
+            form.querySelector('[name="date_of_birth"]').value = member.birthdate || '';
+            form.querySelector('[name="gender"]').value = member.gender || '';
+            form.querySelector('[name="category"]').value = member.category || '';
+            form.querySelector('[name="status"]').value = member.status;
+            form.querySelector('[name="address"]').value = member.address || '';
+
+
+            const emailField = form.querySelector('[name="email"]');
+            const associatedUserField = form.querySelector('[name="associated_user"]');
+            if (emailField) {
+                emailField.closest('.col-md-6').style.display = 'none';
+                emailField.removeAttribute('required');
+            }
+            if (associatedUserField) {
+                associatedUserField.closest('.col-md-6').style.display = 'none';
+                associatedUserField.removeAttribute('required');
+            }
+
+            let idInput = form.querySelector('[name="id"]');
+            if (!idInput) {
+                idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'id';
+                form.appendChild(idInput);
+            }
+            idInput.value = member.id;
+
+            document.querySelector('#addMemberModal .modal-title').textContent = 'Edit Member';
+            document.querySelector('#addMemberModal button[type="submit"]').textContent = 'Save Changes';
+            
+            new bootstrap.Modal(document.getElementById('addMemberModal')).show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading member data: ' + error.message);
+        });
 }
 
 function deleteMember(id) {
