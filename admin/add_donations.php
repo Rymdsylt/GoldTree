@@ -243,11 +243,36 @@ require_once '../templates/admin_header.php';
         loadDonations();
         loadMembers();
         
+         document.getElementById('applyDateRange').addEventListener('click', function() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            if (!startDate || !endDate) {
+                alert('Please select both start and end dates');
+                return;
+            }
+            
+            if (new Date(startDate) > new Date(endDate)) {
+                alert('Start date cannot be later than end date');
+                return;
+            }
+
        
-        document.getElementById('applyDateRange').addEventListener('click', function() {
-            loadStatistics();
-            loadDonations();
-            updateCharts();
+            const btn = this;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Loading...';
+            
+    
+            Promise.all([
+                loadStatistics(),
+                loadDonations(),
+                updateCharts()
+            ]).finally(() => {
+           
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            });
         });
         
   
@@ -298,20 +323,41 @@ require_once '../templates/admin_header.php';
             })
             .catch(error => console.error('Error:', error));
         });
-    });
-
-    function initializeDateRange() {
+    });    function initializeDateRange() {
+     
         const endDate = new Date();
-        const startDate = new Date();
-        startDate.setMonth(startDate.getMonth() - 1);
+  
+        const startDate = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
         
         document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
         document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
-    }    function loadStatistics() {
+        
+   
+        ['startDate', 'endDate'].forEach(id => {
+            document.getElementById(id).addEventListener('change', function() {
+                if (this.value) {
+                    const start = new Date(document.getElementById('startDate').value);
+                    const end = new Date(document.getElementById('endDate').value);
+                    if (start > end) {
+                        alert('Start date cannot be later than end date');
+                        this.value = this.defaultValue;
+                    } else {
+                        this.defaultValue = this.value;
+                    }
+                }
+            });
+        });
+    }function loadStatistics() {
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
 
+
+        if (new Date(startDate) > new Date(endDate)) {
+            alert('Start date cannot be later than end date');
+            return false;
+        }
     
+   
         fetch('../crud/donations/statistics/get_total_statistics.php')
             .then(response => response.json())
             .then(data => {
@@ -319,14 +365,21 @@ require_once '../templates/admin_header.php';
                     document.getElementById('allTimeDonations').textContent = formatCurrency(data.totalDonations);
                 }
             })
-            .catch(error => console.error('Error loading total statistics:', error));
+            .catch(error => {
+                console.error('Error loading total statistics:', error);
+                document.getElementById('allTimeDonations').textContent = 'Error';
+            });
+
 
         fetch(`../crud/donations/statistics/get_donation_statistics.php?start=${startDate}&end=${endDate}`)
             .then(response => response.json())
             .then(data => {
                 document.getElementById('totalDonations').textContent = formatCurrency(data.totalDonations);
             })
-            .catch(error => console.error('Error loading custom range statistics:', error));
+            .catch(error => {
+                console.error('Error loading custom range statistics:', error);
+                document.getElementById('totalDonations').textContent = 'Error';
+            });
         
     
         fetch('../crud/donations/statistics/get_donation_periods.php')
@@ -397,29 +450,62 @@ require_once '../templates/admin_header.php';
         });
 
         updateCharts();
-    }
-
-    function updateCharts() {
+    }    function updateCharts() {
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
-          fetch(`../crud/donations/statistics/get_donations_chart.php?start=${startDate}&end=${endDate}`)
+
+        fetch(`../crud/donations/statistics/get_donations_chart.php?start=${startDate}&end=${endDate}`)
             .then(response => response.json())
             .then(data => {
+                if (!data.success && data.error) {
+                    throw new Error(data.error);
+                }
                 window.donationsChart.data.labels = data.labels;
                 window.donationsChart.data.datasets[0].data = data.values;
                 window.donationsChart.update();
+            })
+            .catch(error => {
+                console.error('Error updating donations chart:', error);
+
+                window.donationsChart.data.labels = [];
+                window.donationsChart.data.datasets[0].data = [];
+                window.donationsChart.update();
             });
-          fetch(`../crud/donations/statistics/get_donation_types.php?start=${startDate}&end=${endDate}`)
+
+
+        fetch(`../crud/donations/statistics/get_donation_types.php?start=${startDate}&end=${endDate}`)
             .then(response => response.json())
             .then(data => {
+                if (!data.success && data.error) {
+                    throw new Error(data.error);
+                }
                 window.donationTypesChart.data.datasets[0].data = data.values;
                 window.donationTypesChart.update();
+            })
+            .catch(error => {
+                console.error('Error updating donation types chart:', error);
+      
+                window.donationTypesChart.data.datasets[0].data = [];
+                window.donationTypesChart.update();
             });
-    }
-
-    function loadDonations() {
+    }    function loadDonations() {
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
+        
+      
+        const tbody = document.getElementById('donationsTableBody');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center">
+                    <div class="d-flex justify-content-center align-items-center">
+                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        Loading donations...
+                    </div>
+                </td>
+            </tr>
+        `;
         
         fetch(`../crud/donations/read_donations.php?start=${startDate}&end=${endDate}`)
             .then(response => response.json())
@@ -428,13 +514,14 @@ require_once '../templates/admin_header.php';
                     throw new Error(data.message || 'Failed to load donations');
                 }
 
-                const tbody = document.getElementById('donationsTableBody');
                 tbody.innerHTML = '';
                 
                 if (data.donations.length === 0) {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="6" class="text-center">No donations found</td>
+                            <td colspan="6" class="text-center">
+                                No donations found between ${formatDate(startDate)} and ${formatDate(endDate)}
+                            </td>
                         </tr>
                     `;
                     return;
