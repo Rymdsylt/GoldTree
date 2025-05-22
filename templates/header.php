@@ -212,6 +212,12 @@ document.addEventListener('DOMContentLoaded', function() {
                    class="sidebar-link <?php echo $_SESSION['active_page'] == 'events' ? 'active' : ''; ?>">
                     <i class="bi bi-calendar-event"></i> Events
                 </a>
+                <?php if ($isAdmin): ?>
+                <a href="/GoldTree/donations.php?page=donations" 
+                   class="sidebar-link <?php echo $_SESSION['active_page'] == 'donations' ? 'active' : ''; ?>">
+                    <i class="bi bi-cash-coin"></i> Donations
+                </a>
+                <?php endif; ?>
                 <a href="/GoldTree/announcements.php?page=announcements" 
                    class="sidebar-link <?php echo $_SESSION['active_page'] == 'announcements' ? 'active' : ''; ?>">
                     <i class="bi bi-megaphone"></i> Notifications

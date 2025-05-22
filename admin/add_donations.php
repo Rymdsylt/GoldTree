@@ -56,7 +56,7 @@ require_once '../templates/admin_header.php';
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-12">
             <div class="card stat-card">
                 <div class="card-body">
                     <div class="d-flex flex-column">
@@ -70,7 +70,7 @@ require_once '../templates/admin_header.php';
     </div>
     
     <div class="row g-4 mb-4">
-        <div class="col-md-4">
+        <div class="col-md-12">
             <div class="card stat-card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between mb-3">
