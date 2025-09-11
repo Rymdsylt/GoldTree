@@ -1,0 +1,244 @@
+
+# Mater Dolorosa Parish Management System Documentation
+
+## Table of Contents
+1. Frontend (User Level)
+2. Frontend (Admin Level)
+3. Templates
+4. Frameworks & Assets
+5. Database & Backend
+6. Cron Jobs
+7. Mailer System
+8. Key Features
+
+## 1. Frontend (User Level)
+- **announcements.php**: Displays parish announcements with pagination and filtering.
+- **Dashboard_intro.php**: User dashboard showing stats (members, events, notifications) and recent activity.
+- **dashboard.php**: Main dashboard, loads user info and privacy status
+- **events.php**: Lists parish events, with details and modal popups for event info.
+- **login.php**: Login form and session management for users.
+- **members.php**: Lists parish members, with filters, search, and member notes/pastoral care modals.
+- **profile.php**: User profile management, including security settings.
+- **reports.php**: Analytics dashboard for members, events, and exportable reports.
+- **donations.php**: Analytics for donations, only admin can access this.
+
+## 2. Frontend (Admin Level)
+- **admin.php**: Admin dashboard with stats and quick links to management pages.
+- **admin/add_donations.php**: Admin interface to add and manage donations.
+- **admin/add_events.php**: Admin interface to create and manage events.
+- **admin/manage_members.php**: Admin interface to manage members (CRUD, notes, stats, charts).
+- **admin/notify_members.php**: Admin tool to send notifications to members.
+- **admin/manage_accounts.php**: Admin tool to manage user accounts (CRUD, admin/staff roles).
+
+## 3. Templates
+- **templates/header.php**: Main header, navigation, and sidebar for user pages.
+- **templates/footer.php**: Main footer, JS includes, and sidebar toggling.
+- **templates/admin_header.php**: Header and sidebar for admin pages, with admin navigation and access control.
+- **templates/admin_footer.php**: Footer for admin pages.
+- **templates/privacy_policy_modal.php**: Modal for privacy policy agreement.
+- **templates/privacy_policy.php**: Privacy policy content.
+
+## 4. Frameworks & Assets
+- **Bootstrap**: Used for all UI components and layout (see css/ and js/ folders).
+- **css/theme.css**: Custom theme and layout styles for the system.
+- **js/bootstrap.bundle.js**: Bootstrap JS for modals, dropdowns, etc.
+- **js/jquery.js**: jQuery for DOM manipulation and AJAX operations.
+
+## 5. Database & Backend
+- **db/connection.php**: Database connection using PDO with security measures.
+- **crud/**: Contains all CRUD operations for each module:
+  - **crud/announcements/**: CRUD for announcements.
+  - **crud/donations/**: CRUD for donations, includes statistics endpoints.
+  - **crud/events/**: CRUD for events and attendance tracking.
+  - **crud/members/**: CRUD for members, includes statistics and attendance tracking.
+  - **crud/notifications/**: CRUD for notifications.
+  - **crud/reports/**: Data analytics and CSV export.
+  - **crud/users/**: User account management.
+- **ajax/**: AJAX endpoints for real-time data:
+  - **get_pastoral_care.php**: Pastoral care records API
+  - **search_members.php**: Member search API
+  - **search_users.php**: User search API
+- **auth/**: Authentication and session management
+
+## 6. Database Cron Jobs
+- **mark_daily_absences.php**: Automated attendance marking for events.
+- **update_event_status.php**: Updates event statuses (upcoming → ongoing → completed).
+
+## 7. Mailer System
+- **mailer/_credentials.php**: SMTP configuration
+- **mailer/confirm_account.php**: Account verification emails
+- **mailer/event_notification.php**: Event-related notifications
+- **mailer/forgot_password.php**: Password reset emails
+- **mailer/notify_all_users.php**: Mass notification system
+- **mailer/notify_event.php**: Event-specific notifications
+
+## 8. Key Features
+
+### Attendance Management
+- Real-time attendance tracking for events
+- Automatic absence marking via cron job
+- Attendance statistics and reports
+- Individual member attendance history
+
+### Donation Management
+- Multiple donation types support (tithe, offering, project, other)
+- Detailed donation statistics
+- Donor tracking and history
+- Financial reports and analytics
+
+### Event Management
+- Event creation and scheduling
+- Staff assignment system
+- Attendance tracking
+- Event status automation
+
+### Member Management
+- Comprehensive member profiles
+- Attendance history tracking
+- Donation history
+- Pastoral care records
+- Member categories and status tracking
+
+### Security Features
+- Session-based authentication
+- Role-based access control
+- Privacy policy enforcement
+- Secure password management
+- PDO for SQL injection prevention
+
+## Notes
+- All user/admin access is protected by session and role checks
+- Privacy policy agreement is required on first login
+- All data operations use PDO with prepared statements
+- AJAX is used for real-time updates
+- Bootstrap 5 for responsive design
+- Automated cron jobs for system maintenance
+- Email notifications for important events
+
+## Development Guidelines
+1. All database operations must use PDO with prepared statements
+2. Form submissions should include CSRF protection
+3. Input validation on both client and server side
+4. Responsive design principles using Bootstrap classes
+5. Error logging for critical operations
+6. Regular backup of database recommended
+
+## Maintenance Scripts
+- **fix_admin_member_DONT_RUN.php**: Admin account repair tool (maintenance only)
+- **insert_test_data_DONT_RUN.php**: Test data population script (development only)
+- **testcount_DONT_RUN.php**: Event count verification tool (testing only)
+
+## Dependencies
+- PHP 7.4+
+- MySQL/MariaDB
+- Bootstrap 5
+- jQuery
+- PHPMailer
+- Parsedown (for markdown processing)
+
+---
+
+## Notes
+- All user/admin access is protected by session and role checks.
+- Privacy policy is enforced on login.
+- All data tables (members, donations, events, users, etc.) have full CRUD support.
+- Reports and analytics are exportable as CSV.
+
+---
+
+## 8. File-by-File Purpose Reference
+
+### Root Directory
+- **admin.php**: Main admin dashboard with stats and quick links to management pages.
+- **announcements.php**: User page for viewing, searching, and managing parish announcements/notifications.
+- **Dashboard_intro.php**: User dashboard with summary stats and recent activity (donations, events, notifications).
+- **dashboard.php**: Main user dashboard, loads user info and privacy status.
+- **donations.php**: User page for viewing donation stats, history, and donor info.
+- **events.php**: User page for listing parish events, with event details and modals.
+- **fix_admin_member_DONT_RUN.php**: Script to fix or create the admin member record (for dev/maintenance use only).
+- **forgot_password.php**: User interface for password reset via email verification.
+- **insert_test_data_DONT_RUN.php**: Script to insert test data into the database (for dev/testing only).
+- **login.php**: Login form and session management for users.
+- **members.php**: User page for listing/searching parish members, with filters and modals for notes/pastoral care.
+- **notifications.php**: User page for viewing and managing notifications.
+- **Privacy Policy for Mater Dolorosa Parish.md**: Markdown file for privacy policy, rendered in the UI.
+- **Privacy Policy for Mater Dolorosa Parish Management System.docx**: Editable privacy policy in Word format.
+- **profile.php**: User profile management, including security settings and profile image.
+- **register.php**: User registration form and logic.
+- **reports.php**: Analytics dashboard for donations, members, events, and exportable reports.
+- **testcount_DONT_RUN.php**: Script to test event counts (for dev/testing only).
+
+### admin/
+- **add_donations.php**: Admin interface to add and manage donations.
+- **add_events.php**: Admin interface to create new events.
+- **manage_accounts.php**: Admin tool to manage user accounts (CRUD, admin/staff roles).
+- **manage_members.php**: Admin interface to manage members (CRUD, notes, stats, charts).
+- **notify_members.php**: Admin tool to send notifications to members.
+
+### ajax/
+- **get_pastoral_care.php**: Returns JSON of pastoral care records for a member (AJAX endpoint).
+- **search_members.php**: AJAX endpoint for searching members by name/email.
+- **search_users.php**: AJAX endpoint for searching users by username/email.
+
+### assets/
+- **img/logo.png**: Main logo for the UI.
+- **s/**: (Empty or reserved for future static assets.)
+
+### auth/
+- **handle_privacy_agreement.php**: Handles user agreement to privacy policy (AJAX endpoint).
+- **login_status.php**: Session and access control logic for all pages.
+- **login_user.php**: Handles user login and session creation.
+- **logout_user.php**: Handles user logout and session destruction.
+- **register_user.php**: Handles user registration and verification.
+- **reset_password.php**: Handles password reset logic.
+- **send_verification.php**: Sends email verification codes for registration/reset.
+
+### cron/
+- **mark_daily_absences.php**: Marks daily absences for event attendance (scheduled task).
+- **update_event_status.php**: Updates event statuses (e.g., from upcoming to ongoing) (scheduled task).
+
+### crud/
+- **announcements/**: CRUD scripts for announcements/notifications (create, read, delete, mark as read, stats).
+- **donations/**: CRUD scripts for donations (create, read, update, delete, filter).
+- **events/**: CRUD scripts for events and attendance (create, read, update, delete, attendance management).
+- **members/**: CRUD scripts for members (create, read, update, delete, notes, stats, charts).
+- **notifications/**: CRUD scripts for notifications (create, read, delete, mark as read, unread count).
+- **reports/**: Scripts for analytics data and CSV export (donations, members, events, demographics, etc.).
+- **users/**: CRUD scripts for user accounts (create, read, update, delete, check email, change password, profile update).
+
+### css/
+- **theme.css**: Custom theme and layout styles for the system.
+- **bootstrap*.css**: Bootstrap framework styles (various builds and utilities).
+
+### db/
+- **connection.php**: Database connection and schema creation using PDO.
+- **create_index.php**: Script to create database indexes for performance.
+- **update_schema.php**: Script to update/alter the database schema.
+
+### js/
+- **bootstrap.bundle.js**: Bootstrap JS for modals, dropdowns, etc. (and minified/maps).
+- **jquery.js**: jQuery library for DOM manipulation and AJAX.
+
+### mailer/
+- **_credentials.php**: SMTP credentials for sending emails.
+- **confirm_account.php**: Sends account confirmation emails.
+- **event_notification.php**: Sends event notification emails.
+- **forgot_password.php**: Sends password reset emails.
+- **notify_all_users.php**: Sends notifications to all users.
+- **notify_event.php**: Sends notifications for specific events.
+
+### templates/
+- **admin_footer.php**: Footer for admin pages.
+- **admin_header.php**: Header and sidebar for admin pages, with admin navigation and access control.
+- **footer.php**: Main footer, JS includes, and sidebar toggling.
+- **header.php**: Main header, navigation, and sidebar for user pages.
+- **privacy_modal.php**: Modal for privacy policy agreement.
+- **privacy_policy.php**: Privacy policy content (PHP include).
+- **privacy_policy_modal.php**: Modal for privacy policy agreement (used in admin).
+
+### vendor/
+- **composer/**: Composer autoload and dependency management files.
+- **erusev/parsedown/**: Markdown parser for rendering privacy policy.
+- **phpmailer/phpmailer/**: PHPMailer library for sending emails (with language and src subfolders).
+
+
