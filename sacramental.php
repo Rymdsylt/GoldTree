@@ -17,6 +17,32 @@ if (!$user || $user['admin_status'] != 1) {
 <?php require_once 'templates/header.php'; ?>
 
 <div class="container-fluid px-3 px-md-4">
+    <div class="row g-4 mb-4">
+        <?php
+        $sacraments = ['Baptism', 'Confirmation', 'First Communion', 'Marriage'];
+        foreach ($sacraments as $sacrament) {
+            $currentYear = date('Y');
+            $stmt = $conn->prepare("SELECT COUNT(*) as total FROM sacramental_records WHERE sacrament_type = ?");
+            $stmt->execute([$sacrament]);
+            $total = $stmt->fetch()['total'];
+            
+            $stmt = $conn->prepare("SELECT COUNT(*) as yearly FROM sacramental_records WHERE sacrament_type = ? AND YEAR(date) = ?");
+            $stmt->execute([$sacrament, $currentYear]);
+            $yearly = $stmt->fetch()['yearly'];
+            ?>
+            <div class="col-md-3">
+                <div class="card stat-card">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2"><?php echo $sacrament; ?></h6>
+                        <h2 class="card-title mb-0"><?php echo $total; ?></h2>
+                        <small>This year: <?php echo $yearly; ?></small>
+                    </div>
+                </div>
+            </div>
+            <?php
+        }
+        ?>
+    </div>
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">

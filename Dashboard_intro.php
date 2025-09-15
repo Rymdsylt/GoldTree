@@ -1,20 +1,11 @@
 <?php 
 require_once 'templates/header.php';
 require_once 'auth/login_status.php';
-require_once 'db/connection.php';
 
 $stmt = $conn->query("SELECT COUNT(*) as total_members, 
     SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_members 
     FROM members");
 $memberStats = $stmt->fetch(PDO::FETCH_ASSOC);
-
-$sacramentStats = [];
-if (isset($_SESSION['admin_status']) && $_SESSION['admin_status'] == 1) {
-    $stmt = $conn->query("SELECT sacrament_type, COUNT(*) as count 
-        FROM sacramental_records 
-        GROUP BY sacrament_type");
-    $sacramentStats = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
-}
 
 
 
@@ -42,7 +33,7 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <div class="container-fluid py-4">    <div class="row g-4 mb-4">
-        <div class="<?php echo isset($_SESSION['admin_status']) && $_SESSION['admin_status'] == 1 ? 'col-md-3' : 'col-md-4'; ?>">
+        <div class="col-md-4">
             <div class="card stat-card h-100">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Total Members</h6>
@@ -51,7 +42,7 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
         </div>
-        <div class="<?php echo isset($_SESSION['admin_status']) && $_SESSION['admin_status'] == 1 ? 'col-md-3' : 'col-md-4'; ?>">
+        <div class="col-md-4">
             <div class="card stat-card h-100">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Upcoming Events</h6>
@@ -60,7 +51,7 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
         </div>
-        <div class="<?php echo isset($_SESSION['admin_status']) && $_SESSION['admin_status'] == 1 ? 'col-md-3' : 'col-md-4'; ?>">
+        <div class="col-md-4">
             <div class="card stat-card h-100">
                 <div class="card-body">
                     <h6 class="card-subtitle mb-2">Unread Notifications</h6>
@@ -69,58 +60,7 @@ $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 </div>
             </div>
         </div>
-        <?php if (isset($_SESSION['admin_status']) && $_SESSION['admin_status'] == 1): ?>
-        <div class="col-md-3">
-            <div class="card stat-card h-100">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2">Total Sacraments</h6>
-                    <h2 class="card-title mb-0"><?php echo array_sum($sacramentStats); ?></h2>
-                    <small><?php echo isset($sacramentStats['Baptism']) ? $sacramentStats['Baptism'] : 0; ?> Baptisms</small>
-                </div>
-            </div>
-        </div>
-        <?php endif; ?>
     </div>
-    <?php if (isset($_SESSION['admin_status']) && $_SESSION['admin_status'] == 1): ?>
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <div class="card stat-card h-100">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2">Baptisms</h6>
-                    <h2 class="card-title mb-0"><?php echo isset($sacramentStats['Baptism']) ? $sacramentStats['Baptism'] : 0; ?></h2>
-                    <small>Total records</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stat-card h-100">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2">Confirmations</h6>
-                    <h2 class="card-title mb-0"><?php echo isset($sacramentStats['Confirmation']) ? $sacramentStats['Confirmation'] : 0; ?></h2>
-                    <small>Total records</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stat-card h-100">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2">First Communion</h6>
-                    <h2 class="card-title mb-0"><?php echo isset($sacramentStats['First Communion']) ? $sacramentStats['First Communion'] : 0; ?></h2>
-                    <small>Total records</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stat-card h-100">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-2">Marriages</h6>
-                    <h2 class="card-title mb-0"><?php echo isset($sacramentStats['Marriage']) ? $sacramentStats['Marriage'] : 0; ?></h2>
-                    <small>Total records</small>
-                </div>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
 
     <div class="row g-4">
         <div class="col-md-12">
