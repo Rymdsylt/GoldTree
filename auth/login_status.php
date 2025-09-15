@@ -6,9 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 $current_page = basename($_SERVER['PHP_SELF']);
 $public_pages = ['register.php', 'login.php', 'forgot_password.php'];
 
-// First check if it's a public page
 if (in_array($current_page, $public_pages)) {
-    // Only redirect away from login page if user is actually logged in
     if ($current_page === 'login.php' && isset($_SESSION['user_id'])) {
         header("Location: /GoldTree/dashboard.php");
         exit();
@@ -16,7 +14,6 @@ if (in_array($current_page, $public_pages)) {
     return;
 }
 
-// For all other pages, redirect to login if not logged in
 if (!isset($_SESSION['user_id'])) {
     header("Location: /GoldTree/login.php");
     exit();

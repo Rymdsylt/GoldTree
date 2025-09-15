@@ -1,6 +1,8 @@
-<?php require_once 'templates/header.php'
-; 
-require_once 'auth/login_status.php';?>
+<?php
+require_once 'templates/header.php';
+require_once 'auth/login_status.php';
+require_once 'auth/check_admin.php';
+require_once 'db/connection.php';?>
 
 <style>
 .chart-container {
@@ -46,8 +48,10 @@ require_once 'auth/login_status.php';?>
                 </div>
             </div>
         </div>
-        <div class="col-sm-6">            <div class="card stat-card">
-                <div class="card-body">                    <h6 class="card-subtitle mb-2">Attendance Rate</h6>
+        <div class="col-sm-6">            
+            <div class="card stat-card">
+                <div class="card-body">                    
+                    <h6 class="card-subtitle mb-2">Attendance Rate</h6>
                     <h2 class="card-title mb-0"><span id="avgAttendance">0</span>%</h2>
                     <div class="d-flex align-items-center gap-2">
                         <i class="bi bi-person-x"></i>
@@ -58,31 +62,99 @@ require_once 'auth/login_status.php';?>
         </div>
     </div>
     <div class="row g-4 mb-4">
+        <?php if (isset($_SESSION['admin_status']) && $_SESSION['admin_status'] == 1): ?>
+            <?php
+            $sacraments = ['Baptism', 'Confirmation', 'First Communion', 'Marriage'];
+            foreach ($sacraments as $sacrament) {
+                $stmt = $conn->prepare("SELECT COUNT(*) as count FROM sacramental_records WHERE sacrament_type = ?");
+                $stmt->execute([$sacrament]);
+                $count = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+                ?>
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-2"><?php echo $sacrament; ?></h6>
+                            <h2 class="card-title mb-0"><?php echo $count; ?></h2>
+                            <small>Total records</small>
+                        </div>
+                    </div>
+                </div>
+                <?php
+            }
+            ?>
+        <?php endif; ?>
     </div>
 
   
     <div class="row g-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Member Demographics</h5>
-                    <div class="chart-container">
-                        <canvas id="demographicsChart"></canvas>
+        <?php if (isset($_SESSION['admin_status']) && $_SESSION['admin_status'] == 1): ?>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Member Demographics</h5>
+                        <div class="chart-container">
+                            <canvas id="demographicsChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Event Participation</h5>
-                    <div class="chart-container">
-                        <canvas id="eventParticipationChart"></canvas>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Event Participation</h5>
+                        <div class="chart-container">
+                            <canvas id="eventParticipationChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Sacramental Records</h5>
+                        <div class="chart-container">
+                            <canvas id="sacramentalChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php else: ?>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Member Demographics</h5>
+                        <div class="chart-container">
+                            <canvas id="demographicsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Event Participation</h5>
+                        <div class="chart-container">
+                            <canvas id="eventParticipationChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
     </div>
+
+    <?php
+    if (isset($_SESSION['admin_status']) && $_SESSION['admin_status'] == 1) {
+        $stmt = $conn->query("SELECT sacrament_type, COUNT(*) as count, 
+            DATE_FORMAT(date, '%Y-%m') as month 
+            FROM sacramental_records 
+            WHERE date >= DATE_SUB(CURRENT_DATE, INTERVAL 12 MONTH) 
+            GROUP BY sacrament_type, month 
+            ORDER BY month, sacrament_type");
+        $sacramentalData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        $sacramentalData = [];
+    }
+    ?>
 
 
     <div class="row mt-4">
@@ -310,6 +382,67 @@ function initializeCharts() {
             }
         }
     });
+
+    <?php if (isset($_SESSION['admin_status']) && $_SESSION['admin_status'] == 1): ?>
+    const sacramentalData = <?php echo json_encode($sacramentalData); ?>;
+    const months = [...new Set(sacramentalData.map(item => item.month))];
+    const sacramentTypes = ['Baptism', 'Confirmation', 'First Communion', 'Marriage'];
+    
+    const datasets = sacramentTypes.map((type, index) => {
+        const color = [
+            'rgba(75, 192, 192, 0.7)',
+            'rgba(255, 159, 64, 0.7)',
+            'rgba(153, 102, 255, 0.7)',
+            'rgba(255, 99, 132, 0.7)'
+        ][index];
+        
+        return {
+            label: type,
+            data: months.map(month => {
+                const record = sacramentalData.find(item => 
+                    item.month === month && item.sacrament_type === type
+                );
+                return record ? record.count : 0;
+            }),
+            backgroundColor: color,
+            borderColor: color.replace('0.7', '1'),
+            borderWidth: 1
+        };
+    });
+
+    new Chart(document.getElementById('sacramentalChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Sacramental Records Distribution'
+                },
+                legend: {
+                    position: 'bottom'
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+    <?php endif; ?>
 
     updateCharts();
 }

@@ -71,7 +71,10 @@ if (!$user || $user['admin_status'] != 1) {
                             </thead>
                             <tbody>
                                 <?php
-                                $stmt = $conn->query("SELECT * FROM sacramental_records ORDER BY date DESC LIMIT 10");
+                                $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+                                $recordsPerPage = 10;
+                                $offset = max(0, ($page - 1) * $recordsPerPage);
+                                $stmt = $conn->query("SELECT * FROM sacramental_records ORDER BY date DESC LIMIT $recordsPerPage OFFSET $offset");
                                 while ($record = $stmt->fetch()) {
                                     echo "<tr>";
                                     echo "<td>" . htmlspecialchars($record['name']) . "</td>";
@@ -88,6 +91,33 @@ if (!$user || $user['admin_status'] != 1) {
                                 ?>
                             </tbody>
                         </table>
+                        <?php
+                        $totalRecords = $conn->query("SELECT COUNT(*) FROM sacramental_records")->fetchColumn();
+                        $totalPages = ceil($totalRecords / $recordsPerPage);
+                        if ($totalPages > 1):
+                        ?>
+                        <nav class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                <?php if ($page > 1): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=<?= $page - 1 ?>">Previous</a>
+                                    </li>
+                                <?php endif; ?>
+                                
+                                <?php for ($i = max(1, $page - 2); $i <= min($totalPages, $page + 2); $i++): ?>
+                                    <li class="page-item <?= $i === $page ? 'active' : '' ?>">
+                                        <a class="page-link" href="?page=<?= $i ?>"><?= $i ?></a>
+                                    </li>
+                                <?php endfor; ?>
+                                
+                                <?php if ($page < $totalPages): ?>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=<?= $page + 1 ?>">Next</a>
+                                    </li>
+                                <?php endif; ?>
+                            </ul>
+                        </nav>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -174,16 +204,17 @@ async function viewRecord(id) {
     }
 }
 
-async function filterRecords() {
+async function filterRecords(page = 1) {
     try {
         const filterData = {
             sacramentType: document.getElementById('filterSacramentType').value,
             dateFrom: document.getElementById('dateFrom').value,
             dateTo: document.getElementById('dateTo').value,
-            search: document.getElementById('search').value
+            search: document.getElementById('search').value,
+            page: page
         };
 
-        const response = await fetch('/GoldTree/crud/sacramental_records/filter.php', {
+        const response = await fetch('/GoldTree/crud/sacramental_records/filter_nocrud.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -199,6 +230,21 @@ async function filterRecords() {
        
         const tbody = document.querySelector('table tbody');
         tbody.innerHTML = result.html;
+        
+        if (result.pagination) {
+            const nav = document.querySelector('nav');
+            nav.innerHTML = result.pagination;
+        }
+        
+        const links = document.querySelectorAll('.pagination .page-link');
+        links.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const pageUrl = new URL(e.target.href);
+                const pageNum = pageUrl.searchParams.get('page');
+                filterRecords(pageNum);
+            });
+        });
 
     } catch (error) {
         alert(error.message);

@@ -171,12 +171,12 @@ $totalCount = $totalStmt->fetch()['count'];
 
 <script>
 function loadEvents(page = 1) {
-    // First update event statuses
+
     fetch('cron/update_event_status.php')
         .then(response => response.json())
         .catch(error => console.error('Error updating event statuses:', error));
 
-    // Then load events as normal
+  
     const search = document.getElementById('searchEvents').value;
     const status = document.getElementById('statusFilter').value;
     const date = document.getElementById('dateFilter').value;
@@ -294,10 +294,10 @@ function updatePagination(currentPage, totalPages) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Initial load
+
     loadEvents();
     
-    // Update event statuses every minute
+ 
     setInterval(() => {
         loadEvents();
     }, 60000);
