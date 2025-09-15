@@ -1,10 +1,5 @@
 <?php
 session_start();
-
-$_SESSION = array();
-session_destroy();
-session_start();
-
 require_once '../db/connection.php';
 
 header('Content-Type: application/json');

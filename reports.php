@@ -197,7 +197,7 @@ function loadStatistics() {
         })
         .catch(error => {
             console.error('Error loading statistics:', error);
-            // Show error message to user
+          
             const alertDiv = document.createElement('div');
             alertDiv.className = 'alert alert-danger';
             alertDiv.textContent = 'Failed to load statistics: ' + error.message;
@@ -318,7 +318,6 @@ function updateCharts() {
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
 
-    // Demographics chart update
     fetch(`crud/reports/get_demographics.php`)
         .then(response => response.json())
         .then(data => {
@@ -337,8 +336,7 @@ function updateCharts() {
                 </div>
             `;
         });
-    
-    // Event participation chart update
+
     fetch(`crud/reports/get_event_participation.php?start=${startDate}&end=${endDate}`)
         .then(response => response.json())
         .then(data => {

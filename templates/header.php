@@ -228,11 +228,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     <i class="bi bi-graph-up"></i> Reports
                 </a>
                 <?php if ($isAdmin): ?>
+                <a href="/GoldTree/sacramental.php?page=sacramental" 
+                   class="sidebar-link <?php echo $_SESSION['active_page'] == 'sacramental' ? 'active' : ''; ?>">
+                    <i class="bi bi-journal-text"></i> Sacramental Records
+                </a>
                     <div class="mt-4">
                         <h6 class="text-muted px-3 mb-3">Admin</h6>
                         <a href="/GoldTree/admin/manage_accounts.php" class="sidebar-link <?php echo $current_page == 'manage_accounts.php' ? 'active' : ''; ?>">
                             <i class="bi bi-gear"></i> Admin Panel
                         </a>
+
                     </div>
                 <?php endif; ?>
                 

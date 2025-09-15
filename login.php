@@ -2,12 +2,7 @@
 session_start();
 
 
-if (isset($_SESSION['user_id'])) {
-    header("Location: dashboard.php");
-    exit();
-}
-
-
+// Handle logout
 if (isset($_GET['logout'])) {
     $_SESSION = array();
     session_destroy();
@@ -17,7 +12,8 @@ if (isset($_GET['logout'])) {
     }
 }
 
-if (isset($_COOKIE['logged_in']) && $_COOKIE['logged_in'] === 'true') {
+// Check if user is already logged in
+if (isset($_SESSION['user_id'])) {
     header("Location: dashboard.php");
     exit();
 }

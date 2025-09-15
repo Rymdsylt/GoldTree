@@ -159,6 +159,17 @@ try {
         UNIQUE KEY unique_assignment (event_id, user_id)
     )");
 
+    $conn->exec("CREATE TABLE IF NOT EXISTS sacramental_records (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        age INT NOT NULL,
+        address TEXT NOT NULL,
+        sacrament_type ENUM('Baptism', 'Confirmation', 'First Communion', 'Marriage') NOT NULL,
+        date DATE NOT NULL,
+        priest_presiding VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+
 } catch(PDOException $e) {
     die("Connection failed: " . $e->getMessage());
 }

@@ -6,28 +6,20 @@ if (session_status() === PHP_SESSION_NONE) {
 $current_page = basename($_SERVER['PHP_SELF']);
 $public_pages = ['register.php', 'login.php', 'forgot_password.php'];
 
-
-if (isset($_SESSION['user_id']) && $current_page === 'login.php') {
-    header("Location: /GoldTree/dashboard.php");
-    exit();
-}
-
-
+// First check if it's a public page
 if (in_array($current_page, $public_pages)) {
+    // Only redirect away from login page if user is actually logged in
+    if ($current_page === 'login.php' && isset($_SESSION['user_id'])) {
+        header("Location: /GoldTree/dashboard.php");
+        exit();
+    }
     return;
 }
 
-
+// For all other pages, redirect to login if not logged in
 if (!isset($_SESSION['user_id'])) {
-    if (strpos($_SERVER['REQUEST_URI'], '/crud/') !== false || strpos($_SERVER['REQUEST_URI'], '/admin/') !== false) {
-        header('Content-Type: application/json');
-        http_response_code(401);
-        echo json_encode(['success' => false, 'message' => 'User not logged in']);
-        exit();
-    } else {
-        header("Location: /GoldTree/login.php");
-        exit();
-    }
+    header("Location: /GoldTree/login.php");
+    exit();
 }
 
 if (!isset($_SESSION['privacy_checked']) && 

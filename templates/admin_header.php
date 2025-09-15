@@ -262,6 +262,9 @@ if (!$user || $user['admin_status'] != 1) {
                 <a href="/GoldTree/admin/notify_members.php" class="sidebar-link <?php echo $current_page == 'notify_members.php' ? 'active' : ''; ?>">
                     <i class="bi bi-envelope"></i> Notify Members
                 </a>
+                <a href="/GoldTree/admin/sacramental_records.php" class="sidebar-link <?php echo $current_page == 'sacramental_records.php' ? 'active' : ''; ?>">
+                    <i class="bi bi-journal-text"></i> Sacramental Records
+                </a>
             </nav>
         </div>
     </div>    <!-- Main Content Container -->
