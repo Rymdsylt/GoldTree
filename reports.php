@@ -32,7 +32,7 @@ require_once 'db/connection.php';?>
                                     </button>
                                 </div>
                             </div>
-                        </div>
+                        </div> 
                     </div>
                 </div>
             </div>
