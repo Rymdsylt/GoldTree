@@ -1,0 +1,129 @@
+
+INSERT INTO baptismal_records (name, parent1_name, parent1_origin, parent2_name, parent2_origin, address, birth_date, birth_place, gender, baptism_date, minister) VALUES
+('Maria Angela Santos', 'Roberto Santos', 'Quezon City', 'Elena Reyes', 'Makati City', '123 Sampaguita St, Quezon City', '2024-01-15', 'St. Lukes Medical Center, QC', 'female', '2024-03-20', 'Rev. Fr. Jose Cruz'),
+('Michael Antonio Reyes', 'Antonio Reyes', 'Manila', 'Clara Mendoza', 'Pasig', '45 Jasmine Ave, Mandaluyong', '2024-02-01', 'Cardinal Santos Hospital', 'male', '2024-04-10', 'Rev. Fr. Pedro Santos'),
+('Marco Angelo dela Cruz', 'Juan dela Cruz', 'Batangas', 'Maria Luna', 'Laguna', '67 Rose St, Makati', '2024-02-15', 'Makati Medical Center', 'male', '2024-04-25', 'Rev. Fr. James Tan'),
+('Sofia Isabel Lim', 'Robert Lim', 'Manila', 'Isabel Tan', 'Binondo', '89 Orchid St, Manila', '2024-03-01', 'Chinese General Hospital', 'female', '2024-05-15', 'Rev. Fr. John Paul Reyes'),
+('Gabriel Alexander Torres', 'Miguel Torres', 'Pampanga', 'Ana Santos', 'Bulacan', '34 Dahlia St, San Juan', '2024-03-15', 'San Juan Medical Center', 'male', '2024-05-30', 'Rev. Fr. Antonio Luna'),
+('Maria Sofia Garcia', 'Carlos Garcia', 'Cavite', 'Patricia Tan', 'Manila', '56 Rosal St, Pasig', '2024-04-01', 'Pasig City General Hospital', 'female', '2024-06-15', 'Rev. Fr. Martin Cruz'),
+('Matthew Sebastian Cruz', 'Roberto Cruz', 'Manila', 'Carmen Reyes', 'Quezon City', '78 Lily St, Marikina', '2024-04-15', 'Marikina Valley Medical Center', 'male', '2024-06-30', 'Rev. Fr. Benedict Tan'),
+('Sofia Alexandra Tan', 'William Tan', 'Binondo', 'Maria Santos', 'Makati', '90 Camia St, Pasay', '2024-05-01', 'Pasay City General Hospital', 'female', '2024-07-15', 'Rev. Fr. Joseph Garcia'),
+('Marcus Angelo Santos', 'Ricardo Santos', 'Pasig', 'Teresa Luna', 'Manila', '12 Acacia St, Muntinlupa', '2024-05-15', 'Asian Hospital', 'male', '2024-07-30', 'Rev. Fr. Francis Reyes'),
+('Maria Isabella Reyes', 'Fernando Reyes', 'Makati', 'Sofia Cruz', 'Quezon City', '23 Pine St, Taguig', '2024-06-01', 'St. Lukes BGC', 'female', '2024-08-15', 'Rev. Fr. Thomas Santos');
+
+
+INSERT INTO baptismal_sponsors (baptismal_record_id, sponsor_name) VALUES
+(1, 'Juan Dela Cruz'), (1, 'Maria Santos'),
+(2, 'Pedro Reyes'), (2, 'Ana Luna'),
+(3, 'Miguel Santos'), (3, 'Clara Torres'),
+(4, 'Roberto Tan'), (4, 'Elena Garcia'),
+(5, 'Carlos Luna'), (5, 'Sofia Reyes'),
+(6, 'Antonio Santos'), (6, 'Isabel Cruz'),
+(7, 'Ricardo Tan'), (7, 'Patricia Santos'),
+(8, 'Martin Cruz'), (8, 'Carmen Luna'),
+(9, 'Fernando Garcia'), (9, 'Teresa Reyes'),
+(10, 'William Santos'), (10, 'Maria Tan');
+
+
+INSERT INTO confirmation_records (name, parent1_name, parent1_origin, parent2_name, parent2_origin, address, birth_date, birth_place, gender, baptism_date, minister) VALUES
+('Marco Antonio Santos', 'Roberto Santos', 'Quezon City', 'Elena Garcia', 'Makati', '123 Mabuhay St, QC', '2016-01-15', 'QC General Hospital', 'male', '2016-03-20', 'Bishop Jose Cruz'),
+('Maria Sofia Reyes', 'Antonio Reyes', 'Manila', 'Clara Torres', 'Pasig', '45 Peace Ave, Mandaluyong', '2016-02-01', 'Cardinal Santos Hospital', 'female', '2016-04-10', 'Bishop Pedro Luna'),
+('Matthew Sebastian Lim', 'William Lim', 'Binondo', 'Isabel Santos', 'Manila', '67 Unity St, Makati', '2016-02-15', 'Makati Medical Center', 'male', '2016-04-25', 'Bishop James Garcia'),
+('Sofia Isabella Cruz', 'Ricardo Cruz', 'Batangas', 'Maria Reyes', 'Laguna', '89 Hope St, Manila', '2016-03-01', 'Manila Doctors Hospital', 'female', '2016-05-15', 'Bishop John Paul Tan'),
+('Gabriel Alexander Tan', 'Martin Tan', 'Manila', 'Ana Luna', 'Quezon City', '34 Love St, San Juan', '2016-03-15', 'San Juan Medical Center', 'male', '2016-05-30', 'Bishop Antonio Santos'),
+('Maria Angela Garcia', 'Carlos Garcia', 'Cavite', 'Patricia Santos', 'Manila', '56 Joy St, Pasig', '2016-04-01', 'Pasig City General Hospital', 'female', '2016-06-15', 'Bishop Martin Reyes'),
+('Michael Angelo Torres', 'Miguel Torres', 'Pampanga', 'Carmen Tan', 'Bulacan', '78 Faith St, Marikina', '2016-04-15', 'Amang Rodriguez Hospital', 'male', '2016-06-30', 'Bishop Benedict Cruz'),
+('Sofia Alexandra Santos', 'Fernando Santos', 'Makati', 'Teresa Cruz', 'Pasig', '90 Grace St, Pasay', '2016-05-01', 'Pasay City General Hospital', 'female', '2016-07-15', 'Bishop Joseph Tan'),
+('Marcus Antonio Reyes', 'Roberto Reyes', 'Pasig', 'Elena Torres', 'Manila', '12 Blessing St, Muntinlupa', '2016-05-15', 'Asian Hospital', 'male', '2016-07-30', 'Bishop Francis Luna'),
+('Maria Isabella Cruz', 'Ricardo Cruz', 'Quezon City', 'Sofia Garcia', 'Makati', '23 Harmony St, Taguig', '2016-06-01', 'St. Lukes BGC', 'female', '2016-08-15', 'Bishop Thomas Santos');
+
+
+INSERT INTO confirmation_sponsors (confirmation_record_id, sponsor_name) VALUES
+(1, 'Pedro Cruz'), (1, 'Maria Luna'),
+(2, 'Juan Santos'), (2, 'Ana Garcia'),
+(3, 'Miguel Reyes'), (3, 'Clara Santos'),
+(4, 'Roberto Garcia'), (4, 'Elena Tan'),
+(5, 'Carlos Santos'), (5, 'Sofia Luna'),
+(6, 'Antonio Cruz'), (6, 'Isabel Torres'),
+(7, 'Ricardo Luna'), (7, 'Patricia Cruz'),
+(8, 'Martin Santos'), (8, 'Carmen Garcia'),
+(9, 'Fernando Tan'), (9, 'Teresa Santos'),
+(10, 'William Cruz'), (10, 'Maria Reyes');
+
+
+INSERT INTO first_communion_records (name, parent1_name, parent1_origin, parent2_name, parent2_origin, address, birth_date, birth_place, gender, baptism_date, baptism_church, church, communion_date, confirmation_date, minister) VALUES
+('Maria Alexandra Santos', 'Roberto Santos', 'Quezon City', 'Elena Torres', 'Makati', '123 Paz St, QC', '2017-01-15', 'QC General Hospital', 'female', '2017-03-20', 'Our Lady of Peace Parish', 'Mater Dolorosa Parish', '2024-05-15', '2024-06-15', 'Rev. Fr. Jose Luna'),
+('Marcus Angelo Reyes', 'Antonio Reyes', 'Manila', 'Clara Garcia', 'Pasig', '45 Harmony Ave, Mandaluyong', '2017-02-01', 'Cardinal Santos Hospital', 'male', '2017-04-10', 'San Felipe Neri Parish', 'Mater Dolorosa Parish', '2024-05-15', '2024-06-15', 'Rev. Fr. Pedro Cruz'),
+('Michael Sebastian Cruz', 'Juan Cruz', 'Batangas', 'Maria Santos', 'Laguna', '67 Grace St, Makati', '2017-02-15', 'Makati Medical Center', 'male', '2017-04-25', 'Sts. Peter and Paul Parish', 'Mater Dolorosa Parish', '2024-05-15', '2024-06-15', 'Rev. Fr. James Santos'),
+('Sofia Isabella Tan', 'Martin Tan', 'Manila', 'Isabel Luna', 'Binondo', '89 Blessing St, Manila', '2017-03-01', 'Chinese General Hospital', 'female', '2017-05-15', 'San Lorenzo Ruiz Parish', 'Mater Dolorosa Parish', '2024-05-15', '2024-06-15', 'Rev. Fr. John Paul Garcia'),
+('Gabriel Antonio Torres', 'Miguel Torres', 'Pampanga', 'Ana Cruz', 'Bulacan', '34 Joy St, San Juan', '2017-03-15', 'San Juan Medical Center', 'male', '2017-05-30', 'St. John the Baptist Parish', 'Mater Dolorosa Parish', '2024-05-15', '2024-06-15', 'Rev. Fr. Antonio Reyes'),
+('Maria Sofia Garcia', 'Carlos Garcia', 'Cavite', 'Patricia Luna', 'Manila', '56 Love St, Pasig', '2017-04-01', 'Pasig City General Hospital', 'female', '2017-06-15', 'Immaculate Conception Parish', 'Mater Dolorosa Parish', '2024-05-15', '2024-06-15', 'Rev. Fr. Martin Santos'),
+('Matthew Alexander Santos', 'Ricardo Santos', 'Manila', 'Carmen Torres', 'Quezon City', '78 Faith St, Marikina', '2017-04-15', 'Amang Rodriguez Hospital', 'male', '2017-06-30', 'Our Lady of Abandoned Parish', 'Mater Dolorosa Parish', '2024-05-15', '2024-06-15', 'Rev. Fr. Benedict Luna'),
+('Sofia Angela Reyes', 'Fernando Reyes', 'Makati', 'Teresa Garcia', 'Pasig', '90 Hope St, Pasay', '2017-05-01', 'Pasay City General Hospital', 'female', '2017-07-15', 'San Isidro Labrador Parish', 'Mater Dolorosa Parish', '2024-05-15', '2024-06-15', 'Rev. Fr. Joseph Cruz'),
+('Marco Antonio Cruz', 'William Cruz', 'Pasig', 'Sofia Santos', 'Manila', '12 Unity St, Muntinlupa', '2017-05-15', 'Asian Hospital', 'male', '2017-07-30', 'San Roque Parish', 'Mater Dolorosa Parish', '2024-05-15', '2024-06-15', 'Rev. Fr. Francis Garcia'),
+('Maria Isabella Torres', 'Roberto Torres', 'Quezon City', 'Elena Luna', 'Makati', '23 Peace St, Taguig', '2017-06-01', 'St. Lukes BGC', 'female', '2017-08-15', 'St. Michael Parish', 'Mater Dolorosa Parish', '2024-05-15', '2024-06-15', 'Rev. Fr. Thomas Reyes');
+
+INSERT INTO matrimony_records (matrimony_date, church, minister) VALUES
+('2024-02-14', 'Mater Dolorosa Parish', 'Rev. Fr. Jose Santos'),
+('2024-03-15', 'Mater Dolorosa Parish', 'Rev. Fr. Pedro Luna'),
+('2024-04-22', 'Mater Dolorosa Parish', 'Rev. Fr. James Cruz'),
+('2024-05-10', 'Mater Dolorosa Parish', 'Rev. Fr. John Paul Torres'),
+('2024-06-12', 'Mater Dolorosa Parish', 'Rev. Fr. Antonio Garcia'),
+('2024-07-08', 'Mater Dolorosa Parish', 'Rev. Fr. Martin Reyes'),
+('2024-08-16', 'Mater Dolorosa Parish', 'Rev. Fr. Benedict Santos'),
+('2024-09-20', 'Mater Dolorosa Parish', 'Rev. Fr. Joseph Luna'),
+('2024-10-11', 'Mater Dolorosa Parish', 'Rev. Fr. Francis Cruz'),
+('2024-11-15', 'Mater Dolorosa Parish', 'Rev. Fr. Thomas Garcia');
+
+
+INSERT INTO matrimony_couples (matrimony_record_id, type, name, parent1_name, parent1_origin, parent2_name, parent2_origin, birth_date, birth_place, gender, baptism_date, baptism_church, confirmation_date, confirmation_church) VALUES
+
+(1, 'bride', 'Maria Angela Santos', 'Roberto Santos', 'Quezon City', 'Elena Cruz', 'Makati', '1995-03-15', 'QC General Hospital', 'female', '1995-05-20', 'Our Lady of Peace Parish', '2010-06-15', 'Mater Dolorosa Parish'),
+(1, 'groom', 'Marco Antonio Reyes', 'Antonio Reyes', 'Manila', 'Clara Torres', 'Pasig', '1993-04-10', 'Cardinal Santos Hospital', 'male', '1993-06-15', 'San Felipe Neri Parish', '2008-07-20', 'Mater Dolorosa Parish'),
+
+
+(2, 'bride', 'Sofia Isabella Cruz', 'Juan Cruz', 'Batangas', 'Maria Luna', 'Laguna', '1996-05-20', 'Makati Medical Center', 'female', '1996-07-25', 'Sts. Peter and Paul Parish', '2011-08-30', 'Mater Dolorosa Parish'),
+(2, 'groom', 'Gabriel Alexander Tan', 'Martin Tan', 'Manila', 'Isabel Santos', 'Binondo', '1994-06-15', 'Chinese General Hospital', 'male', '1994-08-20', 'San Lorenzo Ruiz Parish', '2009-09-25', 'Mater Dolorosa Parish'),
+
+
+(3, 'bride', 'Maria Sofia Garcia', 'Carlos Garcia', 'Cavite', 'Patricia Reyes', 'Manila', '1995-07-25', 'Pasig City General Hospital', 'female', '1995-09-30', 'Immaculate Conception Parish', '2010-10-15', 'Mater Dolorosa Parish'),
+(3, 'groom', 'Matthew Sebastian Torres', 'Miguel Torres', 'Pampanga', 'Ana Cruz', 'Bulacan', '1993-08-20', 'San Juan Medical Center', 'male', '1993-10-25', 'St. John the Baptist Parish', '2008-11-30', 'Mater Dolorosa Parish'),
+
+
+(4, 'bride', 'Sofia Alexandra Santos', 'Ricardo Santos', 'Manila', 'Carmen Luna', 'Quezon City', '1996-09-15', 'Amang Rodriguez Hospital', 'female', '1996-11-20', 'Our Lady of Abandoned Parish', '2011-12-25', 'Mater Dolorosa Parish'),
+(4, 'groom', 'Marcus Angelo Reyes', 'Fernando Reyes', 'Makati', 'Teresa Garcia', 'Pasig', '1994-10-10', 'Pasay City General Hospital', 'male', '1994-12-15', 'San Isidro Labrador Parish', '2009-01-20', 'Mater Dolorosa Parish'),
+
+
+(5, 'bride', 'Maria Isabella Cruz', 'William Cruz', 'Pasig', 'Sofia Torres', 'Manila', '1995-11-05', 'Asian Hospital', 'female', '1996-01-10', 'San Roque Parish', '2011-02-15', 'Mater Dolorosa Parish'),
+(5, 'groom', 'Michael Antonio Santos', 'Roberto Santos', 'Quezon City', 'Elena Luna', 'Makati', '1993-12-01', 'St. Lukes BGC', 'male', '1994-02-05', 'St. Michael Parish', '2009-03-10', 'Mater Dolorosa Parish'),
+
+
+(6, 'bride', 'Sofia Angela Tan', 'Martin Tan', 'Binondo', 'Isabel Reyes', 'Manila', '1996-01-15', 'Chinese General Hospital', 'female', '1996-03-20', 'San Lorenzo Ruiz Parish', '2011-04-25', 'Mater Dolorosa Parish'),
+(6, 'groom', 'Marco Alexander Garcia', 'Carlos Garcia', 'Cavite', 'Patricia Santos', 'Quezon City', '1994-02-10', 'Pasig City General Hospital', 'male', '1994-04-15', 'Immaculate Conception Parish', '2009-05-20', 'Mater Dolorosa Parish'),
+
+(7, 'bride', 'Maria Alexandra Torres', 'Miguel Torres', 'Pampanga', 'Ana Luna', 'Bulacan', '1995-03-20', 'San Juan Medical Center', 'female', '1995-05-25', 'St. John the Baptist Parish', '2010-06-30', 'Mater Dolorosa Parish'),
+(7, 'groom', 'Matthew Antonio Cruz', 'Juan Cruz', 'Batangas', 'Maria Garcia', 'Laguna', '1993-04-15', 'Makati Medical Center', 'male', '1993-06-20', 'Sts. Peter and Paul Parish', '2008-07-25', 'Mater Dolorosa Parish'),
+
+(8, 'bride', 'Sofia Isabella Santos', 'Ricardo Santos', 'Manila', 'Carmen Torres', 'Quezon City', '1996-05-25', 'Amang Rodriguez Hospital', 'female', '1996-07-30', 'Our Lady of Abandoned Parish', '2011-09-05', 'Mater Dolorosa Parish'),
+(8, 'groom', 'Gabriel Sebastian Reyes', 'Fernando Reyes', 'Makati', 'Teresa Luna', 'Pasig', '1994-06-20', 'Pasay City General Hospital', 'male', '1994-08-25', 'San Isidro Labrador Parish', '2009-10-01', 'Mater Dolorosa Parish'),
+
+
+(9, 'bride', 'Maria Sofia Cruz', 'William Cruz', 'Pasig', 'Sofia Santos', 'Manila', '1995-07-30', 'Asian Hospital', 'female', '1995-10-05', 'San Roque Parish', '2010-11-10', 'Mater Dolorosa Parish'),
+(9, 'groom', 'Marcus Alexander Tan', 'Martin Tan', 'Binondo', 'Isabel Garcia', 'Manila', '1993-08-25', 'Chinese General Hospital', 'male', '1993-11-01', 'San Lorenzo Ruiz Parish', '2008-12-05', 'Mater Dolorosa Parish'),
+
+
+(10, 'bride', 'Sofia Angela Torres', 'Miguel Torres', 'Pampanga', 'Ana Reyes', 'Bulacan', '1996-09-30', 'San Juan Medical Center', 'female', '1996-12-05', 'St. John the Baptist Parish', '2011-01-10', 'Mater Dolorosa Parish'),
+(10, 'groom', 'Michael Sebastian Garcia', 'Carlos Garcia', 'Cavite', 'Patricia Luna', 'Manila', '1994-10-25', 'Pasig City General Hospital', 'male', '1994-01-01', 'Immaculate Conception Parish', '2009-02-05', 'Mater Dolorosa Parish');
+
+
+INSERT INTO matrimony_sponsors (matrimony_record_id, sponsor_name) VALUES
+(1, 'Pedro Santos'), (1, 'Maria Luna'), (1, 'Juan Cruz'), (1, 'Elena Garcia'),
+(2, 'Antonio Reyes'), (2, 'Clara Torres'), (2, 'Ricardo Tan'), (2, 'Sofia Santos'),
+(3, 'Miguel Garcia'), (3, 'Patricia Cruz'), (3, 'Martin Santos'), (3, 'Isabel Luna'),
+(4, 'Carlos Torres'), (4, 'Ana Reyes'), (4, 'William Cruz'), (4, 'Teresa Santos'),
+(5, 'Fernando Tan'), (5, 'Carmen Garcia'), (5, 'Roberto Santos'), (5, 'Maria Torres'),
+(6, 'Ricardo Cruz'), (6, 'Elena Luna'), (6, 'Juan Garcia'), (6, 'Sofia Reyes'),
+(7, 'Martin Santos'), (7, 'Patricia Torres'), (7, 'Miguel Cruz'), (7, 'Isabel Garcia'),
+(8, 'Carlos Reyes'), (8, 'Ana Santos'), (8, 'William Tan'), (8, 'Teresa Cruz'),
+(9, 'Fernando Garcia'), (9, 'Carmen Luna'), (9, 'Roberto Torres'), (9, 'Maria Santos'),
+(10, 'Ricardo Tan'), (10, 'Elena Cruz'), (10, 'Juan Santos'), (10, 'Sofia Torres');

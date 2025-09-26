@@ -159,7 +159,111 @@ try {
         UNIQUE KEY unique_assignment (event_id, user_id)
     )");
 
-    $conn->exec("CREATE TABLE IF NOT EXISTS sacramental_records (
+    $conn->exec("CREATE TABLE IF NOT EXISTS baptismal_records (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        parent1_name VARCHAR(255),
+        parent1_origin VARCHAR(255),
+        parent2_name VARCHAR(255),
+        parent2_origin VARCHAR(255),
+        address TEXT NOT NULL,
+        birth_date DATE NOT NULL,
+        birth_place VARCHAR(255) NOT NULL,
+        gender ENUM('male', 'female', 'other') NOT NULL,
+        baptism_date DATE NOT NULL,
+        minister VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    $conn->exec("CREATE TABLE IF NOT EXISTS baptismal_sponsors (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        baptismal_record_id INT NOT NULL,
+        sponsor_name VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (baptismal_record_id) REFERENCES baptismal_records(id) ON DELETE CASCADE
+    )");
+
+    $conn->exec("CREATE TABLE IF NOT EXISTS confirmation_records (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        parent1_name VARCHAR(255),
+        parent1_origin VARCHAR(255),
+        parent2_name VARCHAR(255),
+        parent2_origin VARCHAR(255),
+        address TEXT NOT NULL,
+        birth_date DATE NOT NULL,
+        birth_place VARCHAR(255) NOT NULL,
+        gender ENUM('male', 'female', 'other') NOT NULL,
+        baptism_date DATE NOT NULL,
+        minister VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    $conn->exec("CREATE TABLE IF NOT EXISTS confirmation_sponsors (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        confirmation_record_id INT NOT NULL,
+        sponsor_name VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (confirmation_record_id) REFERENCES confirmation_records(id) ON DELETE CASCADE
+    )");
+
+    $conn->exec("CREATE TABLE IF NOT EXISTS first_communion_records (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        parent1_name VARCHAR(255),
+        parent1_origin VARCHAR(255),
+        parent2_name VARCHAR(255),
+        parent2_origin VARCHAR(255),
+        address TEXT NOT NULL,
+        birth_date DATE NOT NULL,
+        birth_place VARCHAR(255) NOT NULL,
+        gender ENUM('male', 'female', 'other') NOT NULL,
+        baptism_date DATE NOT NULL,
+        baptism_church VARCHAR(255) NOT NULL,
+        church VARCHAR(255) NOT NULL,
+        communion_date DATE NOT NULL,
+        confirmation_date DATE NOT NULL,
+        minister VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    $conn->exec("CREATE TABLE IF NOT EXISTS matrimony_records (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        matrimony_date DATE NOT NULL,
+        church VARCHAR(255) NOT NULL,
+        minister VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    $conn->exec("CREATE TABLE IF NOT EXISTS matrimony_couples (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        matrimony_record_id INT NOT NULL,
+        type ENUM('bride', 'groom') NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        parent1_name VARCHAR(255),
+        parent1_origin VARCHAR(255),
+        parent2_name VARCHAR(255),
+        parent2_origin VARCHAR(255),
+        birth_date DATE NOT NULL,
+        birth_place VARCHAR(255) NOT NULL,
+        gender ENUM('male', 'female', 'other') NOT NULL,
+        baptism_date DATE NOT NULL,
+        baptism_church VARCHAR(255) NOT NULL,
+        confirmation_date DATE NOT NULL,
+        confirmation_church VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (matrimony_record_id) REFERENCES matrimony_records(id) ON DELETE CASCADE
+    )");
+
+    $conn->exec("CREATE TABLE IF NOT EXISTS matrimony_sponsors (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        matrimony_record_id INT NOT NULL,
+        sponsor_name VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (matrimony_record_id) REFERENCES matrimony_records(id) ON DELETE CASCADE
+    )");
+
+    $conn->exec("CREATE TABLE IF NOT EXISTS sacramental_records_deprecated (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         age INT NOT NULL,
@@ -167,8 +271,9 @@ try {
         sacrament_type ENUM('Baptism', 'Confirmation', 'First Communion', 'Marriage') NOT NULL,
         date DATE NOT NULL,
         priest_presiding VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )");
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        migrated BOOLEAN DEFAULT FALSE
+    ) COMMENT 'Deprecated: Use specific sacramental record tables instead'");
 
 } catch(PDOException $e) {
     die("Connection failed: " . $e->getMessage());
