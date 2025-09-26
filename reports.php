@@ -64,10 +64,15 @@ require_once 'db/connection.php';?>
     <div class="row g-4 mb-4">
         <?php if (isset($_SESSION['admin_status']) && $_SESSION['admin_status'] == 1): ?>
             <?php
-            $sacraments = ['Baptism', 'Confirmation', 'First Communion', 'Marriage'];
-            foreach ($sacraments as $sacrament) {
-                $stmt = $conn->prepare("SELECT COUNT(*) as count FROM sacramental_records WHERE sacrament_type = ?");
-                $stmt->execute([$sacrament]);
+            $sacraments = [
+                'Baptism' => 'baptismal_records',
+                'Confirmation' => 'confirmation_records',
+                'First Communion' => 'first_communion_records',
+                'Marriage' => 'matrimony_records'
+            ];
+            foreach ($sacraments as $sacrament => $table) {
+                $stmt = $conn->prepare("SELECT COUNT(*) as count FROM $table");
+                $stmt->execute();
                 $count = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
                 ?>
                 <div class="col-md-3">
@@ -111,7 +116,7 @@ require_once 'db/connection.php';?>
             <div class="col-md-4">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Sacramental Records</h5>
+                        <h5 class="card-title">Yearly Sacramental Records</h5>
                         <div class="chart-container">
                             <canvas id="sacramentalChart"></canvas>
                         </div>
@@ -144,12 +149,65 @@ require_once 'db/connection.php';?>
 
     <?php
     if (isset($_SESSION['admin_status']) && $_SESSION['admin_status'] == 1) {
-        $stmt = $conn->query("SELECT sacrament_type, COUNT(*) as count, 
-            DATE_FORMAT(date, '%Y-%m') as month 
-            FROM sacramental_records 
-            WHERE date >= DATE_SUB(CURRENT_DATE, INTERVAL 12 MONTH) 
-            GROUP BY sacrament_type, month 
-            ORDER BY month, sacrament_type");
+
+        $monthsQuery = "
+            WITH RECURSIVE months AS (
+                SELECT CURRENT_DATE as full_date, 
+                       DATE_FORMAT(CURRENT_DATE, '%Y-%m') as month
+                UNION ALL
+                SELECT DATE_SUB(full_date, INTERVAL 1 MONTH),
+                       DATE_FORMAT(DATE_SUB(full_date, INTERVAL 1 MONTH), '%Y-%m')
+                FROM months
+                WHERE full_date > DATE_SUB(CURRENT_DATE, INTERVAL 1 YEAR)
+            )
+            SELECT month 
+            FROM months 
+            ORDER BY full_date DESC";
+
+        $monthsStmt = $conn->query($monthsQuery);
+        $allMonths = $monthsStmt->fetchAll(PDO::FETCH_COLUMN);
+
+
+        $query = "";
+        foreach ($allMonths as $month) {
+            if ($query !== "") {
+                $query .= "\nUNION ALL\n";
+            }
+            
+            $startOfMonth = $month . '-01';
+            $endOfMonth = date('Y-m-t', strtotime($startOfMonth));
+            
+            $query .= "
+            /* Baptisms for $month */
+            SELECT 'Baptism' as sacrament_type, COUNT(*) as count, '$month' as month
+            FROM baptismal_records 
+            WHERE baptism_date BETWEEN '$startOfMonth' AND '$endOfMonth'
+            
+            UNION ALL
+            
+            /* Confirmations for $month */
+            SELECT 'Confirmation' as sacrament_type, COUNT(*) as count, '$month' as month
+            FROM confirmation_records 
+            WHERE baptism_date BETWEEN '$startOfMonth' AND '$endOfMonth'
+            
+            UNION ALL
+            
+            /* First Communions for $month */
+            SELECT 'First Communion' as sacrament_type, COUNT(*) as count, '$month' as month
+            FROM first_communion_records 
+            WHERE communion_date BETWEEN '$startOfMonth' AND '$endOfMonth'
+            
+            UNION ALL
+            
+            /* Matrimony for $month */
+            SELECT 'Matrimony' as sacrament_type, COUNT(*) as count, '$month' as month
+            FROM matrimony_records 
+            WHERE matrimony_date BETWEEN '$startOfMonth' AND '$endOfMonth'";
+        }
+        
+        $query .= "\nORDER BY month ASC, sacrament_type ASC";
+            
+        $stmt = $conn->query($query);
         $sacramentalData = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } else {
         $sacramentalData = [];
@@ -162,17 +220,23 @@ require_once 'db/connection.php';?>
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title mb-3">Export Reports</h5>
-                    <div class="row g-3">                        <div class="col-md-4">
+                    <div class="row g-3">
+                        <div class="col-md-3">
                             <button class="btn btn-outline-primary w-100" onclick="exportReport('members')">
                                 <i class="bi bi-people me-2"></i> Members Report
                             </button>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <button class="btn btn-outline-primary w-100" onclick="exportReport('events')">
                                 <i class="bi bi-calendar-event me-2"></i> Events Report
                             </button>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-primary w-100" onclick="exportReport('sacramental')">
+                                <i class="bi bi-book me-2"></i> Sacramental Records
+                            </button>
+                        </div>
+                        <div class="col-md-3">
                             <button class="btn btn-outline-primary w-100" onclick="exportReport('complete')">
                                 <i class="bi bi-file-earmark-text me-2"></i> Complete Report
                             </button>
@@ -191,7 +255,7 @@ require_once 'db/connection.php';?>
 
 Chart.defaults.color = '#6a1b9a';
 Chart.defaults.borderColor = 'rgba(106, 27, 154, 0.1)';
-
+    
 document.addEventListener('DOMContentLoaded', function() {
     initializeDateRange();
     loadStatistics();
@@ -218,9 +282,8 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeDateRange() {
     const endDate = new Date();
     const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 1);
+    startDate.setFullYear(startDate.getFullYear() - 1); 
     
-
     document.getElementById('startDate').value = formatDateForInput(startDate);
     document.getElementById('endDate').value = formatDateForInput(endDate);
 
@@ -316,7 +379,7 @@ function initializeCharts() {
                 {
                     label: 'Present',
                     data: [],
-                    backgroundColor: 'rgba(255, 193, 7, 0.8)', // Gold
+                    backgroundColor: 'rgba(255, 193, 7, 0.8)', 
                     borderColor: '#ffc107',
                     borderWidth: 1,
                     borderRadius: 4
@@ -324,7 +387,7 @@ function initializeCharts() {
                 {
                     label: 'Absent',
                     data: [],
-                    backgroundColor: 'rgba(108, 117, 125, 0.8)', // Gray
+                    backgroundColor: 'rgba(108, 117, 125, 0.8)', 
                     borderColor: '#6c757d',
                     borderWidth: 1,
                     borderRadius: 4
@@ -385,17 +448,31 @@ function initializeCharts() {
 
     <?php if (isset($_SESSION['admin_status']) && $_SESSION['admin_status'] == 1): ?>
     const sacramentalData = <?php echo json_encode($sacramentalData); ?>;
-    const months = [...new Set(sacramentalData.map(item => item.month))];
-    const sacramentTypes = ['Baptism', 'Confirmation', 'First Communion', 'Marriage'];
+  
+    const months = [...new Set(sacramentalData.map(item => item.month))]
+        .sort((a, b) => new Date(a + '-01') - new Date(b + '-01'));
+    const sacramentTypes = ['Baptism', 'Confirmation', 'First Communion', 'Matrimony'];
     
-    const datasets = sacramentTypes.map((type, index) => {
-        const color = [
-            'rgba(75, 192, 192, 0.7)',
-            'rgba(255, 159, 64, 0.7)',
-            'rgba(153, 102, 255, 0.7)',
-            'rgba(255, 99, 132, 0.7)'
-        ][index];
-        
+    const colors = {
+        'Baptism': {
+            bg: 'rgba(52, 152, 219, 0.7)',
+            border: 'rgba(52, 152, 219, 1)'
+        },
+        'Confirmation': {
+            bg: 'rgba(155, 89, 182, 0.7)',
+            border: 'rgba(155, 89, 182, 1)'
+        },
+        'First Communion': {
+            bg: 'rgba(230, 126, 34, 0.7)',
+            border: 'rgba(230, 126, 34, 1)'
+        },
+        'Matrimony': {
+            bg: 'rgba(231, 76, 60, 0.7)',
+            border: 'rgba(231, 76, 60, 1)'
+        }
+    };
+    
+    const datasets = sacramentTypes.map(type => {
         return {
             label: type,
             data: months.map(month => {
@@ -404,9 +481,10 @@ function initializeCharts() {
                 );
                 return record ? record.count : 0;
             }),
-            backgroundColor: color,
-            borderColor: color.replace('0.7', '1'),
-            borderWidth: 1
+            backgroundColor: colors[type].bg,
+            borderColor: colors[type].border,
+            borderWidth: 1,
+            borderRadius: 4
         };
     });
 
@@ -422,21 +500,53 @@ function initializeCharts() {
             plugins: {
                 title: {
                     display: true,
-                    text: 'Sacramental Records Distribution'
+                    text: 'Records Per Month',
+                    font: {
+                        size: 16
+                    }
                 },
                 legend: {
-                    position: 'bottom'
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        title: (tooltipItems) => {
+                            const date = new Date(tooltipItems[0].label + '-01');
+                            return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                        }
+                    }
                 }
             },
             scales: {
                 x: {
-                    stacked: true
+                    stacked: true,
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        callback: function(value, index) {
+                            const date = new Date(this.getLabelForValue(value) + '-01');
+                            return date.toLocaleDateString('en-US', { 
+                                month: 'short',
+                                year: '2-digit'
+                            });
+                        }
+                    },
+                    reverse: true 
                 },
                 y: {
                     stacked: true,
                     beginAtZero: true,
                     ticks: {
                         stepSize: 1
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
                     }
                 }
             }

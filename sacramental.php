@@ -1,20 +1,16 @@
 <?php
+require_once 'templates/header.php';
 require_once 'auth/login_status.php';
-require_once 'db/connection.php';
-
 
 $stmt = $conn->prepare("SELECT admin_status FROM users WHERE id = ?");
 $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch();
 
 if (!$user || $user['admin_status'] != 1) {
-    header("Location: templates/header.php");
+    header("Location: dashboard.php");
     exit();
 }
-
 ?>
-
-<?php require_once 'templates/header.php'; ?>
 
 <div class="container-fluid px-3 px-md-4">
     <div class="row">
@@ -22,6 +18,7 @@ if (!$user || $user['admin_status'] != 1) {
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>Sacramental Records</h2>
             </div>
+            
 
             <div class="card mb-4">
                 <div class="card-body">
@@ -175,8 +172,8 @@ if (!$user || $user['admin_status'] != 1) {
 
                         <div id="firstCommunionTable" style="display: none;">
                             <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
+                                <table class="table table-hover table-striped align-middle">
+                                    <thead class="table-light">
                                         <tr>
                                             <th>Name</th>
                                             <th>Parents Information</th>
@@ -1717,12 +1714,6 @@ async function loadMatrimonyRecords() {
                     <button class="btn btn-sm btn-primary me-2" onclick="viewMatrimonyRecord(${record.id})">
                         <i class="bi bi-eye"></i>
                     </button>
-                    <button class="btn btn-sm btn-warning me-2" onclick="editMatrimonyRecord(${record.id})">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteMatrimonyRecord(${record.id})">
-                        <i class="bi bi-trash"></i>
-                    </button>
                 </td>
             `;
             coupleTableBody.appendChild(coupleRow);
@@ -3122,7 +3113,7 @@ async function loadFirstCommunionRecords(page = 1) {
             return;
         }
 
-        document.getElementById('firstCommunionTable').style.display = 'table';
+        document.getElementById('firstCommunionTable').style.display = 'block';
         document.getElementById('noRecordsMessage').style.display = 'none';
 
         records.forEach(record => {
@@ -3151,14 +3142,14 @@ async function loadFirstCommunionRecords(page = 1) {
             const baptismDetails = `${baptismDate}<br>${htmlEscape(record.baptism_church)}`;
 
             row.innerHTML = `
-                <td>${htmlEscape(record.name)}</td>
-                <td>${parentsInfo.length ? parentsInfo.join('<br>') : 'N/A'}</td>
-                <td>${birthDetails}</td>
-                <td>${baptismDetails}</td>
-                <td>${new Date(record.communion_date).toLocaleDateString()}</td>
-                <td>${htmlEscape(record.minister)}</td>
-                <td class="text-end">
-                    <button class="btn btn-sm btn-primary me-2" onclick="viewFirstCommunionRecord(${record.id})">
+                <td class="align-middle">${htmlEscape(record.name)}</td>
+                <td class="align-middle text-wrap" style="min-width: 150px;">${parentsInfo.length ? parentsInfo.join('<br>') : 'N/A'}</td>
+                <td class="align-middle text-wrap" style="min-width: 120px;">${birthDetails}</td>
+                <td class="align-middle text-wrap" style="min-width: 120px;">${baptismDetails}</td>
+                <td class="align-middle text-nowrap">${new Date(record.communion_date).toLocaleDateString()}</td>
+                <td class="align-middle text-wrap">${htmlEscape(record.minister)}</td>
+                <td class="align-middle text-end">
+                    <button class="btn btn-sm btn-primary" onclick="viewFirstCommunionRecord(${record.id})" title="View Record">
                         <i class="bi bi-eye"></i>
                     </button>
                 </td>

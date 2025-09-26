@@ -177,23 +177,29 @@ if (!$user || $user['admin_status'] != 1) {
                             </div>
                         </div>
 
-                        <div id="firstCommunionTable" style="display: none;">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Parents Information</th>
-                                        <th>Birth Details</th>
-                                        <th>Baptism Details</th>
-                                        <th>Confirmation Date</th>
-                                        <th>Minister</th>
-                                        <th class="text-end">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="firstCommunionTableBody">
-                                </tbody>
-                            </table>
-                            <div id="firstCommunionPagination" class="mt-3">
+                        <div id="firstCommunionTable" style="display: none;" class="card mb-4">
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-striped align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Parents Information</th>
+                                                <th>Birth Details</th>
+                                                <th>Baptism Details</th>
+                                                <th>Confirmation Date</th>
+                                                <th>Minister</th>
+                                                <th class="text-end">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="firstCommunionTableBody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <div id="firstCommunionPagination" class="mt-2">
+                                </div>
                             </div>
                         </div>
 
@@ -3143,7 +3149,7 @@ async function loadFirstCommunionRecords(page = 1) {
             return;
         }
 
-        document.getElementById('firstCommunionTable').style.display = 'table';
+        document.getElementById('firstCommunionTable').style.display = 'block';
         document.getElementById('noRecordsMessage').style.display = 'none';
 
         records.forEach(record => {
@@ -3172,22 +3178,24 @@ async function loadFirstCommunionRecords(page = 1) {
             const baptismDetails = `${baptismDate}<br>${htmlEscape(record.baptism_church)}`;
 
             row.innerHTML = `
-                <td>${htmlEscape(record.name)}</td>
-                <td>${parentsInfo.length ? parentsInfo.join('<br>') : 'N/A'}</td>
-                <td>${birthDetails}</td>
-                <td>${baptismDetails}</td>
-                <td>${new Date(record.communion_date).toLocaleDateString()}</td>
-                <td>${htmlEscape(record.minister)}</td>
+                <td class="text-nowrap">${htmlEscape(record.name)}</td>
+                <td class="text-wrap">${parentsInfo.length ? parentsInfo.join('<br>') : 'N/A'}</td>
+                <td class="text-nowrap">${birthDetails}</td>
+                <td class="text-nowrap">${baptismDetails}</td>
+                <td class="text-nowrap">${new Date(record.communion_date).toLocaleDateString()}</td>
+                <td class="text-wrap">${htmlEscape(record.minister)}</td>
                 <td class="text-end">
-                    <button class="btn btn-sm btn-primary me-2" onclick="viewFirstCommunionRecord(${record.id})">
-                        <i class="bi bi-eye"></i>
-                    </button>
-                    <button class="btn btn-sm btn-warning me-2" onclick="editRecord(${record.id}, 'First Communion')">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteRecord(${record.id}, 'First Communion')">
-                        <i class="bi bi-trash"></i>
-                    </button>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-primary me-1" onclick="viewFirstCommunionRecord(${record.id})" title="View">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-warning me-1" onclick="editRecord(${record.id}, 'First Communion')" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteRecord(${record.id}, 'First Communion')" title="Delete">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
                 </td>
             `;
             tableBody.appendChild(row);
