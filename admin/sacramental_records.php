@@ -2764,6 +2764,19 @@ function removeEditMatrimonySponsor(button) {
     updateSponsorNumbers('editMatrimonySponsorsContainer');
 }
 
+function updateSponsorNumbers(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    const entries = container.getElementsByClassName('sponsor-entry');
+    Array.from(entries).forEach((entry, index) => {
+        const numberDiv = entry.querySelector('.fw-bold');
+        if (numberDiv) {
+            numberDiv.textContent = `${index + 1}.`;
+        }
+    });
+}
+
 function deleteMatrimonyRecord(id) {
     try {
         fetch(`/GoldTree/crud/matrimony_records/get.php?id=${id}`)
