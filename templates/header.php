@@ -32,6 +32,15 @@ if (isset($_SESSION['user_id'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <title>Mater Dolorosa Church Management</title>
+    <!-- Primary favicon assets (served via PHP wrapper for easier cache-control) -->
+    <link rel="icon" href="/GoldTree/assets/img/logo.php?v=1" type="image/png">
+    <link rel="shortcut icon" href="/GoldTree/assets/img/logo.php?v=1" type="image/png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/GoldTree/assets/img/logo.php?v=1">
+    <link rel="icon" type="image/png" sizes="32x32" href="/GoldTree/assets/img/logo.php?v=1">
+    <link rel="icon" type="image/png" sizes="16x16" href="/GoldTree/assets/img/logo.php?v=1">
+    <!-- Fallback for browsers that look for /favicon.ico at root -->
+    <link rel="icon" href="/GoldTree/assets/img/logo.php?v=1" type="image/x-icon">
+    <meta name="theme-color" content="#ffffff">
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/theme.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
@@ -168,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container-fluid">
             <a class="navbar-brand d-flex align-items-center" href="dashboard.php">
-                <img src="assets/img/logo.png" alt="Mater Dolorosa Church Logo" height="30" class="me-2">
+                <img src="/GoldTree/assets/img/logo.png" alt="Mater Dolorosa Church Logo" height="30" class="me-2">
                 Mater Dolorosa Church
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -215,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <?php if ($isAdmin): ?>
                 <a href="/GoldTree/donations.php?page=donations" 
                    class="sidebar-link <?php echo $_SESSION['active_page'] == 'donations' ? 'active' : ''; ?>">
-                    <i class="bi bi-cash-coin"></i> Donations
+                    <img src="/GoldTree/assets/img/logo.png" alt="Logo" height="18" class="me-2"> Donations
                 </a>
                 <?php endif; ?>
                 <a href="/GoldTree/announcements.php?page=announcements" 

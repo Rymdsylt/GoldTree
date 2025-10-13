@@ -1,0 +1,7 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Serve the PHP logo wrapper when /favicon.ico is requested
+    RewriteRule ^favicon\.ico$ /GoldTree/assets/img/logo.php [L]
+</IfModule>
+
+# Fallback: if the server doesn't allow rewrites, ensure requests to /favicon.ico are handled by the existing file if present.

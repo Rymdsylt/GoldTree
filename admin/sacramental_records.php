@@ -2243,7 +2243,7 @@ async function saveRecord() {
                             confirmation_church: formInputs.person2_confirmation_church
                         }
                     ],
-                    sponsors: formInputs.matrimony_sponsors || []
+                    sponsors: formInputs.sponsors || []
                 };
                 endpoint = '/GoldTree/crud/matrimony_records/save.php';
                 break;
@@ -4219,15 +4219,19 @@ function getParentsFields(prefix = '') {
 }
 
 function getSponsorsField(prefix = '') {
+    // For Baptism, prefix should be '' so the name is sponsors[]
+    // For other sacraments, prefix can be used if needed
+    const name = prefix === '' ? 'sponsors[]' : `${prefix}sponsors[]`;
+    const containerId = prefix === '' ? 'sponsorsContainer' : `${prefix}SponsorsContainer`;
     return `
         <!-- Sponsors -->
         <div class="col-12">
             <h6 class="border-bottom pb-2">Sponsors (Optional)</h6>
         </div>
-        <div class="col-12" id="${prefix}SponsorsContainer">
+        <div class="col-12" id="${containerId}">
             <div class="sponsor-entry mb-2 d-flex align-items-center">
                 <div class="me-2 fw-bold" style="width: 25px;">1.</div>
-                <input type="text" class="form-control" name="${prefix}sponsors[]" placeholder="Sponsor's Name (Optional)">
+                <input type="text" class="form-control" name="${name}" placeholder="Sponsor's Name (Optional)">
                 <button type="button" class="btn btn-danger ms-2" onclick="removeSponsor(this)">
                     <i class="bi bi-trash"></i>
                 </button>
