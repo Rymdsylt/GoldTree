@@ -32,7 +32,7 @@ if (isset($_SESSION['user_id'])) {
     <link href="css/theme.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
-<body style="background: url('assets/img/mater.jpg') no-repeat center center fixed; background-size: cover;">
+<body style="background: url('assets/img/mater.jpg') no-repeat center center fixed; background-size:cover;">
     <div class="container d-flex justify-content-center align-items-center vh-100">
         <div class="card p-0 shadow-lg fade-in" style="width: 100%; max-width: 760px;">
             <div class="row g-0">
