@@ -24,6 +24,13 @@ if (!$user || $user['admin_status'] != 1) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - <?php echo ucfirst(str_replace('.php', '', $current_page)); ?></title>
+    <!-- Favicon for admin panel -->
+    <link rel="icon" href="/GoldTree/assets/img/logo.php?v=1" type="image/png">
+    <link rel="shortcut icon" href="/GoldTree/assets/img/logo.php?v=1" type="image/png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/GoldTree/assets/img/logo.php?v=1">
+    <link rel="icon" type="image/png" sizes="32x32" href="/GoldTree/assets/img/logo.php?v=1">
+    <link rel="icon" type="image/png" sizes="16x16" href="/GoldTree/assets/img/logo.php?v=1">
+    <link rel="icon" href="/GoldTree/assets/img/logo.php?v=1" type="image/x-icon">
     <link rel="stylesheet" href="/GoldTree/css/bootstrap.min.css">
     <link rel="stylesheet" href="/GoldTree/css/theme.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">

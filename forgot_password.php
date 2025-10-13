@@ -12,6 +12,12 @@ if (isset($_COOKIE['logged_in']) && $_COOKIE['logged_in'] === 'true') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reset Password - Mater Dolorosa</title>
+    <link rel="icon" href="/GoldTree/assets/img/logo.php?v=1" type="image/png">
+    <link rel="shortcut icon" href="/GoldTree/assets/img/logo.php?v=1" type="image/png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/GoldTree/assets/img/logo.php?v=1">
+    <link rel="icon" type="image/png" sizes="32x32" href="/GoldTree/assets/img/logo.php?v=1">
+    <link rel="icon" type="image/png" sizes="16x16" href="/GoldTree/assets/img/logo.php?v=1">
+    <link rel="icon" href="/GoldTree/assets/img/logo.php?v=1" type="image/x-icon">
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/theme.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
