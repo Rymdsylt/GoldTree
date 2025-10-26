@@ -28,37 +28,56 @@ if (isset($_SESSION['user_id'])) {
 </head>
 <body class="bg-light">
     <div class="container d-flex justify-content-center align-items-center vh-100">
-        <div class="card p-4 shadow-lg fade-in" style="width: 100%; max-width: 400px;">
-            <div class="text-center mb-4">
-                <i class="bi bi-church display-4 text-primary"></i>
-                <h3 class="mt-2">Welcome Back</h3>
-                <p class="text-muted">Sign in to your account</p>
+        <div class="card p-0 shadow-lg fade-in overflow-hidden" style="width: 100%; max-width: 900px;">
+            <div class="row g-0">
+               
+                <div class="col-md-5 d-none d-md-flex align-items-center justify-content-center" style="background: linear-gradient(135deg, #9c27b0 0%, #6a1b9a 100%); position: relative; overflow: hidden;">
+                    <div class="text-center p-4">
+                        <div class="mb-3" style="position: relative; display: inline-block;">
+                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 250px; height: 250px; border-radius: 50%; background: rgba(255, 255, 255, 0.1);"></div>
+                            <img src="assets/img/favicon.jpg" alt="Mater Dolorosa" class="rounded-circle" style="width: 200px; height: 200px; object-fit: cover; border: 8px solid rgba(255, 255, 255, 0.3); position: relative; z-index: 1;">
+                        </div>
+                        <h3 class="text-white mb-0">Mater Dolorosa Parish</h3>
+                        <p class="text-white-50 mb-0">Archdiocese of Manila</p>
+                    </div>
+                </div>
+                
+             
+                <div class="col-md-7">
+                    <div class="p-4 p-md-5">
+                        <div class="text-center mb-4">
+                            <i class="bi bi-church display-4 text-primary"></i>
+                            <h3 class="mt-2">Welcome Back</h3>
+                            <p class="text-muted">Sign in to your account</p>
+                        </div>
+                        
+                        <div id="alert-container"></div>
+                        <form id="loginForm" action="auth/login_user.php" method="POST">
+                            <div class="mb-3">
+                                <label for="login" class="form-label">Username or Email</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="bi bi-person"></i>
+                                    </span>
+                                    <input type="text" class="form-control" id="login" name="login" placeholder="Enter your username or email" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="bi bi-lock"></i>
+                                    </span>
+                                    <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-box-arrow-in-right"></i> Sign In
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
-            
-            <div id="alert-container"></div>
-            <form id="loginForm" action="auth/login_user.php" method="POST">
-                <div class="mb-3">
-                    <label for="login" class="form-label">Username or Email</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light">
-                            <i class="bi bi-person"></i>
-                        </span>
-                        <input type="text" class="form-control" id="login" name="login" placeholder="Enter your username or email" required>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <label for="password" class="form-label">Password</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light">
-                            <i class="bi bi-lock"></i>
-                        </span>
-                        <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-box-arrow-in-right"></i> Sign In
-                </button>
-            </form>
         </div>
     </div>
 

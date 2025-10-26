@@ -221,22 +221,28 @@ require_once 'db/connection.php';?>
                 <div class="card-body">
                     <h5 class="card-title mb-3">Export Reports</h5>
                     <div class="row g-3">
-                        <div class="col-md-3">
+                        <?php 
+                        $isAdmin = isset($_SESSION['admin_status']) && $_SESSION['admin_status'] == 1;
+                        $buttonCol = $isAdmin ? 'col-md-3' : 'col-md-4';
+                        ?>
+                        <div class="<?php echo $buttonCol; ?>">
                             <button class="btn btn-outline-primary w-100" onclick="exportReport('members')">
                                 <i class="bi bi-people me-2"></i> Members Report
                             </button>
                         </div>
-                        <div class="col-md-3">
+                        <div class="<?php echo $buttonCol; ?>">
                             <button class="btn btn-outline-primary w-100" onclick="exportReport('events')">
                                 <i class="bi bi-calendar-event me-2"></i> Events Report
                             </button>
                         </div>
-                        <div class="col-md-3">
+                        <?php if ($isAdmin): ?>
+                        <div class="<?php echo $buttonCol; ?>">
                             <button class="btn btn-outline-primary w-100" onclick="exportReport('sacramental')">
                                 <i class="bi bi-book me-2"></i> Sacramental Records
                             </button>
                         </div>
-                        <div class="col-md-3">
+                        <?php endif; ?>
+                        <div class="<?php echo $buttonCol; ?>">
                             <button class="btn btn-outline-primary w-100" onclick="exportReport('complete')">
                                 <i class="bi bi-file-earmark-text me-2"></i> Complete Report
                             </button>
