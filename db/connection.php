@@ -5,19 +5,18 @@ try {
     if (getenv('DATABASE_URL')) {
         // Heroku Postgres configuration
         $db = parse_url(getenv('DATABASE_URL'));
-        $conn = new PDO(
-            sprintf(
-                "pgsql:host=%s;port=%s;dbname=%s",
-                $db['host'],
-                isset($db['port']) ? $db['port'] : 5432,
-                ltrim($db['path'], '/')
-            ),
+        $pgsqlConfig = sprintf(
+            "pgsql:host=%s;port=%s;dbname=%s;user=%s;password=%s",
+            $db['host'],
+            isset($db['port']) ? $db['port'] : 5432,
+            ltrim($db['path'], '/'),
             $db['user'],
             $db['pass']
         );
         
-        // Set error mode
+        $conn = new PDO($pgsqlConfig);
         $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        error_log("Connected to PostgreSQL database");
         
     } else {
         // Local MySQL configuration

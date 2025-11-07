@@ -1,6 +1,8 @@
 {
     "name": "goldtree/church-management",
     "description": "Church Management System",
+    "type": "project",
+    "license": "proprietary",
     "require": {
         "php": "^8.0",
         "phpmailer/phpmailer": "^6.10",
@@ -13,6 +15,13 @@
     "require-dev": {
         "heroku/heroku-buildpack-php": "*"
     },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
     "engines": {
         "php": "^8.0"
     }
