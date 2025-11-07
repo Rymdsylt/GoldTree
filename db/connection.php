@@ -23,12 +23,19 @@ try {
         
         // Helper function to check if constraint exists
         $constraintExists = function($conn, $table, $constraintName) {
-            $stmt = $conn->prepare("
-                SELECT 1 FROM information_schema.table_constraints 
-                WHERE table_name = ? AND constraint_name = ?
-            ");
-            $stmt->execute([$table, $constraintName]);
-            return $stmt->fetch() !== false;
+            try {
+                $stmt = $conn->prepare("
+                    SELECT 1 FROM information_schema.table_constraints 
+                    WHERE table_schema = 'public' 
+                    AND table_name = ? 
+                    AND constraint_name = ?
+                ");
+                $stmt->execute([$table, $constraintName]);
+                return $stmt->fetch() !== false;
+            } catch(PDOException $e) {
+                error_log("Error checking constraint existence: " . $e->getMessage());
+                return false;
+            }
         };
         
         // Create tables (no transaction needed - CREATE TABLE IF NOT EXISTS is safe)
