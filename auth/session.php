@@ -5,8 +5,18 @@ function init_session() {
         ini_set('session.cookie_httponly', 1);
         ini_set('session.use_only_cookies', 1);
         ini_set('session.cookie_secure', 1);
+        ini_set('session.cookie_samesite', 'Lax');
+        ini_set('session.gc_maxlifetime', 3600); // 1 hour
         
+        session_name('GOLDTREE_SESSION');
         session_start();
+        
+        // Regenerate session ID periodically
+        if (!isset($_SESSION['last_regeneration'])) {
+            regenerate_session();
+        } elseif (time() - $_SESSION['last_regeneration'] > 1800) { // 30 minutes
+            regenerate_session();
+        }
     }
 }
 
