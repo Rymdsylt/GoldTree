@@ -4,7 +4,9 @@ require_once '../templates/admin_header.php';
 require_once '../db/connection.php';
 
 
-$query = "SELECT * FROM members ORDER BY created_at DESC";
+// Exclude profile_image from main query to prevent memory exhaustion
+// Profile images are loaded on-demand via AJAX when viewing member details
+$query = "SELECT id, first_name, last_name, email, phone, address, birthdate, membership_date, gender, category, status, user_id, created_at FROM members ORDER BY created_at DESC";
 $stmt = $conn->prepare($query);
 $stmt->execute();
 $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -174,15 +176,11 @@ foreach($members as $member) {
                         <tr>
                             <td>
                                 <div class="d-flex align-items-center member-info">
-                                    <?php if(!empty($member['profile_image'])): ?>
-                                        <img src="data:image/jpeg;base64,<?php echo base64_encode($member['profile_image']); ?>" 
-                                             class="rounded-circle me-2 profile-image" style="width: 40px; height: 40px; object-fit: cover;">
-                                    <?php else: ?>
-                                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-2 profile-image" 
-                                             style="width: 40px; height: 40px;">
-                                            <i class="bi bi-person"></i>
-                                        </div>
-                                    <?php endif; ?>
+                                    <!-- Profile images loaded on-demand via AJAX to prevent memory issues -->
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-2 profile-image" 
+                                         style="width: 40px; height: 40px;" data-member-id="<?php echo $member['id']; ?>">
+                                        <i class="bi bi-person"></i>
+                                    </div>
                                     <div>
                                         <div class="fw-bold"><?php echo htmlspecialchars($member['first_name'] . ' ' . $member['last_name']); ?></div>
                                         <small class="text-muted">Member since <?php echo date('M Y', strtotime($member['membership_date'])); ?></small>
