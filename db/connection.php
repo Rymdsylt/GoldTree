@@ -27,9 +27,30 @@
                 ]
             );
             $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            echo "Successfully connected to PostgreSQL database\n";
+            echo "Successfully connected to PostgreSQL database\n\n";
             
-            // Check members table
+            echo "MEMBERS TABLE STRUCTURE:\n";
+            echo "=======================\n";
+            $columns = $conn->query("
+                SELECT column_name, data_type, character_maximum_length, is_nullable, column_default
+                FROM information_schema.columns 
+                WHERE table_name = 'members'
+                ORDER BY ordinal_position;
+            ");
+            
+            foreach ($columns as $col) {
+                echo "\nCOLUMN: {$col['column_name']}\n";
+                echo "TYPE: {$col['data_type']}";
+                if ($col['character_maximum_length']) {
+                    echo "({$col['character_maximum_length']})";
+                }
+                echo "\n";
+                echo "NULLABLE: {$col['is_nullable']}\n";
+                echo "DEFAULT: " . ($col['column_default'] ?? 'NULL') . "\n";
+                echo "--------------------\n";
+            }
+            
+            // Continue with normal operation
             $result = $conn->query("SELECT COUNT(*) as count FROM members");
             $count = $result->fetch(PDO::FETCH_ASSOC);
             echo "Total members: " . $count['count'] . "\n\n";
