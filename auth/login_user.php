@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'];
     
     try {
-        $stmt = $conn->prepare("SELECT id, username, password, reset_password, admin_status FROM users WHERE username = :login OR email = :login");
+        $stmt = $conn->prepare("SELECT id, username, password, reset_password, admin_status, privacy_agreement FROM users WHERE username = :login OR email = :login");
         $stmt->execute(['login' => $login]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -19,6 +19,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['admin_status'] = $user['admin_status'];
+            $_SESSION['privacy_agreed'] = (bool)$user['privacy_agreement'];
+            $_SESSION['privacy_checked'] = true;
             
             // Only set secure cookie if HTTPS is available
             $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') 
