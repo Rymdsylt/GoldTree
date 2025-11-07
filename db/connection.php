@@ -22,15 +22,32 @@ try {
     
     // For Heroku (ClearDB/JAWSDB), connect directly to the database (no CREATE DATABASE)
     if ($dbUrl) {
-        $conn = new PDO("mysql:host=" . DB_HOST . ";port=" . $port . ";dbname=" . DB_NAME, DB_USER, DB_PASS);
+        $conn = new PDO("mysql:host=" . DB_HOST . ";port=" . $port . ";dbname=" . DB_NAME, DB_USER, DB_PASS, [
+            PDO::ATTR_TIMEOUT => 5,
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+        ]);
     } else {
         // Local development: create database if it doesn't exist
-        $conn = new PDO("mysql:host=" . DB_HOST, DB_USER, DB_PASS);
+        $conn = new PDO("mysql:host=" . DB_HOST, DB_USER, DB_PASS, [
+            PDO::ATTR_TIMEOUT => 5,
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+        ]);
         $conn->exec("CREATE DATABASE IF NOT EXISTS " . DB_NAME);
         $conn->exec("USE " . DB_NAME);
     }
     
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // Check if tables already exist - if users table exists, skip all CREATE TABLE statements
+    $tablesExist = false;
+    try {
+        $stmt = $conn->query("SELECT 1 FROM users LIMIT 1");
+        $tablesExist = true;
+    } catch(PDOException $e) {
+        // Tables don't exist yet, we'll create them
+        $tablesExist = false;
+    }
+    
+    // Only create tables if they don't exist (first run)
+    if (!$tablesExist) {
 
     $conn->exec("CREATE TABLE IF NOT EXISTS users (
         id INT PRIMARY KEY AUTO_INCREMENT,
@@ -62,21 +79,17 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )");
 
-    try {
-        $conn->exec("ALTER TABLE users DROP FOREIGN KEY IF EXISTS users_member_id_fk");
-        $conn->exec("ALTER TABLE users ADD CONSTRAINT users_member_id_fk FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE");
-        
-        $conn->exec("ALTER TABLE members DROP FOREIGN KEY IF EXISTS members_user_id_fk");
-        $conn->exec("ALTER TABLE members ADD CONSTRAINT members_user_id_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL");
-    } catch(PDOException $e) {
-        error_log("Error adding foreign keys: " . $e->getMessage());
-    }
-
-    $checkAdmin = $conn->query("SELECT id FROM users WHERE username = 'root'")->fetch();
-    if (!$checkAdmin) {
-        $hashedPassword = password_hash('mdradmin', PASSWORD_DEFAULT);
-        $stmt = $conn->prepare("INSERT INTO users (username, password, email, admin_status) VALUES (?, ?, ?, ?)");
-        $stmt->execute(['root', $hashedPassword, 'admin@materdolorosa.com', 1]);
+    // Only add foreign keys if tables were just created
+    if (!$tablesExist) {
+        try {
+            $conn->exec("ALTER TABLE users DROP FOREIGN KEY IF EXISTS users_member_id_fk");
+            $conn->exec("ALTER TABLE users ADD CONSTRAINT users_member_id_fk FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE");
+            
+            $conn->exec("ALTER TABLE members DROP FOREIGN KEY IF EXISTS members_user_id_fk");
+            $conn->exec("ALTER TABLE members ADD CONSTRAINT members_user_id_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL");
+        } catch(PDOException $e) {
+            error_log("Error adding foreign keys: " . $e->getMessage());
+        }
     }
 
     $conn->exec("CREATE TABLE IF NOT EXISTS donations (
@@ -91,11 +104,14 @@ try {
         FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
     )");
 
-    try {   
-        $conn->exec("ALTER TABLE donations ADD COLUMN IF NOT EXISTS donor_name VARCHAR(100)");
-    } catch(PDOException $e) {
-        if($conn->inTransaction()) {
-            $conn->rollBack();
+    // Only add column if tables were just created (migration)
+    if (!$tablesExist) {
+        try {   
+            $conn->exec("ALTER TABLE donations ADD COLUMN IF NOT EXISTS donor_name VARCHAR(100)");
+        } catch(PDOException $e) {
+            if($conn->inTransaction()) {
+                $conn->rollBack();
+            }
         }
     }
 
@@ -294,8 +310,20 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         migrated BOOLEAN DEFAULT FALSE
     ) COMMENT 'Deprecated: Use specific sacramental record tables instead'");
+    }
+    
+    // Only check/create admin user if tables were just created
+    if (!$tablesExist) {
+        $checkAdmin = $conn->query("SELECT id FROM users WHERE username = 'root'")->fetch();
+        if (!$checkAdmin) {
+            $hashedPassword = password_hash('mdradmin', PASSWORD_DEFAULT);
+            $stmt = $conn->prepare("INSERT INTO users (username, password, email, admin_status) VALUES (?, ?, ?, ?)");
+            $stmt->execute(['root', $hashedPassword, 'admin@materdolorosa.com', 1]);
+        }
+    }
 
 } catch(PDOException $e) {
+    error_log("Database connection error: " . $e->getMessage());
     die("Connection failed: " . $e->getMessage());
 }
 ?>
