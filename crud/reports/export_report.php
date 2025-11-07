@@ -173,15 +173,27 @@ function exportSacramental($conn, $start_date, $end_date) {
     header('Content-Disposition: attachment;filename="sacramental_records_' . date('Y-m-d') . '.xls"');
     header('Cache-Control: max-age=0');
 
+    // Check if database is PostgreSQL
+    $isPostgres = (getenv('DATABASE_URL') !== false);
+    
+    // Use database-specific date formatting
+    if ($isPostgres) {
+        $dateFormat = "TO_CHAR(created_at, 'YYYY-MM-DD')";
+        $dateFormatField = "TO_CHAR(%s, 'YYYY-MM-DD')";
+    } else {
+        $dateFormat = "DATE_FORMAT(created_at, '%Y-%m-%d')";
+        $dateFormatField = "DATE_FORMAT(%s, '%Y-%m-%d')";
+    }
+
     $baptismQuery = "SELECT 
         name, parent1_name, parent1_origin, parent2_name, parent2_origin,
         address, birth_date, birth_place, gender, baptism_date, minister,
-        DATE_FORMAT(created_at, '%Y-%m-%d') as record_date
+        $dateFormat as record_date
         FROM baptismal_records 
         ORDER BY baptism_date DESC";
 
     $baptismSponsorsQuery = "SELECT br.name as baptized_name, 
-        bs.sponsor_name, DATE_FORMAT(br.baptism_date, '%Y-%m-%d') as baptism_date
+        bs.sponsor_name, " . sprintf($dateFormatField, 'br.baptism_date') . " as baptism_date
         FROM baptismal_records br
         JOIN baptismal_sponsors bs ON br.id = bs.baptismal_record_id
         ORDER BY br.baptism_date DESC";
@@ -189,12 +201,12 @@ function exportSacramental($conn, $start_date, $end_date) {
     $confirmationQuery = "SELECT 
         name, parent1_name, parent1_origin, parent2_name, parent2_origin,
         address, birth_date, birth_place, gender, baptism_date, minister,
-        DATE_FORMAT(created_at, '%Y-%m-%d') as record_date
+        $dateFormat as record_date
         FROM confirmation_records 
         ORDER BY baptism_date DESC";
 
     $confirmationSponsorsQuery = "SELECT cr.name as confirmed_name, 
-        cs.sponsor_name, DATE_FORMAT(cr.baptism_date, '%Y-%m-%d') as confirmation_date
+        cs.sponsor_name, " . sprintf($dateFormatField, 'cr.baptism_date') . " as confirmation_date
         FROM confirmation_records cr
         JOIN confirmation_sponsors cs ON cr.id = cs.confirmation_record_id
         ORDER BY cr.baptism_date DESC";
@@ -203,7 +215,7 @@ function exportSacramental($conn, $start_date, $end_date) {
         name, parent1_name, parent1_origin, parent2_name, parent2_origin,
         address, birth_date, birth_place, gender, baptism_date, baptism_church, 
         church, communion_date, confirmation_date, minister,
-        DATE_FORMAT(created_at, '%Y-%m-%d') as record_date
+        $dateFormat as record_date
         FROM first_communion_records 
         ORDER BY communion_date DESC";
 
@@ -212,24 +224,38 @@ function exportSacramental($conn, $start_date, $end_date) {
         mc.type, mc.name, mc.parent1_name, mc.parent1_origin,
         mc.parent2_name, mc.parent2_origin, mc.birth_date, mc.birth_place, 
         mc.gender, mc.baptism_date, mc.baptism_church, mc.confirmation_date,
-        mc.confirmation_church, DATE_FORMAT(m.created_at, '%Y-%m-%d') as record_date
+        mc.confirmation_church, $dateFormat as record_date
         FROM matrimony_records m
         JOIN matrimony_couples mc ON m.id = mc.matrimony_record_id 
         ORDER BY m.matrimony_date DESC";
         
-    $matrimonySponsorsQuery = "SELECT 
-        CONCAT(
-            MAX(CASE WHEN mc.type = 'groom' THEN mc.name END),
-            ' & ',
-            MAX(CASE WHEN mc.type = 'bride' THEN mc.name END)
-        ) as couple_names,
-        ms.sponsor_name,
-        DATE_FORMAT(m.matrimony_date, '%Y-%m-%d') as marriage_date
-        FROM matrimony_records m
-        JOIN matrimony_couples mc ON m.id = mc.matrimony_record_id
-        JOIN matrimony_sponsors ms ON m.id = ms.matrimony_record_id
-        GROUP BY m.id, ms.sponsor_name, m.matrimony_date
-        ORDER BY m.matrimony_date DESC";
+    // Use database-specific string concatenation for couple names
+    if ($isPostgres) {
+        $matrimonySponsorsQuery = "SELECT 
+            (MAX(CASE WHEN mc.type = 'groom' THEN mc.name END) || ' & ' ||
+             MAX(CASE WHEN mc.type = 'bride' THEN mc.name END)) as couple_names,
+            ms.sponsor_name,
+            TO_CHAR(m.matrimony_date, 'YYYY-MM-DD') as marriage_date
+            FROM matrimony_records m
+            JOIN matrimony_couples mc ON m.id = mc.matrimony_record_id
+            JOIN matrimony_sponsors ms ON m.id = ms.matrimony_record_id
+            GROUP BY m.id, ms.sponsor_name, m.matrimony_date
+            ORDER BY m.matrimony_date DESC";
+    } else {
+        $matrimonySponsorsQuery = "SELECT 
+            CONCAT(
+                MAX(CASE WHEN mc.type = 'groom' THEN mc.name END),
+                ' & ',
+                MAX(CASE WHEN mc.type = 'bride' THEN mc.name END)
+            ) as couple_names,
+            ms.sponsor_name,
+            DATE_FORMAT(m.matrimony_date, '%Y-%m-%d') as marriage_date
+            FROM matrimony_records m
+            JOIN matrimony_couples mc ON m.id = mc.matrimony_record_id
+            JOIN matrimony_sponsors ms ON m.id = ms.matrimony_record_id
+            GROUP BY m.id, ms.sponsor_name, m.matrimony_date
+            ORDER BY m.matrimony_date DESC";
+    }
 
     $queries = [
         'BAPTISM RECORDS' => ['query' => $baptismQuery],
