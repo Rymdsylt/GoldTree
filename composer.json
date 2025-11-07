@@ -1,15 +1,29 @@
 {
+    "name": "materdolorosa/parish-management",
+    "description": "Mater Dolorosa Parish Management System",
+    "type": "project",
     "require": {
         "php": "^8.1",
         "ext-pdo": "*",
         "ext-mbstring": "*",
+        "ext-json": "*",
         "phpmailer/phpmailer": "^6.10",
-        "erusev/parsedown": "^1.7"
+        "erusev/parsedown": "^1.7",
+        "predis/predis": "^2.0"
+    },
+    "require-dev": {
+        "heroku/heroku-buildpack-php": "*"
     },
     "scripts": {
         "post-install-cmd": [
             "php db/create_index.php",
             "php db/update_schema.php"
         ]
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
     }
+}
 }

@@ -1,0 +1,49 @@
+{
+  "name": "Mater Dolorosa Parish Management System",
+  "description": "A comprehensive church management system for Mater Dolorosa Parish",
+  "repository": "https://github.com/Rymdsylt/GoldTree",
+  "addons": [
+    "jawsdb-maria:kitefin",
+    "heroku-redis:hobby-dev",
+    "scheduler:standard"
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/php"
+    }
+  ],
+  "env": {
+    "APP_ENV": {
+      "description": "Application environment",
+      "value": "production"
+    },
+    "APP_DEBUG": {
+      "description": "Enable debug mode",
+      "value": "false"
+    },
+    "SMTP_HOST": {
+      "description": "SMTP server hostname",
+      "required": true
+    },
+    "SMTP_PORT": {
+      "description": "SMTP server port",
+      "value": "587"
+    },
+    "SMTP_USER": {
+      "description": "SMTP username",
+      "required": true
+    },
+    "SMTP_PASS": {
+      "description": "SMTP password",
+      "required": true
+    },
+    "FROM_EMAIL": {
+      "description": "From email address",
+      "required": true
+    },
+    "FROM_NAME": {
+      "description": "From name for emails",
+      "value": "Mater Dolorosa Parish"
+    }
+  }
+}
