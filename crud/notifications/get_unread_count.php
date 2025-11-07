@@ -9,12 +9,24 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+// Check if database is PostgreSQL
+$isPostgres = (getenv('DATABASE_URL') !== false);
+
 try {
-    $stmt = $conn->prepare("
-        SELECT COUNT(*) as unread_count
-        FROM notification_recipients nr
-        WHERE nr.user_id = ? AND nr.is_read = 0
-    ");
+    // Use database-specific boolean comparison
+    if ($isPostgres) {
+        $stmt = $conn->prepare("
+            SELECT COUNT(*) as unread_count
+            FROM notification_recipients nr
+            WHERE nr.user_id = ? AND (nr.is_read = false OR nr.is_read IS NULL)
+        ");
+    } else {
+        $stmt = $conn->prepare("
+            SELECT COUNT(*) as unread_count
+            FROM notification_recipients nr
+            WHERE nr.user_id = ? AND nr.is_read = 0
+        ");
+    }
     
     $stmt->execute([$_SESSION['user_id']]);
     $result = $stmt->fetch(PDO::FETCH_ASSOC);

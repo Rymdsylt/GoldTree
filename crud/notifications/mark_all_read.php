@@ -9,14 +9,20 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+// Check if database is PostgreSQL
+$isPostgres = (getenv('DATABASE_URL') !== false);
+
 try {
+    // Use database-specific boolean value
+    $is_read_value = $isPostgres ? true : 1;
+    
     $stmt = $conn->prepare("
         UPDATE notification_recipients 
-        SET is_read = 1 
+        SET is_read = ? 
         WHERE user_id = ?
     ");
     
-    $stmt->execute([$_SESSION['user_id']]);
+    $stmt->execute([$is_read_value, $_SESSION['user_id']]);
     
     echo json_encode(['success' => true]);
     

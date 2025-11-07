@@ -46,14 +46,29 @@ try {
         $params[':search'] = "%{$_GET['search']}%";
     }
 
+    // Check if database is PostgreSQL
+    $isPostgres = (getenv('DATABASE_URL') !== false);
+    
     if (!empty($_GET['status'])) {
-        switch($_GET['status']) {
-            case 'active':
-                $where[] = "nr.is_read = 0";
-                break;
-            case 'expired':
-                $where[] = "nr.is_read = 1";
-                break;
+        // Use database-specific boolean comparison
+        if ($isPostgres) {
+            switch($_GET['status']) {
+                case 'active':
+                    $where[] = "(nr.is_read = false OR nr.is_read IS NULL)";
+                    break;
+                case 'expired':
+                    $where[] = "nr.is_read = true";
+                    break;
+            }
+        } else {
+            switch($_GET['status']) {
+                case 'active':
+                    $where[] = "nr.is_read = 0";
+                    break;
+                case 'expired':
+                    $where[] = "nr.is_read = 1";
+                    break;
+            }
         }
     }
 

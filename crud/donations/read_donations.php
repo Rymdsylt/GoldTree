@@ -111,7 +111,7 @@ if ($isPostgres) {
         LEFT JOIN members m ON d.member_id = m.id
         $where_sql
         ORDER BY d.donation_date DESC
-        LIMIT $limit OFFSET $offset";
+        LIMIT :limit OFFSET :offset";
 } else {
     $sql = "SELECT 
         d.*,
@@ -120,11 +120,20 @@ if ($isPostgres) {
         LEFT JOIN members m ON d.member_id = m.id
         $where_sql
         ORDER BY d.donation_date DESC
-        LIMIT $limit OFFSET $offset";
+        LIMIT :limit OFFSET :offset";
 }
 
 $stmt = $conn->prepare($sql);
-$stmt->execute($params);
+foreach ($params as $key => $value) {
+    if (is_int($key)) {
+        $stmt->bindValue($key + 1, $value);
+    } else {
+        $stmt->bindValue($key, $value);
+    }
+}
+$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmt->execute();
 $donations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $totalPages = ceil($total / $limit);

@@ -45,11 +45,7 @@
         "web": {
             "quantity": 1,
             "size": "basic"
-        },
-        "scheduler": {
-            "quantity": 1,
-            "size": "basic"
-        }
+    }
     },
     "stack": "heroku-24"
 }

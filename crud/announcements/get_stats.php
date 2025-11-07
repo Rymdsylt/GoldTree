@@ -9,15 +9,30 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+// Check if database is PostgreSQL
+$isPostgres = (getenv('DATABASE_URL') !== false);
+
 try {
-    $stmt = $conn->prepare("
-        SELECT COUNT(*) as total,
-               SUM(CASE WHEN nr.is_read = 0 THEN 1 ELSE 0 END) as unread,
-               COUNT(CASE WHEN nr.is_read = 1 THEN 1 END) * 100.0 / COUNT(*) as read_rate
-        FROM notifications n
-        INNER JOIN notification_recipients nr ON n.id = nr.notification_id
-        WHERE nr.user_id = ?
-    ");
+    // Use database-specific boolean comparison
+    if ($isPostgres) {
+        $stmt = $conn->prepare("
+            SELECT COUNT(*) as total,
+                   SUM(CASE WHEN (nr.is_read = false OR nr.is_read IS NULL) THEN 1 ELSE 0 END) as unread,
+                   COUNT(CASE WHEN nr.is_read = true THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0) as read_rate
+            FROM notifications n
+            INNER JOIN notification_recipients nr ON n.id = nr.notification_id
+            WHERE nr.user_id = ?
+        ");
+    } else {
+        $stmt = $conn->prepare("
+            SELECT COUNT(*) as total,
+                   SUM(CASE WHEN nr.is_read = 0 THEN 1 ELSE 0 END) as unread,
+                   COUNT(CASE WHEN nr.is_read = 1 THEN 1 END) * 100.0 / COUNT(*) as read_rate
+            FROM notifications n
+            INNER JOIN notification_recipients nr ON n.id = nr.notification_id
+            WHERE nr.user_id = ?
+        ");
+    }
     
     $stmt->execute([$_SESSION['user_id']]);
     $stats = $stmt->fetch(PDO::FETCH_ASSOC);

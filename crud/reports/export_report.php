@@ -296,28 +296,49 @@ function exportComplete($conn) {
     header('Content-Disposition: attachment;filename="complete_parish_records_' . date('Y-m-d_His') . '.xls"');
     header('Cache-Control: max-age=0');
     
-    // Get all tables except users
-    $tables_query = "SHOW TABLES FROM " . DB_NAME . " WHERE Tables_in_" . DB_NAME . " != 'users'";
-    $tables_stmt = $conn->query($tables_query);
-    $tables = $tables_stmt->fetchAll(PDO::FETCH_COLUMN);
+    // Check if database is PostgreSQL
+    $isPostgres = (getenv('DATABASE_URL') !== false);
+    
+    // Get all tables except users - use database-specific queries
+    if ($isPostgres) {
+        $tables_query = "SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_name != 'users'";
+        $tables_stmt = $conn->query($tables_query);
+        $tables = $tables_stmt->fetchAll(PDO::FETCH_COLUMN);
+    } else {
+        $tables_query = "SHOW TABLES FROM " . DB_NAME . " WHERE Tables_in_" . DB_NAME . " != 'users'";
+        $tables_stmt = $conn->query($tables_query);
+        $tables = $tables_stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
     
     echo "COMPLETE PARISH DATABASE EXPORT\n";
     echo "Generated on: " . date('F j, Y, g:i a') . "\n\n";
     
     foreach ($tables as $table) {
-        // Get table structure
-        $cols_query = "SHOW COLUMNS FROM `$table`";
-        $cols_stmt = $conn->query($cols_query);
-        $columns = $cols_stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Get table structure - use database-specific queries
+        if ($isPostgres) {
+            $cols_query = "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '$table' ORDER BY ordinal_position";
+            $cols_stmt = $conn->query($cols_query);
+            $columns = $cols_stmt->fetchAll(PDO::FETCH_ASSOC);
+            $headers = array_column($columns, 'column_name');
+        } else {
+            $cols_query = "SHOW COLUMNS FROM `$table`";
+            $cols_stmt = $conn->query($cols_query);
+            $columns = $cols_stmt->fetchAll(PDO::FETCH_ASSOC);
+            $headers = array_column($columns, 'Field');
+        }
         
         echo strtoupper(str_replace('_', ' ', $table)) . "\n";
         
         // Print column headers
-        $headers = array_column($columns, 'Field');
         echo implode("\t", $headers) . "\n";
         
         // Get data
-        $data_query = "SELECT * FROM `$table`";
+        // Use database-specific table quoting
+        if ($isPostgres) {
+            $data_query = "SELECT * FROM \"$table\"";
+        } else {
+            $data_query = "SELECT * FROM `$table`";
+        }
         
         // Add specific ordering for different tables
         switch ($table) {

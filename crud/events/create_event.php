@@ -228,12 +228,14 @@ try {
 
                
                         if ($recipient['type'] === 'user') {
+                            // Use database-specific boolean value
+                            $email_sent_value = $isPostgres ? true : 1;
                             $stmt = $conn->prepare("
                                 UPDATE notification_recipients 
-                                SET email_sent = 1 
+                                SET email_sent = ? 
                                 WHERE notification_id = ? AND user_id = ?
                             ");
-                            $stmt->execute([$notification_id, $recipient['id']]);
+                            $stmt->execute([$email_sent_value, $notification_id, $recipient['id']]);
                         }
                     } catch (Exception $e) {
                         error_log("Failed to send email to {$email}: " . $e->getMessage());

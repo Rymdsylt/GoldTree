@@ -32,9 +32,14 @@ $whereConditions = [];
 $params = [];
 
 
+// Check if database is PostgreSQL
+$isPostgres = (getenv('DATABASE_URL') !== false);
+
 $adminCheck = $conn->prepare("SELECT admin_status FROM users WHERE id = ?");
 $adminCheck->execute([$_SESSION['user_id']]);
-$isAdmin = $adminCheck->fetch()['admin_status'] == 1;
+$adminStatus = $adminCheck->fetch()['admin_status'];
+// admin_status is INTEGER in both databases, so == 1 works for both
+$isAdmin = ($adminStatus == 1 || $adminStatus === 1 || $adminStatus === true);
 
 
 if (!$isAdmin) {
