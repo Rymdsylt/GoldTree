@@ -1,16 +1,35 @@
 <?php
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_NAME', 'goldtree');
+// Use Heroku DATABASE_URL if available, otherwise use local defaults
+if (getenv('DATABASE_URL')) {
+    $url = parse_url(getenv('DATABASE_URL'));
+    define('DB_HOST', $url['host']);
+    define('DB_USER', $url['user']);
+    define('DB_PASS', $url['pass']);
+    define('DB_NAME', ltrim($url['path'], '/'));
+    $port = isset($url['port']) ? $url['port'] : 3306;
+} else {
+    // Local development defaults
+    define('DB_HOST', 'localhost');
+    define('DB_USER', 'root');
+    define('DB_PASS', '');
+    define('DB_NAME', 'goldtree');
+    $port = 3306;
+}
 
 try {
     date_default_timezone_set('Asia/Manila');
-    $conn = new PDO("mysql:host=" . DB_HOST, DB_USER, DB_PASS);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
-    $conn->exec("CREATE DATABASE IF NOT EXISTS " . DB_NAME);
-    $conn->exec("USE " . DB_NAME);
+    // For Heroku (ClearDB), connect directly to the database (no CREATE DATABASE)
+    if (getenv('DATABASE_URL')) {
+        $conn = new PDO("mysql:host=" . DB_HOST . ";port=" . $port . ";dbname=" . DB_NAME, DB_USER, DB_PASS);
+    } else {
+        // Local development: create database if it doesn't exist
+        $conn = new PDO("mysql:host=" . DB_HOST, DB_USER, DB_PASS);
+        $conn->exec("CREATE DATABASE IF NOT EXISTS " . DB_NAME);
+        $conn->exec("USE " . DB_NAME);
+    }
+    
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     $conn->exec("CREATE TABLE IF NOT EXISTS users (
         id INT PRIMARY KEY AUTO_INCREMENT,
