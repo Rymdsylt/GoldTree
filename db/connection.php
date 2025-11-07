@@ -1,8 +1,16 @@
 <?php
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_NAME', 'goldtree');
+if (getenv("JAWSDB_MARIA_URL")) {
+    $url = parse_url(getenv("JAWSDB_MARIA_URL"));
+    define('DB_HOST', $url["host"]);
+    define('DB_USER', $url["user"]);
+    define('DB_PASS', $url["pass"]);
+    define('DB_NAME', ltrim($url["path"], '/'));
+} else {
+    define('DB_HOST', 'localhost');
+    define('DB_USER', 'root');
+    define('DB_PASS', '');
+    define('DB_NAME', 'goldtree');
+}
 
 try {
     date_default_timezone_set('Asia/Manila');
