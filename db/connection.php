@@ -5,11 +5,13 @@ if (getenv("JAWSDB_MARIA_URL")) {
     define('DB_USER', $url["user"]);
     define('DB_PASS', $url["pass"]);
     define('DB_NAME', ltrim($url["path"], '/'));
+    define('DB_PORT', isset($url["port"]) ? $url["port"] : 3306);
 } else {
     define('DB_HOST', 'localhost');
     define('DB_USER', 'root');
     define('DB_PASS', '');
     define('DB_NAME', 'goldtree');
+    define('DB_PORT', 3306);
 }
 
 try {
