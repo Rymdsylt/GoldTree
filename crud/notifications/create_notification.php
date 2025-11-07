@@ -54,23 +54,28 @@ try {
 
     $conn->beginTransaction();
 
-    $stmt = $conn->prepare("
-        INSERT INTO notifications (
-            notification_type, subject, message, send_email, created_by, status
-        ) VALUES (?, ?, ?, ?, ?, 'pending')
-    ");
-    
-    if (!$stmt->execute([$notification_type, $subject, $message, $send_email_value, $_SESSION['user_id']])) {
-        throw new Exception("Error inserting notification: " . implode(", ", $stmt->errorInfo()));
-    }
-    
-    // Get last insert ID - PostgreSQL needs sequence name or lastval()
+    // Use RETURNING for PostgreSQL, lastInsertId for MySQL
     if ($isPostgres) {
-        // For PostgreSQL, use RETURNING id in INSERT or lastval()
-        // Since we already inserted, use lastval()
-        $stmt = $conn->query("SELECT lastval()");
-        $notification_id = (int)$stmt->fetchColumn();
+        $stmt = $conn->prepare("
+            INSERT INTO notifications (
+                notification_type, subject, message, send_email, created_by, status
+            ) VALUES (?, ?, ?, ?, ?, 'pending')
+            RETURNING id
+        ");
+        if (!$stmt->execute([$notification_type, $subject, $message, $send_email_value, $_SESSION['user_id']])) {
+            throw new Exception("Error inserting notification: " . implode(", ", $stmt->errorInfo()));
+        }
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $notification_id = (int)$result['id'];
     } else {
+        $stmt = $conn->prepare("
+            INSERT INTO notifications (
+                notification_type, subject, message, send_email, created_by, status
+            ) VALUES (?, ?, ?, ?, ?, 'pending')
+        ");
+        if (!$stmt->execute([$notification_type, $subject, $message, $send_email_value, $_SESSION['user_id']])) {
+            throw new Exception("Error inserting notification: " . implode(", ", $stmt->errorInfo()));
+        }
         $notification_id = (int)$conn->lastInsertId();
     }
     
