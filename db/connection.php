@@ -19,9 +19,19 @@ try {
         error_log("Successfully connected to PostgreSQL database");
         
         // Create tables for PostgreSQL
-        $conn->beginTransaction();
-        try {
-            error_log("Creating PostgreSQL tables...");
+        error_log("Creating PostgreSQL tables...");
+        
+        // Helper function to check if constraint exists
+        $constraintExists = function($conn, $table, $constraintName) {
+            $stmt = $conn->prepare("
+                SELECT 1 FROM information_schema.table_constraints 
+                WHERE table_name = ? AND constraint_name = ?
+            ");
+            $stmt->execute([$table, $constraintName]);
+            return $stmt->fetch() !== false;
+        };
+        
+        // Create tables (no transaction needed - CREATE TABLE IF NOT EXISTS is safe)
         $conn->exec("CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
             username VARCHAR(50) UNIQUE NOT NULL,
@@ -52,11 +62,21 @@ try {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )");
 
-        try {
-            $conn->exec("ALTER TABLE users ADD CONSTRAINT users_member_id_fk FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE");
-            $conn->exec("ALTER TABLE members ADD CONSTRAINT members_user_id_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL");
-        } catch(PDOException $e) {
-            error_log("Error adding foreign keys: " . $e->getMessage());
+        // Add foreign key constraints only if they don't exist
+        if (!$constraintExists($conn, 'users', 'users_member_id_fk')) {
+            try {
+                $conn->exec("ALTER TABLE users ADD CONSTRAINT users_member_id_fk FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE");
+            } catch(PDOException $e) {
+                error_log("Error adding foreign key users_member_id_fk: " . $e->getMessage());
+            }
+        }
+        
+        if (!$constraintExists($conn, 'members', 'members_user_id_fk')) {
+            try {
+                $conn->exec("ALTER TABLE members ADD CONSTRAINT members_user_id_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL");
+            } catch(PDOException $e) {
+                error_log("Error adding foreign key members_user_id_fk: " . $e->getMessage());
+            }
         }
 
         $conn->exec("CREATE TABLE IF NOT EXISTS donations (
@@ -251,21 +271,25 @@ try {
             CONSTRAINT matrimony_sponsors_record_id_fk FOREIGN KEY (matrimony_record_id) REFERENCES matrimony_records(id) ON DELETE CASCADE
         )");
 
-        // Add default admin user if not exists
-        $checkAdmin = $conn->query("SELECT id FROM users WHERE username = 'root'")->fetch();
-        if (!$checkAdmin) {
-            $hashedPassword = password_hash('mdradmin', PASSWORD_DEFAULT);
-            $stmt = $conn->prepare("INSERT INTO users (username, password, email, admin_status) VALUES (?, ?, ?, ?)");
-            $stmt->execute(['root', $hashedPassword, 'admin@materdolorosa.com', 1]);
+        // Add default admin user if not exists (use transaction for this operation)
+        try {
+            $conn->beginTransaction();
+            $checkAdmin = $conn->query("SELECT id FROM users WHERE username = 'root'")->fetch();
+            if (!$checkAdmin) {
+                $hashedPassword = password_hash('mdradmin', PASSWORD_DEFAULT);
+                $stmt = $conn->prepare("INSERT INTO users (username, password, email, admin_status) VALUES (?, ?, ?, ?)");
+                $stmt->execute(['root', $hashedPassword, 'admin@materdolorosa.com', 1]);
+            }
+            $conn->commit();
+        } catch(PDOException $e) {
+            if ($conn->inTransaction()) {
+                $conn->rollBack();
+            }
+            error_log("Error adding default admin user: " . $e->getMessage());
+            // Don't throw - admin user might already exist
         }
         
-        $conn->commit();
         error_log("PostgreSQL tables created successfully");
-        } catch(PDOException $e) {
-            $conn->rollBack();
-            error_log("Error creating PostgreSQL tables: " . $e->getMessage());
-            throw $e;
-        }
         
     } else {
         // Local MySQL configuration
