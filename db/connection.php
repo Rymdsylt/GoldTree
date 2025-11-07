@@ -1,4 +1,4 @@
-<?phpa
+<?php
 date_default_timezone_set('Asia/Manila');
 
 try {
@@ -522,4 +522,3 @@ try {
     error_log("Database connection failed: " . $e->getMessage());
     die("Connection failed: " . $e->getMessage());
 }
-?>
