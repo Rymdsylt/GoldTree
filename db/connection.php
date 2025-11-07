@@ -32,18 +32,24 @@ try {
     
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Check if tables already exist to avoid slow CREATE TABLE IF NOT EXISTS on every page load
-    $tablesExist = false;
-    try {
-        $result = $conn->query("SHOW TABLES LIKE 'users'");
-        $tablesExist = $result->rowCount() > 0;
-    } catch(PDOException $e) {
-        // If query fails, assume tables don't exist
-        $tablesExist = false;
+    // On Heroku, assume tables exist (they should be created via migration)
+    // Only create tables on local development or if explicitly needed
+    $shouldCreateTables = !$dbUrl; // Only create on local dev
+    
+    // For Heroku, do a quick check - if query fails, tables might not exist
+    if ($dbUrl) {
+        try {
+            // Quick test query - if this works, tables likely exist
+            $conn->query("SELECT 1 FROM users LIMIT 1");
+            $shouldCreateTables = false; // Tables exist
+        } catch(PDOException $e) {
+            // Table doesn't exist or error - create tables
+            $shouldCreateTables = true;
+        }
     }
 
     // Only create tables if they don't exist (for first-time setup)
-    if (!$tablesExist) {
+    if ($shouldCreateTables) {
         $conn->exec("CREATE TABLE IF NOT EXISTS users (
         id INT PRIMARY KEY AUTO_INCREMENT,
         username VARCHAR(50) UNIQUE NOT NULL,
