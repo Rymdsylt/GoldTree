@@ -33,8 +33,8 @@ try {
     // Check if database is PostgreSQL
     $isPostgres = (getenv('DATABASE_URL') !== false);
     
-    // Convert admin_status to integer
-    $admin_status_value = ($admin_status == 1 || $admin_status === '1' || $admin_status === true) ? 1 : 0;
+    // Convert admin_status to proper boolean/integer value
+    $admin_status_value = $isPostgres ? (($admin_status == 1 || $admin_status === '1' || $admin_status === true) ? true : false) : (($admin_status == 1 || $admin_status === '1' || $admin_status === true) ? 1 : 0);
 
     $stmt = $conn->prepare("INSERT INTO users (username, password, email, admin_status) VALUES (?, ?, ?, ?)");
     $stmt->execute([$username, $hashed_password, $email, $admin_status_value]);
