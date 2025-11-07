@@ -56,19 +56,38 @@ try {
     }
 
     $conn->beginTransaction();
+    
+    // Check if database is PostgreSQL
+    $isPostgres = (getenv('DATABASE_URL') !== false);
 
     $username = explode('@', $email)[0];
     
     $hashed_password = password_hash($password, PASSWORD_BCRYPT);
 
-    $stmt = $conn->prepare("INSERT INTO users (username, password, email) VALUES (?, ?, ?)");
-    $stmt->execute([$username, $hashed_password, $email]);
-    $user_id = $conn->lastInsertId();
+    // Use RETURNING for PostgreSQL, lastInsertId for MySQL
+    if ($isPostgres) {
+        $stmt = $conn->prepare("INSERT INTO users (username, password, email) VALUES (?, ?, ?) RETURNING id");
+        $stmt->execute([$username, $hashed_password, $email]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $user_id = (int)$result['id'];
+    } else {
+        $stmt = $conn->prepare("INSERT INTO users (username, password, email) VALUES (?, ?, ?)");
+        $stmt->execute([$username, $hashed_password, $email]);
+        $user_id = (int)$conn->lastInsertId();
+    }
 
-    $stmt = $conn->prepare("INSERT INTO members (first_name, last_name, email, phone, address, birthdate, membership_date) 
-                           VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$first_name, $last_name, $email, $phone, $address, $birthdate, $membership_date]);
-    $member_id = $conn->lastInsertId();
+    if ($isPostgres) {
+        $stmt = $conn->prepare("INSERT INTO members (first_name, last_name, email, phone, address, birthdate, membership_date) 
+                               VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id");
+        $stmt->execute([$first_name, $last_name, $email, $phone, $address, $birthdate, $membership_date]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $member_id = (int)$result['id'];
+    } else {
+        $stmt = $conn->prepare("INSERT INTO members (first_name, last_name, email, phone, address, birthdate, membership_date) 
+                               VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$first_name, $last_name, $email, $phone, $address, $birthdate, $membership_date]);
+        $member_id = (int)$conn->lastInsertId();
+    }
 
     $stmt = $conn->prepare("UPDATE users SET member_id = ? WHERE id = ?");
     $stmt->execute([$member_id, $user_id]);

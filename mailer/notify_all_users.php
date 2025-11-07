@@ -49,13 +49,30 @@ try {
         throw new Exception('No recipients found');
     }
 
-    $stmt = $conn->prepare("
-        INSERT INTO notifications (
-            notification_type, subject, message, send_email, created_by, status
-        ) VALUES (
-            'event', ?, ?, 1, ?, 'pending'
-        )
-    ");
+    // Check if database is PostgreSQL
+    $isPostgres = (getenv('DATABASE_URL') !== false);
+    
+    // Use database-specific boolean value
+    $send_email_value = $isPostgres ? true : 1;
+    
+    // Use RETURNING for PostgreSQL
+    if ($isPostgres) {
+        $stmt = $conn->prepare("
+            INSERT INTO notifications (
+                notification_type, subject, message, send_email, created_by, status
+            ) VALUES (
+                'event', ?, ?, ?, ?, 'pending'
+            ) RETURNING id
+        ");
+    } else {
+        $stmt = $conn->prepare("
+            INSERT INTO notifications (
+                notification_type, subject, message, send_email, created_by, status
+            ) VALUES (
+                'event', ?, ?, ?, ?, 'pending'
+            )
+        ");
+    }
 
     $subject = "New Event: {$event['title']}";
     $message = "A new event has been created:\n\n" .
@@ -64,8 +81,14 @@ try {
                "Location: {$event['location']}\n" .
                "Description: {$event['description']}";
 
-    $stmt->execute([$subject, $message, $_SESSION['user_id']]);
-    $notification_id = $conn->lastInsertId();
+    $stmt->execute([$subject, $message, $send_email_value, $_SESSION['user_id']]);
+    
+    if ($isPostgres) {
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $notification_id = (int)$result['id'];
+    } else {
+        $notification_id = (int)$conn->lastInsertId();
+    }
 
     $stmt = $conn->prepare("
         INSERT INTO notification_recipients (
@@ -118,12 +141,14 @@ try {
                 $successfulEmails++;
 
                 if (isset($recipient['id'])) {
+                    // Use database-specific boolean value
+                    $email_sent_value = $isPostgres ? true : 1;
                     $stmt = $conn->prepare("
                         UPDATE notification_recipients 
-                        SET email_sent = 1 
+                        SET email_sent = ? 
                         WHERE notification_id = ? AND user_id = ?
                     ");
-                    $stmt->execute([$notification_id, $recipient['id']]);
+                    $stmt->execute([$email_sent_value, $notification_id, $recipient['id']]);
                 }
             } catch (Exception $e) {
                 error_log("Failed to send email to {$recipient['email']}: " . $e->getMessage());
