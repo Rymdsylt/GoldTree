@@ -3,15 +3,26 @@ require_once '../../db/connection.php';
 
 header('Content-Type: application/json');
 
+// Check if database is PostgreSQL
+$isPostgres = (getenv('DATABASE_URL') !== false);
+
 if (isset($_GET['stats'])) {
     try {
         $stmt = $conn->query("SELECT SUM(amount) as total FROM donations");
         $totalDonations = $stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0;
 
-        $stmt = $conn->query("SELECT SUM(amount) as monthly 
-                            FROM donations 
-                            WHERE MONTH(donation_date) = MONTH(CURRENT_DATE) 
-                            AND YEAR(donation_date) = YEAR(CURRENT_DATE)");
+        // Use database-specific date functions
+        if ($isPostgres) {
+            $stmt = $conn->query("SELECT SUM(amount) as monthly 
+                                FROM donations 
+                                WHERE EXTRACT(MONTH FROM donation_date) = EXTRACT(MONTH FROM CURRENT_DATE) 
+                                AND EXTRACT(YEAR FROM donation_date) = EXTRACT(YEAR FROM CURRENT_DATE)");
+        } else {
+            $stmt = $conn->query("SELECT SUM(amount) as monthly 
+                                FROM donations 
+                                WHERE MONTH(donation_date) = MONTH(CURRENT_DATE) 
+                                AND YEAR(donation_date) = YEAR(CURRENT_DATE)");
+        }
         $monthlyDonations = $stmt->fetch(PDO::FETCH_ASSOC)['monthly'] ?? 0;
 
         $stmt = $conn->query("SELECT COUNT(DISTINCT COALESCE(member_id, donor_name)) as total_donors 
@@ -44,10 +55,18 @@ $fromDate = $data['fromDate'] ?? '';
 $toDate = $data['toDate'] ?? '';
 
 try {
-    $sql = "SELECT d.*, CONCAT(m.first_name, ' ', m.last_name) as member_name 
-            FROM donations d 
-            LEFT JOIN members m ON d.member_id = m.id 
-            WHERE 1=1";
+    // Use database-specific string concatenation
+    if ($isPostgres) {
+        $sql = "SELECT d.*, m.first_name || ' ' || m.last_name as member_name 
+                FROM donations d 
+                LEFT JOIN members m ON d.member_id = m.id 
+                WHERE 1=1";
+    } else {
+        $sql = "SELECT d.*, CONCAT(m.first_name, ' ', m.last_name) as member_name 
+                FROM donations d 
+                LEFT JOIN members m ON d.member_id = m.id 
+                WHERE 1=1";
+    }
     $params = [];
 
     if (!empty($type)) {

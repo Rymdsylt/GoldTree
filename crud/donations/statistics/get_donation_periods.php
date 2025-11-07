@@ -2,33 +2,63 @@
 require_once '../../../db/connection.php';
 header('Content-Type: application/json');
 
-try {
+// Check if database is PostgreSQL
+$isPostgres = (getenv('DATABASE_URL') !== false);
 
-    $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total 
-        FROM donations 
-        WHERE DATE(donation_date) = CURRENT_DATE");
+try {
+    // Today's donations
+    if ($isPostgres) {
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total 
+            FROM donations 
+            WHERE DATE(donation_date) = CURRENT_DATE");
+    } else {
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total 
+            FROM donations 
+            WHERE DATE(donation_date) = CURRENT_DATE");
+    }
     $stmt->execute();
     $todayDonations = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-
-    $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total 
-        FROM donations 
-        WHERE YEARWEEK(donation_date, 1) = YEARWEEK(CURDATE(), 1)");
+    // Weekly donations
+    if ($isPostgres) {
+        // PostgreSQL equivalent of YEARWEEK
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total 
+            FROM donations 
+            WHERE EXTRACT(YEAR FROM donation_date) = EXTRACT(YEAR FROM CURRENT_DATE)
+            AND EXTRACT(WEEK FROM donation_date) = EXTRACT(WEEK FROM CURRENT_DATE)");
+    } else {
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total 
+            FROM donations 
+            WHERE YEARWEEK(donation_date, 1) = YEARWEEK(CURDATE(), 1)");
+    }
     $stmt->execute();
     $weeklyDonations = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
-
-    $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total 
-        FROM donations 
-        WHERE MONTH(donation_date) = MONTH(CURRENT_DATE) 
-        AND YEAR(donation_date) = YEAR(CURRENT_DATE)");
+    // Monthly donations
+    if ($isPostgres) {
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total 
+            FROM donations 
+            WHERE EXTRACT(MONTH FROM donation_date) = EXTRACT(MONTH FROM CURRENT_DATE) 
+            AND EXTRACT(YEAR FROM donation_date) = EXTRACT(YEAR FROM CURRENT_DATE)");
+    } else {
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total 
+            FROM donations 
+            WHERE MONTH(donation_date) = MONTH(CURRENT_DATE) 
+            AND YEAR(donation_date) = YEAR(CURRENT_DATE)");
+    }
     $stmt->execute();
     $monthlyDonations = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
- 
-    $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total 
-        FROM donations 
-        WHERE YEAR(donation_date) = YEAR(CURRENT_DATE)");
+    // Yearly donations
+    if ($isPostgres) {
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total 
+            FROM donations 
+            WHERE EXTRACT(YEAR FROM donation_date) = EXTRACT(YEAR FROM CURRENT_DATE)");
+    } else {
+        $stmt = $conn->prepare("SELECT COALESCE(SUM(amount), 0) as total 
+            FROM donations 
+            WHERE YEAR(donation_date) = YEAR(CURRENT_DATE)");
+    }
     $stmt->execute();
     $yearlyDonations = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
 
