@@ -78,6 +78,8 @@ $conn->prepare($updateStatusSQL)->execute([$now, $now, $now, $now]);
 
 $whereClause = $whereConditions ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
 
+// Check if database is PostgreSQL
+$isPostgres = (getenv('DATABASE_URL') !== false);
 
 $countSql = "SELECT COUNT(*) as total FROM events e $whereClause";
 $countStmt = $conn->prepare($countSql);
@@ -87,33 +89,65 @@ $total = $countStmt->fetch()['total'];
 $totalPages = ceil($total / $perPage);
 $currentPage = max(1, min($page, $totalPages));
 
-
-$sql = "
-    SELECT 
-        e.*,
-        GROUP_CONCAT(DISTINCT CONCAT(m.first_name, ' ', m.last_name)) as assigned_staff,
-        GROUP_CONCAT(DISTINCT u.id) as assigned_staff_ids,
-        GROUP_CONCAT(DISTINCT CONCAT(m.first_name, ' ', m.last_name)) as assigned_staff_names,
-        (
-            SELECT COUNT(DISTINCT ea.member_id)
-            FROM event_attendance ea
-            WHERE ea.event_id = e.id
-            AND ea.attendance_status = 'present'
-            AND DATE(ea.attendance_date) = CURRENT_DATE
-        ) as present_count,
-        (
-            SELECT COUNT(*)
-            FROM members m
-            WHERE m.status = 'active'
-        ) as total_members
-    FROM events e 
-    LEFT JOIN event_assignments ea ON e.id = ea.event_id
-    LEFT JOIN users u ON ea.user_id = u.id
-    LEFT JOIN members m ON u.member_id = m.id
-    $whereClause
-    GROUP BY e.id
-    ORDER BY e.$sort $direction 
-    LIMIT ? OFFSET ?";
+// Build SQL with database-specific aggregate functions
+if ($isPostgres) {
+    // PostgreSQL uses STRING_AGG instead of GROUP_CONCAT
+    // COALESCE handles NULL case when no staff is assigned
+    $sql = "
+        SELECT 
+            e.*,
+            COALESCE(STRING_AGG(DISTINCT m.first_name || ' ' || m.last_name, ', '), '') as assigned_staff,
+            COALESCE(STRING_AGG(DISTINCT u.id::text, ', '), '') as assigned_staff_ids,
+            COALESCE(STRING_AGG(DISTINCT m.first_name || ' ' || m.last_name, ', '), '') as assigned_staff_names,
+            (
+                SELECT COUNT(DISTINCT ea.member_id)
+                FROM event_attendance ea
+                WHERE ea.event_id = e.id
+                AND ea.attendance_status = 'present'
+                AND DATE(ea.attendance_date) = CURRENT_DATE
+            ) as present_count,
+            (
+                SELECT COUNT(*)
+                FROM members m
+                WHERE m.status = 'active'
+            ) as total_members
+        FROM events e 
+        LEFT JOIN event_assignments ea ON e.id = ea.event_id
+        LEFT JOIN users u ON ea.user_id = u.id
+        LEFT JOIN members m ON u.member_id = m.id
+        $whereClause
+        GROUP BY e.id
+        ORDER BY e.$sort $direction 
+        LIMIT ? OFFSET ?";
+} else {
+    // MySQL uses GROUP_CONCAT
+    $sql = "
+        SELECT 
+            e.*,
+            GROUP_CONCAT(DISTINCT CONCAT(m.first_name, ' ', m.last_name)) as assigned_staff,
+            GROUP_CONCAT(DISTINCT u.id) as assigned_staff_ids,
+            GROUP_CONCAT(DISTINCT CONCAT(m.first_name, ' ', m.last_name)) as assigned_staff_names,
+            (
+                SELECT COUNT(DISTINCT ea.member_id)
+                FROM event_attendance ea
+                WHERE ea.event_id = e.id
+                AND ea.attendance_status = 'present'
+                AND DATE(ea.attendance_date) = CURRENT_DATE
+            ) as present_count,
+            (
+                SELECT COUNT(*)
+                FROM members m
+                WHERE m.status = 'active'
+            ) as total_members
+        FROM events e 
+        LEFT JOIN event_assignments ea ON e.id = ea.event_id
+        LEFT JOIN users u ON ea.user_id = u.id
+        LEFT JOIN members m ON u.member_id = m.id
+        $whereClause
+        GROUP BY e.id
+        ORDER BY e.$sort $direction 
+        LIMIT ? OFFSET ?";
+}
 
 try {
     $stmt = $conn->prepare($sql);
