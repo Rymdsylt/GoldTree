@@ -1,14 +1,6 @@
 <?php
-require_once __DIR__ . '/../auth/session.php';
+session_start();
 require_once __DIR__ . '/../db/connection.php';
-
-init_session();
-
-// Check if user is logged in
-if (!isset($_SESSION['user_id']) && !in_array(basename($_SERVER['PHP_SELF']), ['login.php', 'register.php', 'forgot_password.php'])) {
-    header('Location: /login.php');
-    exit;
-}
 
 if (!isset($_SESSION['active_page'])) {
     $_SESSION['active_page'] = 'dashboard';

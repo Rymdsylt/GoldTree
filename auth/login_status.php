@@ -1,24 +1,21 @@
 <?php
-require_once __DIR__ . '/session.php';
-init_session();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 $current_page = basename($_SERVER['PHP_SELF']);
 $public_pages = ['register.php', 'login.php', 'forgot_password.php'];
 
-// Get the base URL for the application
-$isHeroku = getenv('HEROKU') !== false;
-$baseUrl = $isHeroku ? '' : '/GoldTree';
-
 if (in_array($current_page, $public_pages)) {
     if ($current_page === 'login.php' && isset($_SESSION['user_id'])) {
-        header("Location: {$baseUrl}/dashboard.php");
+        header("Location: /GoldTree/dashboard.php");
         exit();
     }
     return;
 }
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: {$baseUrl}/login.php");
+    header("Location: /GoldTree/login.php");
     exit();
 }
 
