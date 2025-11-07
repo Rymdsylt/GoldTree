@@ -2,19 +2,54 @@
     "name": "GoldTree Church Management",
     "description": "A church management system for handling members, events, and sacramental records",
     "repository": "https://github.com/Rymdsylt/GoldTree",
-    "keywords": ["php", "church", "management"],
+    "logo": "assets/img/logo.png",
+    "keywords": ["php", "church", "management", "sacramental", "events"],
+    "website": "https://goldtree-app-cf573e5647cf.herokuapp.com/",
+    "success_url": "/login.php",
     "addons": [
-        "heroku-postgresql"
+        "heroku-postgresql:hobby-dev",
+        "scheduler:standard",
+        "papertrail:choklad"
     ],
     "env": {
         "APP_ENV": {
-            "description": "Environment for the application (production/development)",
+            "description": "Environment for the application",
             "value": "production"
+        },
+        "APP_DEBUG": {
+            "description": "Enable debug mode",
+            "value": "false"
+        },
+        "APP_KEY": {
+            "description": "Application encryption key",
+            "generator": "secret"
+        },
+        "SESSION_SECURE": {
+            "description": "Force HTTPS for sessions",
+            "value": "true"
+        },
+        "TIMEZONE": {
+            "description": "Application timezone",
+            "value": "Asia/Manila"
         }
     },
     "buildpacks": [
         {
             "url": "heroku/php"
         }
-    ]
+    ],
+    "scripts": {
+        "postdeploy": "php db/migrations/001_heroku_postgres.php"
+    },
+    "formation": {
+        "web": {
+            "quantity": 1,
+            "size": "basic"
+        },
+        "scheduler": {
+            "quantity": 1,
+            "size": "basic"
+        }
+    },
+    "stack": "heroku-24"
 }
