@@ -32,24 +32,11 @@ try {
     
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // On Heroku, assume tables exist (they should be created via migration)
-    // Only create tables on local development or if explicitly needed
-    $shouldCreateTables = !$dbUrl; // Only create on local dev
-    
-    // For Heroku, do a quick check - if query fails, tables might not exist
-    if ($dbUrl) {
-        try {
-            // Quick test query - if this works, tables likely exist
-            $conn->query("SELECT 1 FROM users LIMIT 1");
-            $shouldCreateTables = false; // Tables exist
-        } catch(PDOException $e) {
-            // Table doesn't exist or error - create tables
-            $shouldCreateTables = true;
-        }
-    }
-
-    // Only create tables if they don't exist (for first-time setup)
-    if ($shouldCreateTables) {
+    // On Heroku, skip table creation entirely to prevent memory/timeout issues
+    // Tables should be created manually via migration or will be created on first error
+    // Only create tables on local development
+    if (!$dbUrl) {
+        // Local development: create tables if they don't exist
         $conn->exec("CREATE TABLE IF NOT EXISTS users (
         id INT PRIMARY KEY AUTO_INCREMENT,
         username VARCHAR(50) UNIQUE NOT NULL,
@@ -80,22 +67,15 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )");
 
-    try {
-        $conn->exec("ALTER TABLE users DROP FOREIGN KEY IF EXISTS users_member_id_fk");
-        $conn->exec("ALTER TABLE users ADD CONSTRAINT users_member_id_fk FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE");
-        
-        $conn->exec("ALTER TABLE members DROP FOREIGN KEY IF EXISTS members_user_id_fk");
-        $conn->exec("ALTER TABLE members ADD CONSTRAINT members_user_id_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL");
-    } catch(PDOException $e) {
-        error_log("Error adding foreign keys: " . $e->getMessage());
-    }
-
-    $checkAdmin = $conn->query("SELECT id FROM users WHERE username = 'root'")->fetch();
-    if (!$checkAdmin) {
-        $hashedPassword = password_hash('mdradmin', PASSWORD_DEFAULT);
-        $stmt = $conn->prepare("INSERT INTO users (username, password, email, admin_status) VALUES (?, ?, ?, ?)");
-        $stmt->execute(['root', $hashedPassword, 'admin@materdolorosa.com', 1]);
-    }
+        try {
+            $conn->exec("ALTER TABLE users DROP FOREIGN KEY IF EXISTS users_member_id_fk");
+            $conn->exec("ALTER TABLE users ADD CONSTRAINT users_member_id_fk FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE");
+            
+            $conn->exec("ALTER TABLE members DROP FOREIGN KEY IF EXISTS members_user_id_fk");
+            $conn->exec("ALTER TABLE members ADD CONSTRAINT members_user_id_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL");
+        } catch(PDOException $e) {
+            error_log("Error adding foreign keys: " . $e->getMessage());
+        }
 
     $conn->exec("CREATE TABLE IF NOT EXISTS donations (
         id INT PRIMARY KEY AUTO_INCREMENT,
@@ -312,7 +292,20 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         migrated BOOLEAN DEFAULT FALSE
     ) COMMENT 'Deprecated: Use specific sacramental record tables instead'");
-    } // End of if (!$tablesExist)
+    } // End of if (!$dbUrl) - local development only
+
+    // Always check/create admin user (runs on both Heroku and local)
+    try {
+        $checkAdmin = $conn->query("SELECT id FROM users WHERE username = 'root'")->fetch();
+        if (!$checkAdmin) {
+            $hashedPassword = password_hash('mdradmin', PASSWORD_DEFAULT);
+            $stmt = $conn->prepare("INSERT INTO users (username, password, email, admin_status) VALUES (?, ?, ?, ?)");
+            $stmt->execute(['root', $hashedPassword, 'admin@materdolorosa.com', 1]);
+        }
+    } catch(PDOException $e) {
+        // If users table doesn't exist yet, this will fail - that's okay
+        error_log("Could not check/create admin user: " . $e->getMessage());
+    }
 
 } catch(PDOException $e) {
     die("Connection failed: " . $e->getMessage());
