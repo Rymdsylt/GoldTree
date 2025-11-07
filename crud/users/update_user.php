@@ -18,8 +18,8 @@ try {
     // Check if database is PostgreSQL
     $isPostgres = (getenv('DATABASE_URL') !== false);
     
-    // Convert admin_status to proper boolean/integer value
-    $admin_status_value = $isPostgres ? (($admin_status == 1 || $admin_status === '1' || $admin_status === true) ? true : false) : (($admin_status == 1 || $admin_status === '1' || $admin_status === true) ? 1 : 0);
+    // Convert admin_status to integer
+    $admin_status_value = ($admin_status == 1 || $admin_status === '1' || $admin_status === true) ? 1 : 0;
     
     $stmt = $conn->prepare("SELECT id FROM users WHERE (username = ? OR email = ?) AND id != ?");
     $stmt->execute([$username, $email, $id]);
