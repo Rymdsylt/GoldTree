@@ -11,8 +11,10 @@ if (isset($_GET['logout'])) {
     }
 }
 
+require_once __DIR__ . '/config.php';
+
 if (isset($_SESSION['user_id'])) {
-    header("Location: dashboard.php");
+    header("Location: " . base_path('dashboard.php'));
     exit();
 }
 ?>

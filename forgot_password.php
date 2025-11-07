@@ -1,8 +1,10 @@
 <?php
 require_once 'auth/login_status.php';
 session_start();
+require_once __DIR__ . '/config.php';
+
 if (isset($_COOKIE['logged_in']) && $_COOKIE['logged_in'] === 'true') {
-    header("Location: dashboard.php");
+    header("Location: " . base_path('dashboard.php'));
     exit();
 }
 ?>

@@ -1,9 +1,10 @@
 <?php 
+require_once __DIR__ . '/config.php';
 require_once 'templates/header.php';
 require_once 'auth/login_status.php';
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
+    header("Location: " . base_path('login.php'));
     exit();
 }
 

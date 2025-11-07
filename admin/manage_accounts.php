@@ -5,8 +5,10 @@ require_once '../db/connection.php';
 
 
 
+require_once __DIR__ . '/../config.php';
+
 if (!isset($_SESSION['user_id'])){
-    header("Location: ../login.php");
+    header("Location: " . base_path('login.php'));
     exit();
 }
 
@@ -15,7 +17,7 @@ $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch();
 
 if (!$user || $user['admin_status'] != 1) {
-    header("Location: ../dashboard.php");
+    header("Location: " . base_path('dashboard.php'));
     exit();
 }
 ?>

@@ -1,10 +1,11 @@
 <?php
 session_start();
+require_once __DIR__ . '/../config.php';
 require_once '../db/connection.php';
 
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: /GoldTree/login.php");
+    header("Location: " . base_path('login.php'));
     exit();
 }
 
@@ -13,7 +14,7 @@ $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch();
 
 if (!$user || $user['admin_status'] != 1) {
-    header("Location: /GoldTree/events.php");
+    header("Location: " . base_path('events.php'));
     exit();
 }
 ?>

@@ -10,14 +10,16 @@ $user = $stmt->fetch();
 
 if (!$user || $user['admin_status'] != 1) {
    
-    $previousPage = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : 'dashboard.php';
+require_once __DIR__ . '/config.php';
+
+    $previousPage = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : base_path('dashboard.php');
     
 
     if (!empty($_SERVER['HTTP_REFERER'])) {
         $refererHost = parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST);
         $currentHost = $_SERVER['HTTP_HOST'];
         if ($refererHost !== $currentHost) {
-            $previousPage = 'dashboard.php';
+            $previousPage = base_path('dashboard.php');
         }
     }
     

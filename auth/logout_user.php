@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../config.php';
 session_start();
 
 $_SESSION = array();
@@ -18,5 +19,5 @@ setcookie('logged_in', '', [
 setcookie('user_id', '', time() - 3600, '/');
 setcookie('username', '', time() - 3600, '/');
 
-header('Location: ../login.php');
+header('Location: ' . base_path('login.php'));
 exit();
