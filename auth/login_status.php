@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../config.php';
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -8,14 +10,14 @@ $public_pages = ['register.php', 'login.php', 'forgot_password.php'];
 
 if (in_array($current_page, $public_pages)) {
     if ($current_page === 'login.php' && isset($_SESSION['user_id'])) {
-        header("Location: /GoldTree/dashboard.php");
+        header("Location: " . base_path('dashboard.php'));
         exit();
     }
     return;
 }
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: /GoldTree/login.php");
+    header("Location: " . base_path('login.php'));
     exit();
 }
 

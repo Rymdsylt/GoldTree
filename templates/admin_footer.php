@@ -1,6 +1,10 @@
 </main>
-    <script src="/GoldTree/js/bootstrap.bundle.min.js"></script>
-    <script src="/GoldTree/js/jquery.js"></script>
+    <script src="<?php echo base_path('js/bootstrap.bundle.min.js'); ?>"></script>
+    <script src="<?php echo base_path('js/jquery.js'); ?>"></script>
+    <script>
+        // Global base path for JavaScript
+        const BASE_PATH = '<?php echo BASE_PATH; ?>';
+    </script>
     <script>
 
         document.getElementById('adminSidebarToggle')?.addEventListener('click', function() {

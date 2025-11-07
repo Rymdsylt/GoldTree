@@ -1,6 +1,6 @@
 <?php
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+require_once dirname(dirname(dirname(__FILE__))) . '/config.php';
+// Error reporting handled by config.php
 
 $basePath = dirname(dirname(dirname(__FILE__)));
 require_once $basePath . '/db/connection.php';

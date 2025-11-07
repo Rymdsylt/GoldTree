@@ -1,6 +1,12 @@
 </main>
-    <script src="js/jquery.js"></script>
-    <script src="js/bootstrap.bundle.min.js"></script>
+    <script src="<?php echo isset($BASE_PATH) ? base_path('js/jquery.js') : 'js/jquery.js'; ?>"></script>
+    <script src="<?php echo isset($BASE_PATH) ? base_path('js/bootstrap.bundle.min.js') : 'js/bootstrap.bundle.min.js'; ?>"></script>
+    <script>
+        // Global base path for JavaScript (if not already defined)
+        if (typeof BASE_PATH === 'undefined') {
+            const BASE_PATH = '<?php echo defined("BASE_PATH") ? BASE_PATH : ""; ?>';
+        }
+    </script>
     <script>
         // Toggle sidebar on mobile
         document.addEventListener('DOMContentLoaded', function() {

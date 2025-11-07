@@ -7,8 +7,10 @@ $stmt = $conn->prepare("SELECT admin_status FROM users WHERE id = ?");
 $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch();
 
+require_once __DIR__ . '/../config.php';
+
 if (!$user || $user['admin_status'] != 1) {
-    header("Location: /GoldTree/events.php");
+    header("Location: " . base_path('events.php'));
     exit();
 }
 

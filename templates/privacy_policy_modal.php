@@ -77,7 +77,8 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['privacy_checked']) && !$_SES
         });
 
         function handlePrivacyAgreement(agreed) {
-            fetch('/GoldTree/auth/handle_privacy_agreement.php', {
+            const basePath = '<?php echo BASE_PATH; ?>';
+            fetch(basePath + '/auth/handle_privacy_agreement.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -93,7 +94,7 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['privacy_checked']) && !$_SES
             .then(data => {
                 if (data.success) {
                     if (!agreed) {
-                        window.location.href = '/GoldTree/login.php';
+                        window.location.href = basePath + '/login.php';
                     } else {
                         modal.hide();
                         window.location.reload();

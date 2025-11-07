@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../db/connection.php';
 
 if (!isset($_SESSION['active_page'])) {
@@ -202,40 +203,40 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="p-3">
             <h5 class="mb-4 text-primary">Navigation</h5>
             <nav class="nav flex-column">
-                <a href="/GoldTree/Dashboard_intro.php?page=dashboard" 
+                <a href="<?php echo base_path('Dashboard_intro.php'); ?>?page=dashboard" 
                    class="sidebar-link <?php echo $_SESSION['active_page'] == 'dashboard' ? 'active' : ''; ?>">
                     <i class="bi bi-speedometer2"></i> Dashboard
-                </a>                <a href="/GoldTree/members.php?page=members" 
+                </a>                <a href="<?php echo base_path('members.php'); ?>?page=members" 
                    class="sidebar-link <?php echo $_SESSION['active_page'] == 'members' ? 'active' : ''; ?>">
                     <i class="bi bi-people-fill"></i> Members
                 </a>
-                <a href="/GoldTree/events.php?page=events" 
+                <a href="<?php echo base_path('events.php'); ?>?page=events" 
                    class="sidebar-link <?php echo $_SESSION['active_page'] == 'events' ? 'active' : ''; ?>">
                     <i class="bi bi-calendar-event"></i> Events
                 </a>
                 <?php if ($isAdmin): ?>
-                <a href="/GoldTree/donations.php?page=donations" 
+                <a href="<?php echo base_path('donations.php'); ?>?page=donations" 
                    class="sidebar-link <?php echo $_SESSION['active_page'] == 'donations' ? 'active' : ''; ?>">
                     <i class="bi bi-cash-coin"></i> Donations
                 </a>
                 <?php endif; ?>
-                <a href="/GoldTree/announcements.php?page=announcements" 
+                <a href="<?php echo base_path('announcements.php'); ?>?page=announcements" 
                    class="sidebar-link <?php echo $_SESSION['active_page'] == 'announcements' ? 'active' : ''; ?>">
                     <i class="bi bi-megaphone"></i> Notifications
                     <span id="unreadNotificationsBadge" class="notification-badge d-none">0</span>
                 </a>
-                <a href="/GoldTree/reports.php?page=reports" 
+                <a href="<?php echo base_path('reports.php'); ?>?page=reports" 
                    class="sidebar-link <?php echo $_SESSION['active_page'] == 'reports' ? 'active' : ''; ?>">
                     <i class="bi bi-graph-up"></i> Reports
                 </a>
                 <?php if ($isAdmin): ?>
-                <a href="/GoldTree/sacramental.php?page=sacramental" 
+                <a href="<?php echo base_path('sacramental.php'); ?>?page=sacramental" 
                    class="sidebar-link <?php echo $_SESSION['active_page'] == 'sacramental' ? 'active' : ''; ?>">
                     <i class="bi bi-journal-text"></i> Sacramental Records
                 </a>
                     <div class="mt-4">
                         <h6 class="text-muted px-3 mb-3">Admin</h6>
-                        <a href="/GoldTree/admin/manage_accounts.php" class="sidebar-link <?php echo $current_page == 'manage_accounts.php' ? 'active' : ''; ?>">
+                        <a href="<?php echo base_path('admin/manage_accounts.php'); ?>" class="sidebar-link <?php echo $current_page == 'manage_accounts.php' ? 'active' : ''; ?>">
                             <i class="bi bi-gear"></i> Admin Panel
                         </a>
 
@@ -267,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     <script>
     function updateNotificationBadge() {
-        fetch('/GoldTree/crud/notifications/get_unread_count.php')
+        fetch('<?php echo base_path('crud/notifications/get_unread_count.php'); ?>')
             .then(response => response.json())
             .then(data => {
                 const badge = document.getElementById('unreadNotificationsBadge');
