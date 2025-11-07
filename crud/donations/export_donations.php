@@ -13,18 +13,37 @@ try {
     $headers = ['Date', 'Type', 'Amount', 'Donor', 'Notes'];
     fputcsv($output, $headers);
     
-    $stmt = $conn->prepare("
-        SELECT 
-            donation_date,
-            donation_type,
-            amount,
-            COALESCE(donor_name, CONCAT(m.first_name, ' ', m.last_name)) as donor,
-            notes
-        FROM donations d
-        LEFT JOIN members m ON d.member_id = m.id
-        WHERE donation_date BETWEEN ? AND ?
-        ORDER BY donation_date DESC
-    ");
+    // Check if database is PostgreSQL
+    $isPostgres = (getenv('DATABASE_URL') !== false);
+    
+    // Use database-specific string concatenation
+    if ($isPostgres) {
+        $stmt = $conn->prepare("
+            SELECT 
+                donation_date,
+                donation_type,
+                amount,
+                COALESCE(donor_name, m.first_name || ' ' || m.last_name) as donor,
+                notes
+            FROM donations d
+            LEFT JOIN members m ON d.member_id = m.id
+            WHERE donation_date BETWEEN ? AND ?
+            ORDER BY donation_date DESC
+        ");
+    } else {
+        $stmt = $conn->prepare("
+            SELECT 
+                donation_date,
+                donation_type,
+                amount,
+                COALESCE(donor_name, CONCAT(m.first_name, ' ', m.last_name)) as donor,
+                notes
+            FROM donations d
+            LEFT JOIN members m ON d.member_id = m.id
+            WHERE donation_date BETWEEN ? AND ?
+            ORDER BY donation_date DESC
+        ");
+    }
     $stmt->execute([$start_date, $end_date]);
     
     while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {

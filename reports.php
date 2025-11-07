@@ -150,19 +150,40 @@ require_once 'db/connection.php';?>
     <?php
     if (isset($_SESSION['admin_status']) && $_SESSION['admin_status'] == 1) {
 
-        $monthsQuery = "
-            WITH RECURSIVE months AS (
-                SELECT CURRENT_DATE as full_date, 
-                       DATE_FORMAT(CURRENT_DATE, '%Y-%m') as month
-                UNION ALL
-                SELECT DATE_SUB(full_date, INTERVAL 1 MONTH),
-                       DATE_FORMAT(DATE_SUB(full_date, INTERVAL 1 MONTH), '%Y-%m')
-                FROM months
-                WHERE full_date > DATE_SUB(CURRENT_DATE, INTERVAL 1 YEAR)
-            )
-            SELECT month 
-            FROM months 
-            ORDER BY full_date DESC";
+        // Check if database is PostgreSQL
+        $isPostgres = (getenv('DATABASE_URL') !== false);
+        
+        if ($isPostgres) {
+            // PostgreSQL recursive CTE syntax
+            $monthsQuery = "
+                WITH RECURSIVE months AS (
+                    SELECT CURRENT_DATE as full_date, 
+                           TO_CHAR(CURRENT_DATE, 'YYYY-MM') as month
+                    UNION ALL
+                    SELECT (full_date - INTERVAL '1 month'),
+                           TO_CHAR((full_date - INTERVAL '1 month'), 'YYYY-MM')
+                    FROM months
+                    WHERE full_date > (CURRENT_DATE - INTERVAL '1 year')
+                )
+                SELECT month 
+                FROM months 
+                ORDER BY full_date DESC";
+        } else {
+            // MySQL recursive CTE syntax
+            $monthsQuery = "
+                WITH RECURSIVE months AS (
+                    SELECT CURRENT_DATE as full_date, 
+                           DATE_FORMAT(CURRENT_DATE, '%Y-%m') as month
+                    UNION ALL
+                    SELECT DATE_SUB(full_date, INTERVAL 1 MONTH),
+                           DATE_FORMAT(DATE_SUB(full_date, INTERVAL 1 MONTH), '%Y-%m')
+                    FROM months
+                    WHERE full_date > DATE_SUB(CURRENT_DATE, INTERVAL 1 YEAR)
+                )
+                SELECT month 
+                FROM months 
+                ORDER BY full_date DESC";
+        }
 
         $monthsStmt = $conn->query($monthsQuery);
         $allMonths = $monthsStmt->fetchAll(PDO::FETCH_COLUMN);

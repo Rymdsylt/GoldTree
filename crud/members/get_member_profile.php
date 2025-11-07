@@ -55,22 +55,45 @@ try {
     $recentDonations = $donationsStmt->fetchAll(PDO::FETCH_ASSOC);
 
 
-    $attendanceRateStmt = $conn->prepare("
-        SELECT 
-            ROUND(
-                (SELECT COUNT(*) 
-                 FROM event_attendance ea
-                 JOIN events e ON ea.event_id = e.id
-                 WHERE ea.member_id = ? 
-                 AND ea.attendance_status = 'present'
-                 AND e.start_datetime >= DATE_SUB(CURRENT_DATE, INTERVAL 3 MONTH)
-                ) / 
-                (SELECT COUNT(*) 
-                 FROM events 
-                 WHERE start_datetime >= DATE_SUB(CURRENT_DATE, INTERVAL 3 MONTH)
-                ) * 100
-            ) as attendance_rate
-    ");
+    // Check if database is PostgreSQL
+    $isPostgres = (getenv('DATABASE_URL') !== false);
+    
+    // Use database-specific date functions
+    if ($isPostgres) {
+        $attendanceRateStmt = $conn->prepare("
+            SELECT 
+                ROUND(
+                    (SELECT COUNT(*) 
+                     FROM event_attendance ea
+                     JOIN events e ON ea.event_id = e.id
+                     WHERE ea.member_id = ? 
+                     AND ea.attendance_status = 'present'
+                     AND e.start_datetime >= CURRENT_DATE - INTERVAL '3 months'
+                    ) / 
+                    NULLIF((SELECT COUNT(*) 
+                     FROM events 
+                     WHERE start_datetime >= CURRENT_DATE - INTERVAL '3 months'
+                    ), 0) * 100
+                ) as attendance_rate
+        ");
+    } else {
+        $attendanceRateStmt = $conn->prepare("
+            SELECT 
+                ROUND(
+                    (SELECT COUNT(*) 
+                     FROM event_attendance ea
+                     JOIN events e ON ea.event_id = e.id
+                     WHERE ea.member_id = ? 
+                     AND ea.attendance_status = 'present'
+                     AND e.start_datetime >= DATE_SUB(CURRENT_DATE, INTERVAL 3 MONTH)
+                    ) / 
+                    (SELECT COUNT(*) 
+                     FROM events 
+                     WHERE start_datetime >= DATE_SUB(CURRENT_DATE, INTERVAL 3 MONTH)
+                    ) * 100
+                ) as attendance_rate
+        ");
+    }
     $attendanceRateStmt->execute([$id]);
     $attendanceRate = $attendanceRateStmt->fetchColumn() ?? 0;
 

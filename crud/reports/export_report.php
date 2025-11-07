@@ -51,17 +51,35 @@ function outputCSV($filename, $headers, $data) {
 function exportMembers($conn) {
     $headers = ['Name', 'Email', 'Phone', 'Status', 'Category', 'Join Date'];
     
-    $stmt = $conn->prepare("
-        SELECT 
-            CONCAT(first_name, ' ', last_name) as name,
-            email,
-            phone,
-            status,
-            category,
-            membership_date
-        FROM members
-        ORDER BY membership_date DESC
-    ");
+    // Check if database is PostgreSQL
+    $isPostgres = (getenv('DATABASE_URL') !== false);
+    
+    // Use database-specific string concatenation
+    if ($isPostgres) {
+        $stmt = $conn->prepare("
+            SELECT 
+                first_name || ' ' || last_name as name,
+                email,
+                phone,
+                status,
+                category,
+                membership_date
+            FROM members
+            ORDER BY membership_date DESC
+        ");
+    } else {
+        $stmt = $conn->prepare("
+            SELECT 
+                CONCAT(first_name, ' ', last_name) as name,
+                email,
+                phone,
+                status,
+                category,
+                membership_date
+            FROM members
+            ORDER BY membership_date DESC
+        ");
+    }
     $stmt->execute();
     
     $data = [];

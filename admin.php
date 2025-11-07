@@ -2,8 +2,8 @@
 require_once 'auth/login_status.php';
 require_once 'db/connection.php';
 
-
-
+// Check if database is PostgreSQL
+$isPostgres = (getenv('DATABASE_URL') !== false);
 
 $stmt = $conn->prepare("SELECT admin_status FROM users WHERE id = ?");
 $stmt->execute([$_SESSION['user_id']]);
@@ -39,7 +39,12 @@ $user = $stmt->fetch();
                 <div class="card-body">
                     <h5 class="card-title text-primary">Recent Donations</h5>
                     <?php
-                    $stmt = $conn->query("SELECT COUNT(*) as count FROM donations WHERE date >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
+                    // Use database-specific date functions and correct column name
+                    if ($isPostgres) {
+                        $stmt = $conn->query("SELECT COUNT(*) as count FROM donations WHERE donation_date >= CURRENT_DATE - INTERVAL '30 days'");
+                    } else {
+                        $stmt = $conn->query("SELECT COUNT(*) as count FROM donations WHERE donation_date >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
+                    }
                     $recentDonations = $stmt->fetch()['count'];
                     ?>
                     <h3 class="mb-0"><?php echo $recentDonations; ?></h3>
@@ -52,7 +57,12 @@ $user = $stmt->fetch();
                 <div class="card-body">
                     <h5 class="card-title text-primary">Upcoming Events</h5>
                     <?php
-                    $stmt = $conn->query("SELECT COUNT(*) as count FROM events WHERE date >= CURDATE()");
+                    // Use database-specific date functions and correct column name
+                    if ($isPostgres) {
+                        $stmt = $conn->query("SELECT COUNT(*) as count FROM events WHERE start_datetime >= CURRENT_DATE");
+                    } else {
+                        $stmt = $conn->query("SELECT COUNT(*) as count FROM events WHERE start_datetime >= CURDATE()");
+                    }
                     $upcomingEvents = $stmt->fetch()['count'];
                     ?>
                     <h3 class="mb-0"><?php echo $upcomingEvents; ?></h3>
@@ -65,7 +75,12 @@ $user = $stmt->fetch();
                 <div class="card-body">
                     <h5 class="card-title text-primary">New Members</h5>
                     <?php
-                    $stmt = $conn->query("SELECT COUNT(*) as count FROM members WHERE membership_date >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
+                    // Use database-specific date functions
+                    if ($isPostgres) {
+                        $stmt = $conn->query("SELECT COUNT(*) as count FROM members WHERE membership_date >= CURRENT_DATE - INTERVAL '30 days'");
+                    } else {
+                        $stmt = $conn->query("SELECT COUNT(*) as count FROM members WHERE membership_date >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
+                    }
                     $newMembers = $stmt->fetch()['count'];
                     ?>
                     <h3 class="mb-0"><?php echo $newMembers; ?></h3>
@@ -127,15 +142,16 @@ $user = $stmt->fetch();
                             </thead>
                             <tbody>
                                 <?php
+                                // Use correct column name
                                 $stmt = $conn->query("SELECT d.*, m.first_name, m.last_name 
                                     FROM donations d 
                                     LEFT JOIN members m ON d.member_id = m.id 
-                                    ORDER BY d.date DESC LIMIT 5");
+                                    ORDER BY d.donation_date DESC LIMIT 5");
                                 while ($donation = $stmt->fetch()) {
                                     echo "<tr>";
                                     echo "<td class='text-nowrap'>" . htmlspecialchars($donation['first_name'] . ' ' . $donation['last_name']) . "</td>";
                                     echo "<td class='text-nowrap'>$" . number_format($donation['amount'], 2) . "</td>";
-                                    echo "<td class='text-nowrap'>" . date('M d, Y', strtotime($donation['date'])) . "</td>";
+                                    echo "<td class='text-nowrap'>" . date('M d, Y', strtotime($donation['donation_date'])) . "</td>";
                                     echo "<td class='text-end'><a href='admin/add_donations.php?id=" . $donation['id'] . "' class='btn btn-sm btn-primary'>View</a></td>";
                                     echo "</tr>";
                                 }

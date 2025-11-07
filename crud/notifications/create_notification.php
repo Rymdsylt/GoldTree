@@ -45,8 +45,10 @@ try {
     $notification_type = $_POST['notification_type'];
     $subject = $_POST['subject'];
     $message = $_POST['message'];
-    // Use database-specific boolean value
-    $send_email = isset($_POST['send_email']) && $_POST['send_email'];
+    // Handle checkbox: if not set or empty string, it's false; otherwise check if it's truthy
+    $send_email_raw = $_POST['send_email'] ?? '';
+    $send_email = !empty($send_email_raw) && $send_email_raw !== 'false' && $send_email_raw !== '0';
+    // Use database-specific boolean value - ensure we never send empty string
     $send_email_value = $isPostgres ? ($send_email ? true : false) : ($send_email ? 1 : 0);
     $recipients = !empty($_POST['recipients']) ? explode(',', $_POST['recipients']) : [];
     

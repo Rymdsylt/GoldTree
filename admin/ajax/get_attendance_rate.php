@@ -1,13 +1,24 @@
 <?php
 require_once '../../db/connection.php';
 
-try {
+// Check if database is PostgreSQL
+$isPostgres = (getenv('DATABASE_URL') !== false);
 
-    $query = "SELECT 
-        COUNT(CASE WHEN attendance_status = 'present' THEN 1 END) as present_count,
-        COUNT(CASE WHEN attendance_status = 'absent' THEN 1 END) as absent_count
-    FROM event_attendance 
-    WHERE attendance_date >= DATE_SUB(CURRENT_DATE, INTERVAL 30 DAY)";
+try {
+    // Use database-specific date functions
+    if ($isPostgres) {
+        $query = "SELECT 
+            COUNT(CASE WHEN attendance_status = 'present' THEN 1 END) as present_count,
+            COUNT(CASE WHEN attendance_status = 'absent' THEN 1 END) as absent_count
+        FROM event_attendance 
+        WHERE attendance_date >= CURRENT_DATE - INTERVAL '30 days'";
+    } else {
+        $query = "SELECT 
+            COUNT(CASE WHEN attendance_status = 'present' THEN 1 END) as present_count,
+            COUNT(CASE WHEN attendance_status = 'absent' THEN 1 END) as absent_count
+        FROM event_attendance 
+        WHERE attendance_date >= DATE_SUB(CURRENT_DATE, INTERVAL 30 DAY)";
+    }
     
     $stmt = $conn->query($query);
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
