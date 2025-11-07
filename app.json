@@ -1,0 +1,20 @@
+{
+    "name": "GoldTree Church Management",
+    "description": "A church management system for handling members, events, and sacramental records",
+    "repository": "https://github.com/Rymdsylt/GoldTree",
+    "keywords": ["php", "church", "management"],
+    "addons": [
+        "heroku-postgresql"
+    ],
+    "env": {
+        "APP_ENV": {
+            "description": "Environment for the application (production/development)",
+            "value": "production"
+        }
+    },
+    "buildpacks": [
+        {
+            "url": "heroku/php"
+        }
+    ]
+}

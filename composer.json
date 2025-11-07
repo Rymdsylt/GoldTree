@@ -1,6 +1,24 @@
 {
+    "name": "goldtree/church-management",
+    "description": "Church Management System",
     "require": {
+        "php": "^8.0",
         "phpmailer/phpmailer": "^6.10",
-        "erusev/parsedown": "^1.7"
+        "erusev/parsedown": "^1.7",
+        "ext-pdo": "*",
+        "ext-json": "*",
+        "ext-pgsql": "*",
+        "ext-mbstring": "*"
+    },
+    "require-dev": {
+        "heroku/heroku-buildpack-php": "*"
+    },
+    "engines": {
+        "php": "^8.0"
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "php db/migrations/001_heroku_postgres.php"
+        ]
     }
 }

@@ -1,32 +1,70 @@
 <?php
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_NAME', 'goldtree');
+date_default_timezone_set('Asia/Manila');
 
 try {
-    date_default_timezone_set('Asia/Manila');
-    $conn = new PDO("mysql:host=" . DB_HOST, DB_USER, DB_PASS);
+    if (getenv('DATABASE_URL')) {
+        // Heroku Postgres configuration
+        $db = parse_url(getenv('DATABASE_URL'));
+        $conn = new PDO(
+            sprintf(
+                "pgsql:host=%s;port=%s;dbname=%s",
+                $db['host'],
+                isset($db['port']) ? $db['port'] : 5432,
+                ltrim($db['path'], '/')
+            ),
+            $db['user'],
+            $db['pass']
+        );
+        
+        // Set error mode
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        
+    } else {
+        // Local MySQL configuration
+        define('DB_HOST', 'localhost');
+        define('DB_USER', 'root');
+        define('DB_PASS', '');
+        define('DB_NAME', 'goldtree');
+        
+        $conn = new PDO("mysql:host=" . DB_HOST, DB_USER, DB_PASS);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
     $conn->exec("CREATE DATABASE IF NOT EXISTS " . DB_NAME);
     $conn->exec("USE " . DB_NAME);
 
-    $conn->exec("CREATE TABLE IF NOT EXISTS users (
-        id INT PRIMARY KEY AUTO_INCREMENT,
-        username VARCHAR(50) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        reset_password VARCHAR(255) DEFAULT NULL,
-        email VARCHAR(100) UNIQUE NOT NULL,
-        member_id INT,
-        admin_status INT DEFAULT 0,
-        privacy_agreement BOOLEAN DEFAULT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        last_login TIMESTAMP NULL DEFAULT NULL
-    )");
+    if (getenv('DATABASE_URL')) {
+        // PostgreSQL table creation
+        $conn->exec("CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(50) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            reset_password VARCHAR(255) DEFAULT NULL,
+            email VARCHAR(100) UNIQUE NOT NULL,
+            member_id INTEGER,
+            admin_status INTEGER DEFAULT 0,
+            privacy_agreement BOOLEAN DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_login TIMESTAMP DEFAULT NULL
+        )");
+    } else {
+        // MySQL table creation
+        $conn->exec("CREATE TABLE IF NOT EXISTS users (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            username VARCHAR(50) UNIQUE NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            reset_password VARCHAR(255) DEFAULT NULL,
+            email VARCHAR(100) UNIQUE NOT NULL,
+            member_id INT,
+            admin_status INT DEFAULT 0,
+            privacy_agreement BOOLEAN DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_login TIMESTAMP NULL DEFAULT NULL
+        )");
+    }
 
-    $conn->exec("CREATE TABLE IF NOT EXISTS members (
-        id INT PRIMARY KEY AUTO_INCREMENT,
+    if (getenv('DATABASE_URL')) {
+        $conn->exec("CREATE TABLE IF NOT EXISTS members (
+            id SERIAL PRIMARY KEY,
         first_name VARCHAR(50) NOT NULL,
         last_name VARCHAR(50) NOT NULL,
         email VARCHAR(100),
