@@ -1,3 +1,5 @@
+DirectoryIndex login.php index.php
+
 Options -Indexes
 
 <IfModule mod_rewrite.c>
@@ -13,8 +15,7 @@ Options -Indexes
     Header set X-Frame-Options "SAMEORIGIN"
 </IfModule>
 
-php_value upload_max_filesize 10M
-php_value post_max_size 10M
-php_value max_execution_time 300
-php_value max_input_time 300
-php_value memory_limit 256M
+# PHP configuration using FPM
+<IfModule proxy_fcgi_module>
+    SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+</IfModule>
