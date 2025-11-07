@@ -2,14 +2,16 @@
 require_once 'templates/header.php';
 require_once 'auth/login_status.php';
 
+// Check if database is PostgreSQL
+$isPostgres = (getenv('DATABASE_URL') !== false);
+
+// Get member statistics
 $stmt = $conn->query("SELECT COUNT(*) as total_members, 
     SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_members 
     FROM members");
 $memberStats = $stmt->fetch(PDO::FETCH_ASSOC);
 
-
-
-
+// Get upcoming events
 $stmt = $conn->prepare("SELECT * FROM events 
     WHERE start_datetime >= CURRENT_DATE 
     AND status = 'upcoming'
@@ -17,19 +19,45 @@ $stmt = $conn->prepare("SELECT * FROM events
 $stmt->execute();
 $upcomingEvents = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$stmt = $conn->query("SELECT COUNT(*) as total_unread 
-    FROM notifications n
-    INNER JOIN notification_recipients nr ON n.id = nr.notification_id
-    WHERE nr.user_id = {$_SESSION['user_id']} AND nr.is_read = 0");
-$unreadCount = $stmt->fetch(PDO::FETCH_ASSOC)['total_unread'];
+// Get unread notification count (use prepared statement for security)
+if (!isset($_SESSION['user_id'])) {
+    $unreadCount = 0;
+    $notifications = [];
+} else {
+    // Handle boolean check for PostgreSQL
+    if ($isPostgres) {
+        $stmt = $conn->prepare("SELECT COUNT(*) as total_unread 
+            FROM notifications n
+            INNER JOIN notification_recipients nr ON n.id = nr.notification_id
+            WHERE nr.user_id = ? AND (nr.is_read = false OR nr.is_read IS NULL)");
+    } else {
+        $stmt = $conn->prepare("SELECT COUNT(*) as total_unread 
+            FROM notifications n
+            INNER JOIN notification_recipients nr ON n.id = nr.notification_id
+            WHERE nr.user_id = ? AND nr.is_read = 0");
+    }
+    $stmt->execute([$_SESSION['user_id']]);
+    $unreadCount = $stmt->fetch(PDO::FETCH_ASSOC)['total_unread'] ?? 0;
 
-$stmt = $conn->query("SELECT n.*, nr.is_read 
-    FROM notifications n
-    INNER JOIN notification_recipients nr ON n.id = nr.notification_id
-    WHERE nr.user_id = {$_SESSION['user_id']} 
-    AND nr.is_read = 0
-    ORDER BY n.created_at DESC LIMIT 5");
-$notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // Get unread notifications (use prepared statement for security)
+    if ($isPostgres) {
+        $stmt = $conn->prepare("SELECT n.*, nr.is_read 
+            FROM notifications n
+            INNER JOIN notification_recipients nr ON n.id = nr.notification_id
+            WHERE nr.user_id = ? 
+            AND (nr.is_read = false OR nr.is_read IS NULL)
+            ORDER BY n.created_at DESC LIMIT 5");
+    } else {
+        $stmt = $conn->prepare("SELECT n.*, nr.is_read 
+            FROM notifications n
+            INNER JOIN notification_recipients nr ON n.id = nr.notification_id
+            WHERE nr.user_id = ? 
+            AND nr.is_read = 0
+            ORDER BY n.created_at DESC LIMIT 5");
+    }
+    $stmt->execute([$_SESSION['user_id']]);
+    $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
 ?>
 
 <div class="container-fluid py-4">    <div class="row g-4 mb-4">
