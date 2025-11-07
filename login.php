@@ -48,6 +48,102 @@ if (isset($_SESSION['user_id'])) {
                             <i class="bi bi-church display-4 text-primary"></i>
                             <h3 class="mt-2">Welcome Back</h3>
                             <p class="text-muted">Sign in to your account</p>
+                            <div id="loginAlert" class="alert" role="alert" style="display: none;"></div>
+                        </div>
+                        <form id="loginForm" class="needs-validation" novalidate>
+                            <div class="mb-3">
+                                <label for="login" class="form-label">Username or Email</label>
+                                <input type="text" class="form-control" id="login" name="login" required>
+                                <div class="invalid-feedback">
+                                    Please enter your username or email.
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="password" name="password" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="invalid-feedback">
+                                    Please enter your password.
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <a href="forgot_password.php" class="text-decoration-none">Forgot Password?</a>
+                                </div>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary" id="loginButton">
+                                    <span id="loginSpinner" class="spinner-border spinner-border-sm me-2 d-none" role="status"></span>
+                                    Sign In
+                                </button>
+                            </div>
+                            <div class="text-center mt-4">
+                                <p class="mb-0">Don't have an account? <a href="register.php" class="text-decoration-none">Register</a></p>
+                            </div>
+                        </form>
+                        <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const loginForm = document.getElementById('loginForm');
+                            const loginButton = document.getElementById('loginButton');
+                            const loginSpinner = document.getElementById('loginSpinner');
+                            const loginAlert = document.getElementById('loginAlert');
+                            const togglePassword = document.getElementById('togglePassword');
+                            const passwordInput = document.getElementById('password');
+
+                            // Toggle password visibility
+                            togglePassword.addEventListener('click', function() {
+                                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                                passwordInput.setAttribute('type', type);
+                                togglePassword.innerHTML = type === 'password' ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
+                            });
+
+                            loginForm.addEventListener('submit', function(e) {
+                                e.preventDefault();
+
+                                if (!loginForm.checkValidity()) {
+                                    e.stopPropagation();
+                                    loginForm.classList.add('was-validated');
+                                    return;
+                                }
+
+                                const formData = new FormData(loginForm);
+                                loginButton.disabled = true;
+                                loginSpinner.classList.remove('d-none');
+                                loginAlert.style.display = 'none';
+
+                                fetch('auth/login_user.php', {
+                                    method: 'POST',
+                                    body: formData
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        loginAlert.className = 'alert alert-success';
+                                        loginAlert.textContent = 'Login successful. Redirecting...';
+                                        loginAlert.style.display = 'block';
+                                        window.location.href = 'dashboard.php';
+                                    } else {
+                                        loginAlert.className = 'alert alert-danger';
+                                        loginAlert.textContent = data.message || 'Invalid username/email or password';
+                                        loginAlert.style.display = 'block';
+                                        loginButton.disabled = false;
+                                        loginSpinner.classList.add('d-none');
+                                    }
+                                })
+                                .catch(error => {
+                                    loginAlert.className = 'alert alert-danger';
+                                    loginAlert.textContent = 'An error occurred. Please try again.';
+                                    loginAlert.style.display = 'block';
+                                    loginButton.disabled = false;
+                                    loginSpinner.classList.add('d-none');
+                                });
+                            });
+                        });
+                        </script>
                         </div>
                         
                         <div id="alert-container"></div>
