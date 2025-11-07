@@ -3,11 +3,12 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-// Start session
-session_start();
-
-// Load database connection
+// Load session management and database connection
+require_once __DIR__ . '/auth/session.php';
 require_once __DIR__ . '/db/connection.php';
+
+// Initialize session
+init_session();
 
 // Default route to login page
 if (!isset($_SERVER['PATH_INFO']) || $_SERVER['PATH_INFO'] == '/') {

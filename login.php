@@ -1,11 +1,10 @@
 <?php
-session_start();
-
+require_once __DIR__ . '/auth/session.php';
+init_session();
 
 if (isset($_GET['logout'])) {
-    $_SESSION = array();
-    session_destroy();
-    session_start();
+    destroy_session();
+    init_session();
     if (isset($_COOKIE['logged_in'])) {
         setcookie('logged_in', '', time() - 3600, '/');
     }
