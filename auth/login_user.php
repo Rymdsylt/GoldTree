@@ -5,18 +5,16 @@ require_once '../db/connection.php';
 header('Content-Type: application/json');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!isset($_POST['login']) || !isset($_POST['password'])) {
-        echo json_encode(['success' => false, 'message' => 'Login and password are required']);
-        exit;
+    $response = ['success' => false, 'message' => ''];
+    
+    if (empty($_POST['login']) || empty($_POST['password'])) {
+        $response['message'] = 'Please provide both username/email and password';
+        echo json_encode($response);
+        exit();
     }
-
+    
     $login = $_POST['login'];
     $password = $_POST['password'];
-    
-    if (empty($login) || empty($password)) {
-        echo json_encode(['success' => false, 'message' => 'Login and password cannot be empty']);
-        exit;
-    }
     
     try {
         $stmt = $conn->prepare("SELECT id, username, password, reset_password, admin_status, privacy_agreement FROM users WHERE username = :login OR email = :login");
