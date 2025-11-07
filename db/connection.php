@@ -295,8 +295,12 @@ try {
     } // End of if (!$dbUrl) - local development only
 
     // Always check/create admin user (runs on both Heroku and local)
+    // Use a simple try-catch to avoid any potential memory issues
     try {
-        $checkAdmin = $conn->query("SELECT id FROM users WHERE username = 'root'")->fetch();
+        // Use LIMIT 1 to prevent loading unnecessary data
+        $stmt = $conn->prepare("SELECT id FROM users WHERE username = 'root' LIMIT 1");
+        $stmt->execute();
+        $checkAdmin = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$checkAdmin) {
             $hashedPassword = password_hash('mdradmin', PASSWORD_DEFAULT);
             $stmt = $conn->prepare("INSERT INTO users (username, password, email, admin_status) VALUES (?, ?, ?, ?)");
@@ -304,7 +308,7 @@ try {
         }
     } catch(PDOException $e) {
         // If users table doesn't exist yet, this will fail - that's okay
-        error_log("Could not check/create admin user: " . $e->getMessage());
+        // Silently fail to prevent memory issues
     }
 
 } catch(PDOException $e) {
