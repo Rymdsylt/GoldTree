@@ -1,6 +1,6 @@
 </main>
-    <script src="/GoldTree/js/bootstrap.bundle.min.js"></script>
-    <script src="/GoldTree/js/jquery.js"></script>
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/jquery.js"></script>
     <script>
 
         document.getElementById('adminSidebarToggle')?.addEventListener('click', function() {

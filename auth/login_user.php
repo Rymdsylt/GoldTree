@@ -20,10 +20,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['username'] = $user['username'];
             $_SESSION['admin_status'] = $user['admin_status'];
             
+            // Only set secure cookie if HTTPS is available
+            $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') 
+                       || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+                       || (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on');
+            
             setcookie('logged_in', 'true', [
                 'expires' => time() + (86400 * 30),
                 'path' => '/',
                 'httponly' => true,
+                'secure' => $isHttps,
                 'samesite' => 'Strict'
             ]);
             

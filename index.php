@@ -1,7 +1,14 @@
 <?php
-// Enable error reporting for debugging
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+// Error reporting - disable in production (Heroku)
+$isProduction = (getenv('APP_ENV') === 'production' || getenv('DATABASE_URL') !== false);
+if (!$isProduction) {
+    ini_set('display_errors', 1);
+    error_reporting(E_ALL);
+} else {
+    ini_set('display_errors', 0);
+    error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
+    ini_set('log_errors', 1);
+}
 
 // Load session management and database connection
 require_once __DIR__ . '/auth/session.php';

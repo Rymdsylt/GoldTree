@@ -5,7 +5,7 @@ require_once __DIR__ . '/../db/connection.php';
 $current_page = basename($_SERVER['PHP_SELF']);
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: /GoldTree/login.php");
+    header("Location: /login.php");
     exit();
 }
 
@@ -14,7 +14,7 @@ $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch();
 
 if (!$user || $user['admin_status'] != 1) {
-    header("Location: /GoldTree/events.php?page=events");
+    header("Location: /events.php?page=events");
     exit();
 }
 ?>
@@ -24,9 +24,9 @@ if (!$user || $user['admin_status'] != 1) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - <?php echo ucfirst(str_replace('.php', '', $current_page)); ?></title>
-    <link rel="icon" type="image/png" href="/GoldTree/assets/img/logo.png">
-    <link rel="stylesheet" href="/GoldTree/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/GoldTree/css/theme.css">
+    <link rel="icon" type="image/png" href="/assets/img/logo.png">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/theme.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         :root {
@@ -221,10 +221,10 @@ if (!$user || $user['admin_status'] != 1) {
                 <i class="bi bi-shield-lock"></i> Admin Panel
             </a>
             <div class="d-flex align-items-center">
-                <a href="/GoldTree/Dashboard_intro.php?page=dashboard" class="btn btn-outline-primary me-2 d-none d-md-inline-block">
+                <a href="/Dashboard_intro.php?page=dashboard" class="btn btn-outline-primary me-2 d-none d-md-inline-block">
                     <i class="bi bi-house"></i> Main Dashboard
                 </a>
-                <a href="/GoldTree/reports.php" class="btn btn-outline-primary me-2 d-none d-md-inline-block">
+                <a href="/reports.php" class="btn btn-outline-primary me-2 d-none d-md-inline-block">
                     <i class="bi bi-graph-up"></i> Reports
                 </a>
                 <div class="dropdown">
@@ -232,11 +232,11 @@ if (!$user || $user['admin_status'] != 1) {
                         <i class="bi bi-person-circle"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/GoldTree/profile.php">Profile</a></li>
-                        <li><a class="dropdown-item d-md-none" href="/GoldTree/Dashboard_intro.php?page=dashboard">Main Dashboard</a></li>
-                        <li><a class="dropdown-item d-md-none" href="/GoldTree/reports.php">Reports</a></li>
+                        <li><a class="dropdown-item" href="/profile.php">Profile</a></li>
+                        <li><a class="dropdown-item d-md-none" href="/Dashboard_intro.php?page=dashboard">Main Dashboard</a></li>
+                        <li><a class="dropdown-item d-md-none" href="/reports.php">Reports</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/GoldTree/auth/logout_user.php">Logout</a></li>
+                        <li><a class="dropdown-item" href="/auth/logout_user.php">Logout</a></li>
                     </ul>
                 </div>
             </div>
@@ -248,22 +248,22 @@ if (!$user || $user['admin_status'] != 1) {
         <div class="p-3">
             <h5 class="mb-4 text-primary">Admin Controls</h5>
             <nav class="nav flex-column">
-                <a href="/GoldTree/admin/manage_accounts.php" class="sidebar-link <?php echo $current_page == 'manage_accounts.php' ? 'active' : ''; ?>">
+                <a href="/admin/manage_accounts.php" class="sidebar-link <?php echo $current_page == 'manage_accounts.php' ? 'active' : ''; ?>">
                     <i class="bi bi-person-badge"></i> Manage Accounts
                 </a>
-                <a href="/GoldTree/admin/manage_members.php" class="sidebar-link <?php echo $current_page == 'manage_members.php' ? 'active' : ''; ?>">
+                <a href="/admin/manage_members.php" class="sidebar-link <?php echo $current_page == 'manage_members.php' ? 'active' : ''; ?>">
                     <i class="bi bi-people-fill"></i> Manage Members
                 </a>
-                <a href="/GoldTree/admin/add_donations.php" class="sidebar-link <?php echo $current_page == 'add_donations.php' ? 'active' : ''; ?>">
+                <a href="/admin/add_donations.php" class="sidebar-link <?php echo $current_page == 'add_donations.php' ? 'active' : ''; ?>">
                     <i class="bi bi-cash-coin"></i> Add Donations
                 </a>
-                <a href="/GoldTree/admin/add_events.php" class="sidebar-link <?php echo $current_page == 'add_events.php' ? 'active' : ''; ?>">
+                <a href="/admin/add_events.php" class="sidebar-link <?php echo $current_page == 'add_events.php' ? 'active' : ''; ?>">
                     <i class="bi bi-calendar-plus"></i> Add Events
                 </a>
-                <a href="/GoldTree/admin/notify_members.php" class="sidebar-link <?php echo $current_page == 'notify_members.php' ? 'active' : ''; ?>">
+                <a href="/admin/notify_members.php" class="sidebar-link <?php echo $current_page == 'notify_members.php' ? 'active' : ''; ?>">
                     <i class="bi bi-envelope"></i> Notify Members
                 </a>
-                <a href="/GoldTree/admin/sacramental_records.php" class="sidebar-link <?php echo $current_page == 'sacramental_records.php' ? 'active' : ''; ?>">
+                <a href="/admin/sacramental_records.php" class="sidebar-link <?php echo $current_page == 'sacramental_records.php' ? 'active' : ''; ?>">
                     <i class="bi bi-journal-text"></i> Sacramental Records
                 </a>
             </nav>

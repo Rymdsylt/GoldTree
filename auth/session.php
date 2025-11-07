@@ -4,7 +4,12 @@ function init_session() {
         // Set secure session parameters
         ini_set('session.cookie_httponly', 1);
         ini_set('session.use_only_cookies', 1);
-        ini_set('session.cookie_secure', 1);
+        
+        // Only set secure cookie if HTTPS is available (Heroku or local HTTPS)
+        $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') 
+                   || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+                   || (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on');
+        ini_set('session.cookie_secure', $isHttps ? 1 : 0);
         ini_set('session.cookie_samesite', 'Lax');
         ini_set('session.gc_maxlifetime', 3600); // 1 hour
         

@@ -18,8 +18,9 @@ Header set X-Frame-Options "SAMEORIGIN"
 Header set Referrer-Policy "strict-origin-when-cross-origin"
 Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
 
-# Enable CORS for specific origins
-Header set Access-Control-Allow-Origin "https://goldtree-app-cf573e5647cf.herokuapp.com"
+# Enable CORS - Allow requests from same origin (handled by browser)
+# Note: For cross-origin requests, configure in application code
+# Header set Access-Control-Allow-Origin "https://goldtree-app-cf573e5647cf.herokuapp.com"
 Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
 Header set Access-Control-Allow-Headers "Content-Type, Authorization"
 
