@@ -1,15 +1,27 @@
 <?php
+// Start output buffering to prevent any unexpected output
+ob_start();
+
 session_start();
 require_once '../../db/connection.php';
 
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+// Disable error display (outputs before JSON)
+ini_set('display_errors', 0);
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
+ini_set('log_errors', 1);
+
+// Check if database is PostgreSQL
+$isPostgres = (getenv('DATABASE_URL') !== false);
+
+// Clear any output
+ob_clean();
 
 header('Content-Type: application/json');
 
 error_log("POST data received: " . print_r($_POST, true));
 
 if (!isset($_SESSION['user_id'])) {
+    ob_clean();
     http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
     exit();
@@ -33,7 +45,9 @@ try {
     $notification_type = $_POST['notification_type'];
     $subject = $_POST['subject'];
     $message = $_POST['message'];
-    $send_email = isset($_POST['send_email']) ? 1 : 0;
+    // Use database-specific boolean value
+    $send_email = isset($_POST['send_email']) && $_POST['send_email'];
+    $send_email_value = $isPostgres ? ($send_email ? true : false) : ($send_email ? 1 : 0);
     $recipients = !empty($_POST['recipients']) ? explode(',', $_POST['recipients']) : [];
     
     error_log("Processing data - Type: $notification_type, Recipients: " . print_r($recipients, true));
@@ -46,11 +60,24 @@ try {
         ) VALUES (?, ?, ?, ?, ?, 'pending')
     ");
     
-    if (!$stmt->execute([$notification_type, $subject, $message, $send_email, $_SESSION['user_id']])) {
+    if (!$stmt->execute([$notification_type, $subject, $message, $send_email_value, $_SESSION['user_id']])) {
         throw new Exception("Error inserting notification: " . implode(", ", $stmt->errorInfo()));
     }
     
-    $notification_id = $conn->lastInsertId();
+    // Get last insert ID - PostgreSQL needs sequence name or lastval()
+    if ($isPostgres) {
+        // For PostgreSQL, use RETURNING id in INSERT or lastval()
+        // Since we already inserted, use lastval()
+        $stmt = $conn->query("SELECT lastval()");
+        $notification_id = (int)$stmt->fetchColumn();
+    } else {
+        $notification_id = (int)$conn->lastInsertId();
+    }
+    
+    if (!$notification_id) {
+        throw new Exception("Failed to get notification ID after insert");
+    }
+    
     error_log("Notification created with ID: $notification_id");
 
 
@@ -117,12 +144,14 @@ try {
                             $mail->addAddress($user['email']);
                             $mail->send();
 
+                            // Use database-specific boolean value
+                            $emailSentValue = $isPostgres ? true : 1;
                             $stmt = $conn->prepare("
                                 UPDATE notification_recipients 
-                                SET email_sent = 1 
+                                SET email_sent = ? 
                                 WHERE notification_id = ? AND user_id = ?
                             ");
-                            $stmt->execute([$notification_id, $user['id']]);
+                            $stmt->execute([$emailSentValue, $notification_id, $user['id']]);
                         } catch (Exception $e) {
                             error_log("Failed to send email to {$user['email']}: " . $e->getMessage());
                         }
@@ -145,15 +174,28 @@ try {
     error_log("Transaction committed successfully");
 
     if ($send_email) {
-        $stmt = $conn->prepare("
-            SELECT COUNT(*) as email_count 
-            FROM notification_recipients 
-            WHERE notification_id = ? AND email_sent = 1
-        ");
+        // Use database-specific boolean check
+        if ($isPostgres) {
+            $stmt = $conn->prepare("
+                SELECT COUNT(*) as email_count 
+                FROM notification_recipients 
+                WHERE notification_id = ? AND (email_sent = true OR email_sent = 1)
+            ");
+        } else {
+            $stmt = $conn->prepare("
+                SELECT COUNT(*) as email_count 
+                FROM notification_recipients 
+                WHERE notification_id = ? AND email_sent = 1
+            ");
+        }
         $stmt->execute([$notification_id]);
-        $email_count = $stmt->fetch(PDO::FETCH_ASSOC)['email_count'];
+        $email_count = $stmt->fetch(PDO::FETCH_ASSOC)['email_count'] ?? 0;
+    } else {
+        $email_count = 0;
     }
 
+    // Clear output buffer and send JSON
+    ob_clean();
     echo json_encode([
         'success' => true, 
         'message' => 'Notification sent successfully' . 
@@ -162,13 +204,21 @@ try {
         'recipient_count' => count($recipients),
         'email_count' => $send_email ? $email_count : 0
     ]);
+    exit;
 
 } catch (Exception $e) {
     error_log("Error in create_notification.php: " . $e->getMessage());
-    if ($conn && $conn->inTransaction()) {
-        $conn->rollBack();
-        error_log("Transaction rolled back");
+    if (isset($conn) && $conn && $conn->inTransaction()) {
+        try {
+            $conn->rollBack();
+            error_log("Transaction rolled back");
+        } catch (Exception $rollbackError) {
+            error_log("Error rolling back transaction: " . $rollbackError->getMessage());
+        }
     }
+    
+    // Clear output buffer and send error JSON
+    ob_clean();
     http_response_code(500);
     echo json_encode([
         'success' => false, 
@@ -179,5 +229,24 @@ try {
             'trace' => $e->getTraceAsString()
         ]
     ]);
+    exit;
+} catch (PDOException $e) {
+    error_log("PDO Error in create_notification.php: " . $e->getMessage());
+    if (isset($conn) && $conn && $conn->inTransaction()) {
+        try {
+            $conn->rollBack();
+        } catch (Exception $rollbackError) {
+            error_log("Error rolling back transaction: " . $rollbackError->getMessage());
+        }
+    }
+    
+    // Clear output buffer and send error JSON
+    ob_clean();
+    http_response_code(500);
+    echo json_encode([
+        'success' => false, 
+        'message' => 'Database error: ' . $e->getMessage()
+    ]);
+    exit;
 }
 ?>
