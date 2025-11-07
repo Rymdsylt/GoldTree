@@ -28,6 +28,10 @@ if (!$user || $user['admin_status'] != 1) {
 
 require_once 'templates/header.php';
 
+// Check if database is PostgreSQL
+$isPostgres = (getenv('DATABASE_URL') !== false);
+
+// Get donation statistics
 $stmt = $conn->query("SELECT 
     SUM(amount) as total_donations,
     COUNT(DISTINCT COALESCE(member_id, donor_name)) as total_donors,
@@ -35,11 +39,20 @@ $stmt = $conn->query("SELECT
     FROM donations");
 $stats = $stmt->fetch(PDO::FETCH_ASSOC);
 
-
-$stmt = $conn->query("SELECT SUM(amount) as monthly 
-    FROM donations 
-    WHERE MONTH(donation_date) = MONTH(CURRENT_DATE) 
-    AND YEAR(donation_date) = YEAR(CURRENT_DATE)");
+// Get monthly donations - use database-specific date functions
+if ($isPostgres) {
+    // PostgreSQL uses EXTRACT for date parts
+    $stmt = $conn->query("SELECT SUM(amount) as monthly 
+        FROM donations 
+        WHERE EXTRACT(MONTH FROM donation_date) = EXTRACT(MONTH FROM CURRENT_DATE)
+        AND EXTRACT(YEAR FROM donation_date) = EXTRACT(YEAR FROM CURRENT_DATE)");
+} else {
+    // MySQL uses MONTH() and YEAR() functions
+    $stmt = $conn->query("SELECT SUM(amount) as monthly 
+        FROM donations 
+        WHERE MONTH(donation_date) = MONTH(CURRENT_DATE) 
+        AND YEAR(donation_date) = YEAR(CURRENT_DATE)");
+}
 $monthlyStats = $stmt->fetch(PDO::FETCH_ASSOC);
 
 $totalDonations = number_format($stats['total_donations'] ?? 0, 2);

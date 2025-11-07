@@ -3,14 +3,28 @@ require_once '../../db/connection.php';
 
 header('Content-Type: application/json');
 
+// Check if database is PostgreSQL
+$isPostgres = (getenv('DATABASE_URL') !== false);
+
 // If a specific donation ID is requested
 if (isset($_GET['id'])) {
-    $stmt = $conn->prepare("
-        SELECT d.*, COALESCE(CONCAT(m.first_name, ' ', m.last_name), d.donor_name) as donor_name
-        FROM donations d
-        LEFT JOIN members m ON d.member_id = m.id
-        WHERE d.id = ?
-    ");
+    // Use database-specific string concatenation
+    if ($isPostgres) {
+        $sql = "
+            SELECT d.*, COALESCE(m.first_name || ' ' || m.last_name, d.donor_name) as donor_name
+            FROM donations d
+            LEFT JOIN members m ON d.member_id = m.id
+            WHERE d.id = ?
+        ";
+    } else {
+        $sql = "
+            SELECT d.*, COALESCE(CONCAT(m.first_name, ' ', m.last_name), d.donor_name) as donor_name
+            FROM donations d
+            LEFT JOIN members m ON d.member_id = m.id
+            WHERE d.id = ?
+        ";
+    }
+    $stmt = $conn->prepare($sql);
     $stmt->execute([$_GET['id']]);
     $donation = $stmt->fetch(PDO::FETCH_ASSOC);
     
@@ -50,24 +64,17 @@ if (!empty($_GET['end_date']) || !empty($_GET['end'])) {
 
 $where_sql = !empty($where_clauses) ? 'WHERE ' . implode(' AND ', $where_clauses) : '';
 
-if (isset($_GET['id'])) {
-    $stmt = $conn->prepare("
-        SELECT d.*, COALESCE(CONCAT(m.first_name, ' ', m.last_name), d.donor_name) as donor_name
-        FROM donations d
-        LEFT JOIN members m ON d.member_id = m.id
-        WHERE d.id = ?
-    ");
-    $stmt->execute([$_GET['id']]);
-    $donation = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    echo json_encode([
-        'success' => true,
-        'donations' => $donation ? [$donation] : []
-    ]);
-    exit;
-}
 
 if (isset($_GET['stats'])) {
+    // Build monthly donations subquery with database-specific date functions
+    if ($isPostgres) {
+        $monthlyCondition = "EXTRACT(MONTH FROM d2.donation_date) = EXTRACT(MONTH FROM CURRENT_DATE)
+            AND EXTRACT(YEAR FROM d2.donation_date) = EXTRACT(YEAR FROM CURRENT_DATE)";
+    } else {
+        $monthlyCondition = "MONTH(d2.donation_date) = MONTH(CURRENT_DATE)
+            AND YEAR(d2.donation_date) = YEAR(CURRENT_DATE)";
+    }
+    
     $stats_sql = "SELECT 
         COALESCE(SUM(d.amount), 0) as totalDonations,
         COUNT(DISTINCT COALESCE(d.member_id, d.donor_name)) as totalDonors,
@@ -75,8 +82,7 @@ if (isset($_GET['stats'])) {
         (
             SELECT COALESCE(SUM(amount), 0)
             FROM donations d2
-            WHERE MONTH(d2.donation_date) = MONTH(CURRENT_DATE)
-            AND YEAR(d2.donation_date) = YEAR(CURRENT_DATE)
+            WHERE $monthlyCondition
             " . ($where_sql ? ' AND ' . str_replace('d.', 'd2.', implode(' AND ', $where_clauses)) : '') . "
         ) as monthlyDonations
         FROM donations d
@@ -96,14 +102,26 @@ $stmt = $conn->prepare($count_sql);
 $stmt->execute($params);
 $total = $stmt->fetchColumn();
 
-$sql = "SELECT 
-    d.*,
-    COALESCE(CONCAT(m.first_name, ' ', m.last_name), d.donor_name) as donor_name
-    FROM donations d
-    LEFT JOIN members m ON d.member_id = m.id
-    $where_sql
-    ORDER BY d.donation_date DESC
-    LIMIT $limit OFFSET $offset";
+// Build SQL with database-specific string concatenation
+if ($isPostgres) {
+    $sql = "SELECT 
+        d.*,
+        COALESCE(m.first_name || ' ' || m.last_name, d.donor_name) as donor_name
+        FROM donations d
+        LEFT JOIN members m ON d.member_id = m.id
+        $where_sql
+        ORDER BY d.donation_date DESC
+        LIMIT $limit OFFSET $offset";
+} else {
+    $sql = "SELECT 
+        d.*,
+        COALESCE(CONCAT(m.first_name, ' ', m.last_name), d.donor_name) as donor_name
+        FROM donations d
+        LEFT JOIN members m ON d.member_id = m.id
+        $where_sql
+        ORDER BY d.donation_date DESC
+        LIMIT $limit OFFSET $offset";
+}
 
 $stmt = $conn->prepare($sql);
 $stmt->execute($params);
