@@ -15,10 +15,5 @@
     },
     "engines": {
         "php": "^8.0"
-    },
-    "scripts": {
-        "post-install-cmd": [
-            "php -f db/migrations/001_heroku_postgres.php"
-        ]
     }
 }
