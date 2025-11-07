@@ -30,8 +30,14 @@ try {
 
     $hashed_password = password_hash($password, PASSWORD_BCRYPT);
 
+    // Check if database is PostgreSQL
+    $isPostgres = (getenv('DATABASE_URL') !== false);
+    
+    // Convert admin_status to proper boolean/integer value
+    $admin_status_value = $isPostgres ? (($admin_status == 1 || $admin_status === '1' || $admin_status === true) ? true : false) : (($admin_status == 1 || $admin_status === '1' || $admin_status === true) ? 1 : 0);
+
     $stmt = $conn->prepare("INSERT INTO users (username, password, email, admin_status) VALUES (?, ?, ?, ?)");
-    $stmt->execute([$username, $hashed_password, $email, $admin_status]);
+    $stmt->execute([$username, $hashed_password, $email, $admin_status_value]);
 
     echo json_encode(['success' => true, 'message' => 'User created successfully']);
 

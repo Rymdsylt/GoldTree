@@ -41,32 +41,59 @@ try {
     }
 
     $conn->beginTransaction();
-
-    $stmt = $conn->prepare("
-        INSERT INTO events (
-            title, description, start_datetime, end_datetime, 
-            event_type, location, max_attendees,
-            image, created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ");
     
-    $result = $stmt->execute([
-        $title,
-        $description,
-        $start_datetime,
-        $end_datetime,
-        $event_type,
-        $location,
-        $max_attendees,
-        $image,
-        $created_by
-    ]);
+    // Check if database is PostgreSQL
+    $isPostgres = (getenv('DATABASE_URL') !== false);
 
-    if (!$result) {
-        throw new Exception('Failed to insert event: ' . implode(', ', $stmt->errorInfo()));
+    // Use RETURNING for PostgreSQL, lastInsertId for MySQL
+    if ($isPostgres) {
+        $stmt = $conn->prepare("
+            INSERT INTO events (
+                title, description, start_datetime, end_datetime, 
+                event_type, location, max_attendees,
+                image, created_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+        ");
+        $result = $stmt->execute([
+            $title,
+            $description,
+            $start_datetime,
+            $end_datetime,
+            $event_type,
+            $location,
+            $max_attendees,
+            $image,
+            $created_by
+        ]);
+        if (!$result) {
+            throw new Exception('Failed to insert event: ' . implode(', ', $stmt->errorInfo()));
+        }
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $event_id = (int)$result['id'];
+    } else {
+        $stmt = $conn->prepare("
+            INSERT INTO events (
+                title, description, start_datetime, end_datetime, 
+                event_type, location, max_attendees,
+                image, created_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        $result = $stmt->execute([
+            $title,
+            $description,
+            $start_datetime,
+            $end_datetime,
+            $event_type,
+            $location,
+            $max_attendees,
+            $image,
+            $created_by
+        ]);
+        if (!$result) {
+            throw new Exception('Failed to insert event: ' . implode(', ', $stmt->errorInfo()));
+        }
+        $event_id = (int)$conn->lastInsertId();
     }
-
-    $event_id = $conn->lastInsertId();
 
     // I cant even understand my own code xd
     if (!empty($_POST['assigned_staff'])) {
@@ -94,8 +121,25 @@ try {
                   "Location: $location\n" .
                   "Description: $description";
 
-        $notif_stmt->execute([$subject, $message, $send_all_emails ? 1 : 0, $_SESSION['user_id']]);
-        $notification_id = $conn->lastInsertId();
+        // Use database-specific boolean value
+        $send_email_value = $isPostgres ? ($send_all_emails ? true : false) : ($send_all_emails ? 1 : 0);
+        
+        // Use RETURNING for PostgreSQL
+        if ($isPostgres) {
+            $notif_stmt = $conn->prepare("
+                INSERT INTO notifications (
+                    notification_type, subject, message, send_email, created_by, status
+                ) VALUES (
+                    'event', ?, ?, ?, ?, 'pending'
+                ) RETURNING id
+            ");
+            $notif_stmt->execute([$subject, $message, $send_email_value, $_SESSION['user_id']]);
+            $result = $notif_stmt->fetch(PDO::FETCH_ASSOC);
+            $notification_id = (int)$result['id'];
+        } else {
+            $notif_stmt->execute([$subject, $message, $send_email_value, $_SESSION['user_id']]);
+            $notification_id = (int)$conn->lastInsertId();
+        }
 
      
         $email_recipients = array();

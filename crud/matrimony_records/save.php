@@ -10,22 +10,40 @@ try {
     }
 
     $conn->beginTransaction();
+    
+    // Check if database is PostgreSQL
+    $isPostgres = (getenv('DATABASE_URL') !== false);
 
-
-    $stmt = $conn->prepare("
-        INSERT INTO matrimony_records (
-            matrimony_date, 
-            church, 
-            minister
-        ) VALUES (?, ?, ?)
-    ");
+    // Use RETURNING for PostgreSQL, lastInsertId for MySQL
+    if ($isPostgres) {
+        $stmt = $conn->prepare("
+            INSERT INTO matrimony_records (
+                matrimony_date, 
+                church, 
+                minister
+            ) VALUES (?, ?, ?) RETURNING id
+        ");
+    } else {
+        $stmt = $conn->prepare("
+            INSERT INTO matrimony_records (
+                matrimony_date, 
+                church, 
+                minister
+            ) VALUES (?, ?, ?)
+        ");
+    }
     $stmt->execute([
         $data['matrimony_date'],
         $data['church'],
         $data['minister']
     ]);
     
-    $matrimonyId = $conn->lastInsertId();
+    if ($isPostgres) {
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $matrimonyId = (int)$result['id'];
+    } else {
+        $matrimonyId = (int)$conn->lastInsertId();
+    }
 
 
     foreach ($data['couples'] as $couple) {

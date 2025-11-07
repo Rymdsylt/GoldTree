@@ -12,12 +12,22 @@ try {
     }
 
     $conn->beginTransaction();
+    
+    // Check if database is PostgreSQL
+    $isPostgres = (getenv('DATABASE_URL') !== false);
 
-
-    $query = "INSERT INTO confirmation_records (
-        name, parent1_name, parent1_origin, parent2_name, parent2_origin,
-        address, birth_date, birth_place, gender, baptism_date, minister
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    // Use RETURNING for PostgreSQL, lastInsertId for MySQL
+    if ($isPostgres) {
+        $query = "INSERT INTO confirmation_records (
+            name, parent1_name, parent1_origin, parent2_name, parent2_origin,
+            address, birth_date, birth_place, gender, baptism_date, minister
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id";
+    } else {
+        $query = "INSERT INTO confirmation_records (
+            name, parent1_name, parent1_origin, parent2_name, parent2_origin,
+            address, birth_date, birth_place, gender, baptism_date, minister
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    }
     
     $stmt = $conn->prepare($query);
     $stmt->execute([
@@ -34,7 +44,12 @@ try {
         $data['minister']
     ]);
     
-    $recordId = $conn->lastInsertId();
+    if ($isPostgres) {
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $recordId = (int)$result['id'];
+    } else {
+        $recordId = (int)$conn->lastInsertId();
+    }
 
 
     if (!empty($data['sponsors'])) {

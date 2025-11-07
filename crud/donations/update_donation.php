@@ -51,7 +51,9 @@ try {
         notes = ?
         WHERE id = ?");
         
-    $stmt->execute([$member_id, $donor_name, $amount, $donation_type, $donation_date, $notes, $donation_id]);    if ($stmt->rowCount() === 0) {
+    $stmt->execute([$member_id, $donor_name, $amount, $donation_type, $donation_date, $notes, $donation_id]);
+    
+    if ($stmt->rowCount() === 0) {
         throw new Exception('No donation found with the given ID');
     }
 
@@ -64,10 +66,20 @@ try {
             $donor_type === 'member' ? " from a member" : ""
         );
         
-        $stmt = $conn->prepare("INSERT INTO notifications (notification_type, subject, message, created_at) VALUES (?, ?, ?, NOW())");
-        $stmt->execute(['donation', $notificationTitle, $notificationMessage]);
+        // Check if database is PostgreSQL
+        $isPostgres = (getenv('DATABASE_URL') !== false);
         
-        $notification_id = $conn->lastInsertId();
+        // Use database-specific timestamp function and RETURNING
+        if ($isPostgres) {
+            $stmt = $conn->prepare("INSERT INTO notifications (notification_type, subject, message, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP) RETURNING id");
+            $stmt->execute(['donation', $notificationTitle, $notificationMessage]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            $notification_id = (int)$result['id'];
+        } else {
+            $stmt = $conn->prepare("INSERT INTO notifications (notification_type, subject, message, created_at) VALUES (?, ?, ?, NOW())");
+            $stmt->execute(['donation', $notificationTitle, $notificationMessage]);
+            $notification_id = (int)$conn->lastInsertId();
+        }
         
 
         $stmt = $conn->prepare("INSERT INTO notification_recipients (notification_id, user_id)

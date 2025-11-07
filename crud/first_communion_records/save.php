@@ -31,22 +31,43 @@ try {
     $conn->beginTransaction();
 
     try {
+        // Check if database is PostgreSQL
+        $isPostgres = (getenv('DATABASE_URL') !== false);
    
-        $query = "INSERT INTO first_communion_records (
-            name, gender, address, 
-            birth_date, birth_place,
-            parent1_name, parent1_origin,
-            parent2_name, parent2_origin,
-            baptism_date, baptism_church,
-            church, confirmation_date, minister
-        ) VALUES (
-            :name, :gender, :address,
-            :birth_date, :birth_place,
-            :parent1_name, :parent1_origin,
-            :parent2_name, :parent2_origin,
-            :baptism_date, :baptism_church,
-            :church, :confirmation_date, :minister
-        )";
+        // Use RETURNING for PostgreSQL, lastInsertId for MySQL
+        if ($isPostgres) {
+            $query = "INSERT INTO first_communion_records (
+                name, gender, address, 
+                birth_date, birth_place,
+                parent1_name, parent1_origin,
+                parent2_name, parent2_origin,
+                baptism_date, baptism_church,
+                church, confirmation_date, minister
+            ) VALUES (
+                :name, :gender, :address,
+                :birth_date, :birth_place,
+                :parent1_name, :parent1_origin,
+                :parent2_name, :parent2_origin,
+                :baptism_date, :baptism_church,
+                :church, :confirmation_date, :minister
+            ) RETURNING id";
+        } else {
+            $query = "INSERT INTO first_communion_records (
+                name, gender, address, 
+                birth_date, birth_place,
+                parent1_name, parent1_origin,
+                parent2_name, parent2_origin,
+                baptism_date, baptism_church,
+                church, confirmation_date, minister
+            ) VALUES (
+                :name, :gender, :address,
+                :birth_date, :birth_place,
+                :parent1_name, :parent1_origin,
+                :parent2_name, :parent2_origin,
+                :baptism_date, :baptism_church,
+                :church, :confirmation_date, :minister
+            )";
+        }
 
         $stmt = $conn->prepare($query);
         $stmt->execute([
@@ -66,7 +87,12 @@ try {
             ':minister' => $data['minister']
         ]);
 
-        $recordId = $conn->lastInsertId();
+        if ($isPostgres) {
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            $recordId = (int)$result['id'];
+        } else {
+            $recordId = (int)$conn->lastInsertId();
+        }
 
 
         $conn->commit();

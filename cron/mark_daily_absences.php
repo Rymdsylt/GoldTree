@@ -1,20 +1,36 @@
 <?php
 require_once '../db/connection.php';
 
+// Check if database is PostgreSQL
+$isPostgres = (getenv('DATABASE_URL') !== false);
+
 try {
     $today = date('Y-m-d');
     
-    
-    $stmt = $conn->prepare("
-        SELECT e.id, e.title, m.id as member_id 
-        FROM events e 
-        CROSS JOIN members m 
-        WHERE e.status = 'ongoing' 
-        AND e.start_datetime <= NOW() 
-        AND e.end_datetime >= NOW()
-    ");
+    // Use database-specific timestamp function
+    if ($isPostgres) {
+        $stmt = $conn->prepare("
+            SELECT e.id, e.title, m.id as member_id 
+            FROM events e 
+            CROSS JOIN members m 
+            WHERE e.status = 'ongoing' 
+            AND e.start_datetime <= CURRENT_TIMESTAMP 
+            AND e.end_datetime >= CURRENT_TIMESTAMP
+        ");
+    } else {
+        $stmt = $conn->prepare("
+            SELECT e.id, e.title, m.id as member_id 
+            FROM events e 
+            CROSS JOIN members m 
+            WHERE e.status = 'ongoing' 
+            AND e.start_datetime <= NOW() 
+            AND e.end_datetime >= NOW()
+        ");
+    }
     $stmt->execute();
-    $membersEvents = $stmt->fetchAll(PDO::FETCH_ASSOC);    foreach ($membersEvents as $record) {
+    $membersEvents = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    foreach ($membersEvents as $record) {
         $eventStartDateStmt = $conn->prepare("
             SELECT start_datetime 
             FROM events 

@@ -20,12 +20,25 @@ try {
     }
 
 
-    $membersStmt = $conn->prepare("
-        SELECT id, CONCAT(first_name, ' ', last_name) as full_name
-        FROM members 
-        WHERE status = 'active'
-        ORDER BY first_name, last_name
-    ");
+    // Check if database is PostgreSQL
+    $isPostgres = (getenv('DATABASE_URL') !== false);
+    
+    // Use database-specific string concatenation
+    if ($isPostgres) {
+        $membersStmt = $conn->prepare("
+            SELECT id, first_name || ' ' || last_name as full_name
+            FROM members 
+            WHERE status = 'active'
+            ORDER BY first_name, last_name
+        ");
+    } else {
+        $membersStmt = $conn->prepare("
+            SELECT id, CONCAT(first_name, ' ', last_name) as full_name
+            FROM members 
+            WHERE status = 'active'
+            ORDER BY first_name, last_name
+        ");
+    }
     $membersStmt->execute();
     $allMembers = $membersStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -48,32 +61,52 @@ try {
 
         if ($dateObj <= $today) {
 
-            $attendeesStmt = $conn->prepare("
-                SELECT DISTINCT m.id, CONCAT(m.first_name, ' ', m.last_name) as full_name
-                FROM members m
-                JOIN event_attendance ea ON m.id = ea.member_id
-                WHERE ea.event_id = ? 
-                AND DATE(ea.attendance_date) = ?
-                AND ea.attendance_status = 'present'
-                ORDER BY m.first_name, m.last_name
-            ");
+            // Use database-specific string concatenation
+            if ($isPostgres) {
+                $attendeesStmt = $conn->prepare("
+                    SELECT DISTINCT m.id, m.first_name || ' ' || m.last_name as full_name
+                    FROM members m
+                    JOIN event_attendance ea ON m.id = ea.member_id
+                    WHERE ea.event_id = ? 
+                    AND DATE(ea.attendance_date) = ?
+                    AND ea.attendance_status = 'present'
+                    ORDER BY m.first_name, m.last_name
+                ");
+                $absentStmt = $conn->prepare("
+                    SELECT DISTINCT m.id, m.first_name || ' ' || m.last_name as full_name
+                    FROM members m
+                    JOIN event_attendance ea ON m.id = ea.member_id
+                    WHERE ea.event_id = ? 
+                    AND DATE(ea.attendance_date) = ?
+                    AND ea.attendance_status = 'absent'
+                    ORDER BY m.first_name, m.last_name
+                ");
+            } else {
+                $attendeesStmt = $conn->prepare("
+                    SELECT DISTINCT m.id, CONCAT(m.first_name, ' ', m.last_name) as full_name
+                    FROM members m
+                    JOIN event_attendance ea ON m.id = ea.member_id
+                    WHERE ea.event_id = ? 
+                    AND DATE(ea.attendance_date) = ?
+                    AND ea.attendance_status = 'present'
+                    ORDER BY m.first_name, m.last_name
+                ");
+                $absentStmt = $conn->prepare("
+                    SELECT DISTINCT m.id, CONCAT(m.first_name, ' ', m.last_name) as full_name
+                    FROM members m
+                    JOIN event_attendance ea ON m.id = ea.member_id
+                    WHERE ea.event_id = ? 
+                    AND DATE(ea.attendance_date) = ?
+                    AND ea.attendance_status = 'absent'
+                    ORDER BY m.first_name, m.last_name
+                ");
+            }
             $attendeesStmt->execute([$event_id, $currentDate]);
             $presentMembers = $attendeesStmt->fetchAll(PDO::FETCH_ASSOC);
 
             $attendees = array_column($presentMembers, 'full_name');
-            
-
             $presentMemberIds = array_column($presentMembers, 'id');
            
-            $absentStmt = $conn->prepare("
-                SELECT DISTINCT m.id, CONCAT(m.first_name, ' ', m.last_name) as full_name
-                FROM members m
-                JOIN event_attendance ea ON m.id = ea.member_id
-                WHERE ea.event_id = ? 
-                AND DATE(ea.attendance_date) = ?
-                AND ea.attendance_status = 'absent'
-                ORDER BY m.first_name, m.last_name
-            ");
             $absentStmt->execute([$event_id, $currentDate]);
             $absentees = array_column($absentStmt->fetchAll(PDO::FETCH_ASSOC), 'full_name');
         }

@@ -32,9 +32,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (isset($_POST['send_notification']) && $_POST['send_notification'] === 'on') {
             
             $display_name = 'Anonymous';
+            // Check if database is PostgreSQL
+            $isPostgres = (getenv('DATABASE_URL') !== false);
+            
             if ($donor_type === 'member' && $member_id) {
-             
-                $member_stmt = $conn->prepare("SELECT CONCAT(first_name, ' ', last_name) as full_name FROM members WHERE id = ?");
+                // Use database-specific string concatenation
+                if ($isPostgres) {
+                    $member_stmt = $conn->prepare("SELECT first_name || ' ' || last_name as full_name FROM members WHERE id = ?");
+                } else {
+                    $member_stmt = $conn->prepare("SELECT CONCAT(first_name, ' ', last_name) as full_name FROM members WHERE id = ?");
+                }
                 $member_stmt->execute([$member_id]);
                 $member = $member_stmt->fetch(PDO::FETCH_ASSOC);
                 if ($member) {
@@ -44,14 +51,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $display_name = $_POST['donor_name'];
             }
 
-         
-            $notification_stmt = $conn->prepare("INSERT INTO notifications (notification_type, subject, message, send_email, created_by) VALUES (?, ?, ?, ?, ?)");
-            
+            // Prepare notification subject and message
             $subject = "New Donation Received";
             $message = "A new " . $type . " donation of ₱" . number_format($amount, 2) . " has been received from " . $display_name;
             $message .= " on " . date('F j, Y', strtotime($donation_date));
+
+            // Use database-specific boolean value
+            $send_email_value = $isPostgres ? true : 1;
             
-            $notification_stmt->execute(['donation', $subject, $message, true, $_SESSION['user_id'] ?? null]);            $notification_id = $conn->lastInsertId();
+            // Use RETURNING for PostgreSQL
+            if ($isPostgres) {
+                $notification_stmt = $conn->prepare("INSERT INTO notifications (notification_type, subject, message, send_email, created_by) VALUES (?, ?, ?, ?, ?) RETURNING id");
+                $notification_stmt->execute(['donation', $subject, $message, $send_email_value, $_SESSION['user_id'] ?? null]);
+                $result = $notification_stmt->fetch(PDO::FETCH_ASSOC);
+                $notification_id = (int)$result['id'];
+            } else {
+                $notification_stmt = $conn->prepare("INSERT INTO notifications (notification_type, subject, message, send_email, created_by) VALUES (?, ?, ?, ?, ?)");
+                $notification_stmt->execute(['donation', $subject, $message, $send_email_value, $_SESSION['user_id'] ?? null]);
+                $notification_id = (int)$conn->lastInsertId();
+            }
          
             // Only send notifications to admin users
             $user_stmt = $conn->query("SELECT id, email FROM users WHERE admin_status = 1");

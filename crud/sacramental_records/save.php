@@ -32,16 +32,33 @@ try {
     }
 
     
-    $stmt = $conn->prepare("
-        INSERT INTO sacramental_records (
-            name, 
-            age, 
-            address, 
-            sacrament_type, 
-            date, 
-            priest_presiding
-        ) VALUES (?, ?, ?, ?, ?, ?)
-    ");
+    // Check if database is PostgreSQL
+    $isPostgres = (getenv('DATABASE_URL') !== false);
+    
+    // Use RETURNING for PostgreSQL, lastInsertId for MySQL
+    if ($isPostgres) {
+        $stmt = $conn->prepare("
+            INSERT INTO sacramental_records (
+                name, 
+                age, 
+                address, 
+                sacrament_type, 
+                date, 
+                priest_presiding
+            ) VALUES (?, ?, ?, ?, ?, ?) RETURNING id
+        ");
+    } else {
+        $stmt = $conn->prepare("
+            INSERT INTO sacramental_records (
+                name, 
+                age, 
+                address, 
+                sacrament_type, 
+                date, 
+                priest_presiding
+            ) VALUES (?, ?, ?, ?, ?, ?)
+        ");
+    }
 
     $stmt->execute([
         $data['name'],
@@ -51,11 +68,18 @@ try {
         $data['date'],
         $data['priest_presiding']
     ]);
+    
+    if ($isPostgres) {
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $recordId = (int)$result['id'];
+    } else {
+        $recordId = (int)$conn->lastInsertId();
+    }
 
     echo json_encode([
         'success' => true,
         'message' => 'Record saved successfully',
-        'id' => $conn->lastInsertId()
+        'id' => $recordId
     ]);
 
 } catch (Exception $e) {

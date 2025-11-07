@@ -52,13 +52,37 @@ try {
         )
     ");
 
-    $stmt->execute([
-        $first_name, $last_name, $email, $phone, $address,
-        $date_of_birth, $gender, $category, $status, $profile_image,
-        $associated_user
-    ]);
-
-    $memberId = $conn->lastInsertId();
+    // Check if database is PostgreSQL
+    $isPostgres = (getenv('DATABASE_URL') !== false);
+    
+    // Use RETURNING for PostgreSQL, lastInsertId for MySQL
+    if ($isPostgres) {
+        $stmt = $conn->prepare("
+            INSERT INTO members (
+                first_name, last_name, email, phone, address, 
+                birthdate, gender, category, status, profile_image,
+                membership_date, user_id
+            ) VALUES (
+                ?, ?, ?, ?, ?, 
+                ?, ?, ?, ?, ?,
+                CURRENT_DATE, ?
+            ) RETURNING id
+        ");
+        $stmt->execute([
+            $first_name, $last_name, $email, $phone, $address,
+            $date_of_birth, $gender, $category, $status, $profile_image,
+            $associated_user
+        ]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $memberId = (int)$result['id'];
+    } else {
+        $stmt->execute([
+            $first_name, $last_name, $email, $phone, $address,
+            $date_of_birth, $gender, $category, $status, $profile_image,
+            $associated_user
+        ]);
+        $memberId = (int)$conn->lastInsertId();
+    }
 
 
     $updateUserQuery = "UPDATE users SET member_id = ? WHERE id = ?";

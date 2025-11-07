@@ -51,10 +51,20 @@ try {
         number_format($donation['amount'], 2)
     );
     
-    $stmt = $conn->prepare("INSERT INTO notifications (notification_type, subject, message, created_at) VALUES ('donation', ?, ?, NOW())");
-    $stmt->execute([$notificationTitle, $notificationMessage]);
+    // Check if database is PostgreSQL
+    $isPostgres = (getenv('DATABASE_URL') !== false);
     
-    $notification_id = $conn->lastInsertId();
+    // Use database-specific timestamp function and RETURNING
+    if ($isPostgres) {
+        $stmt = $conn->prepare("INSERT INTO notifications (notification_type, subject, message, created_at) VALUES ('donation', ?, ?, CURRENT_TIMESTAMP) RETURNING id");
+        $stmt->execute([$notificationTitle, $notificationMessage]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $notification_id = (int)$result['id'];
+    } else {
+        $stmt = $conn->prepare("INSERT INTO notifications (notification_type, subject, message, created_at) VALUES ('donation', ?, ?, NOW())");
+        $stmt->execute([$notificationTitle, $notificationMessage]);
+        $notification_id = (int)$conn->lastInsertId();
+    }
     
 
     $stmt = $conn->prepare("INSERT INTO notification_recipients (notification_id, user_id)
