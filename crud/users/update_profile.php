@@ -70,7 +70,9 @@ try {
             if (in_array($ext, $allowed)) {
                 $profile_image = file_get_contents($_FILES['profile_image']['tmp_name']);
                 $stmt = $conn->prepare("UPDATE members SET profile_image = ? WHERE id = ?");
-                $stmt->execute([$profile_image, $member_id]);
+                $stmt->bindParam(1, $profile_image, PDO::PARAM_LOB);
+                $stmt->bindParam(2, $member_id, PDO::PARAM_INT);
+                $stmt->execute();
             }
         }
     }

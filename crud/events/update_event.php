@@ -48,7 +48,13 @@ try {
     }
 
     if (isset($_FILES['event_image']) && $_FILES['event_image']['error'] === UPLOAD_ERR_OK) {
-        $updateFields['image'] = file_get_contents($_FILES['event_image']['tmp_name']);
+        // Handle image update separately using PDO::PARAM_LOB
+        $image_data = file_get_contents($_FILES['event_image']['tmp_name']);
+        $imgStmt = $conn->prepare("UPDATE events SET image = ? WHERE id = ?");
+        $imgStmt->bindParam(1, $image_data, PDO::PARAM_LOB);
+        $imgStmt->bindParam(2, $id, PDO::PARAM_INT);
+        $imgStmt->execute();
+        unset($updateFields['image']); // Remove from main update as it's handled separately
     }
 
     $sql = "UPDATE events SET ";

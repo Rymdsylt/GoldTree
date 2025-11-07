@@ -48,8 +48,11 @@ try {
         
         if (in_array($ext, $allowed)) {
             $profile_image = file_get_contents($_FILES['profile_image']['tmp_name']);
-            $updateFields[] = 'profile_image = ?';
-            $params[] = $profile_image;
+            // Separate statement for image update using PDO::PARAM_LOB
+            $imgStmt = $conn->prepare("UPDATE members SET profile_image = ? WHERE id = ?");
+            $imgStmt->bindParam(1, $profile_image, PDO::PARAM_LOB);
+            $imgStmt->bindParam(2, $id, PDO::PARAM_INT);
+            $imgStmt->execute();
         }
     }
 

@@ -35,6 +35,11 @@ try {
         
         if (in_array($ext, $allowed)) {
             $profile_image = file_get_contents($_FILES['profile_image']['tmp_name']);
+            // Get a PDO statement to ensure proper LOB handling
+            if (getenv('DATABASE_URL') !== false) {
+                $tempStmt = $conn->prepare("SELECT 1");
+                $profile_image = $tempStmt->bindParam(1, $profile_image, PDO::PARAM_LOB);
+            }
         }
     }
 

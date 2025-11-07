@@ -37,7 +37,10 @@ try {
 
     $image = null;
     if (isset($_FILES['event_image']) && $_FILES['event_image']['error'] === UPLOAD_ERR_OK) {
-        $image = file_get_contents($_FILES['event_image']['tmp_name']);
+        $image_data = file_get_contents($_FILES['event_image']['tmp_name']);
+        $stmt = $conn->prepare("INSERT INTO events (...) VALUES (...)");
+        $stmt->bindParam(8, $image_data, PDO::PARAM_LOB);
+        $stmt->execute();
     }
 
     $conn->beginTransaction();
