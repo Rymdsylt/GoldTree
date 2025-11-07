@@ -18,7 +18,7 @@
     },
     "scripts": {
         "post-install-cmd": [
-            "php db/migrations/001_heroku_postgres.php"
+            "php -f db/migrations/001_heroku_postgres.php"
         ]
     }
 }
