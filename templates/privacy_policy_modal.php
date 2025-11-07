@@ -77,7 +77,10 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['privacy_checked']) && !$_SES
         });
 
         function handlePrivacyAgreement(agreed) {
-            fetch('/GoldTree/auth/handle_privacy_agreement.php', {
+            // Use absolute path from document root (works on Heroku)
+            const apiPath = '/auth/handle_privacy_agreement.php';
+            
+            fetch(apiPath, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -86,14 +89,16 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['privacy_checked']) && !$_SES
             })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                    return response.text().then(text => {
+                        throw new Error(`HTTP ${response.status}: ${text}`);
+                    });
                 }
                 return response.json();
             })
             .then(data => {
                 if (data.success) {
                     if (!agreed) {
-                        window.location.href = '/GoldTree/login.php';
+                        window.location.href = '/login.php';
                     } else {
                         modal.hide();
                         window.location.reload();
@@ -104,7 +109,7 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['privacy_checked']) && !$_SES
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while processing your choice. Please try again.');
+                alert('An error occurred while processing your choice: ' + (error.message || 'Please try again.'));
             });
         }
     });

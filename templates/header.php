@@ -15,13 +15,25 @@ $isAdmin = false;
 $username = '';
 
 if (isset($_SESSION['user_id'])) {
+    // Check if database is PostgreSQL
+    $isPostgres = (getenv('DATABASE_URL') !== false);
+    
     $stmt = $conn->prepare("SELECT username, admin_status, privacy_agreement FROM users WHERE id = ?");
     $stmt->execute([$_SESSION['user_id']]);
     $user = $stmt->fetch();
     if ($user) {
         $isAdmin = ($user['admin_status'] > 0);
         $username = htmlspecialchars($user['username']);
-        $privacyStatus = $user['privacy_agreement'];
+        
+        // Handle boolean check for both PostgreSQL and MySQL
+        if ($isPostgres) {
+            // PostgreSQL returns boolean as 't'/'f' string or actual boolean
+            $privacyValue = $user['privacy_agreement'];
+            $privacyStatus = ($privacyValue === true || $privacyValue === 't' || $privacyValue === 1) ? 1 : null;
+        } else {
+            // MySQL returns as integer (0 or 1) or null
+            $privacyStatus = $user['privacy_agreement'];
+        }
     }
 }
 ?>
@@ -139,26 +151,39 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         function handlePrivacyAgreement(agreed) {
-            fetch('auth/handle_privacy_agreement.php', {
+            // Use absolute path from document root (works on Heroku)
+            const apiPath = '/auth/handle_privacy_agreement.php';
+            
+            fetch(apiPath, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 body: 'agreed=' + agreed
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`HTTP ${response.status}: ${text}`);
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     if (!agreed) {
-                        window.location.href = 'login.php';
+                        window.location.href = '/login.php';
                     } else {
                         modal.hide();
                         location.reload();
                     }
+                } else {
+                    throw new Error(data.message || 'Unknown error occurred');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
+                alert('An error occurred while processing your choice: ' + (error.message || 'Please try again.'));
             });
         }
     }

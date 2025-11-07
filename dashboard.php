@@ -8,9 +8,22 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 
+// Check if database is PostgreSQL
+$isPostgres = (getenv('DATABASE_URL') !== false);
+
 $privacyStmt = $conn->prepare("SELECT privacy_agreement FROM users WHERE id = ?");
 $privacyStmt->execute([$_SESSION['user_id']]);
-$privacyStatus = $privacyStmt->fetch();
+$privacyResult = $privacyStmt->fetch();
+
+// Handle boolean check for both PostgreSQL and MySQL
+if ($isPostgres) {
+    // PostgreSQL returns boolean as 't'/'f' string or actual boolean
+    $privacyValue = $privacyResult['privacy_agreement'];
+    $privacyStatus = ($privacyValue === true || $privacyValue === 't' || $privacyValue === 1) ? 1 : null;
+} else {
+    // MySQL returns as integer (0 or 1) or null
+    $privacyStatus = $privacyResult['privacy_agreement'];
+}
 
 if (!isset($_SESSION['active_page'])) {
     $_SESSION['active_page'] = 'dashboard';
