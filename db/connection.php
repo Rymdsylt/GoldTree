@@ -1,6 +1,9 @@
 <?php
 // Use Heroku DATABASE_URL or JAWSDB_MARIA_URL if available, otherwise use local defaults
-$dbUrl = $_ENV['DATABASE_URL'] ?? $_ENV['JAWSDB_MARIA_URL'] ?? false;
+$dbUrl = getenv('JAWSDB_MARIA_URL');
+if (!$dbUrl) {
+    $dbUrl = getenv('DATABASE_URL');
+}
 if ($dbUrl) {
     $url = parse_url($dbUrl);
     define('DB_HOST', $url['host']);

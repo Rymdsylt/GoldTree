@@ -210,7 +210,7 @@ if (!$user || $user['admin_status'] != 1) {
         }
     </style>
 </head>
-<body>
+<body data-base-path="<?php echo BASE_PATH; ?>">
     <!-- Admin Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container-fluid">

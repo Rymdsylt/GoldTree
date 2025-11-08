@@ -331,6 +331,13 @@ if (!$user || $user['admin_status'] != 1) {
 </div>
 
 <?php require_once '../templates/admin_footer.php'; ?>
+<script>
+// Helper function to get the base path for API endpoints
+function getApiEndpoint(path) {
+    const basePath = document.body.getAttribute('data-base-path') || '';
+    return `${basePath}${path}`;
+}
+</script>
 <script src="/GoldTree/js/first_communion_filters.js"></script>
 
 <div class="modal fade" id="viewRecordModal" tabindex="-1">
@@ -1693,7 +1700,7 @@ async function viewRecord(id) {
 
 async function loadMatrimonyRecords() {
     try {
-        const response = await fetch('/GoldTree/crud/matrimony_records/get_all.php');
+        const response = await fetch(getApiEndpoint('/crud/matrimony_records/get_all.php'));
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -2160,7 +2167,7 @@ async function saveRecord() {
                     minister: formInputs.minister,
                     sponsors: formInputs.sponsors || []
                 };
-                endpoint = '/GoldTree/crud/baptismal_records/save.php';
+                endpoint = `${document.body.getAttribute('data-base-path')}/crud/baptismal_records/save.php`;
                 break;
 
             case 'Confirmation':
@@ -2178,7 +2185,7 @@ async function saveRecord() {
                     minister: formInputs.minister,
                     sponsors: formInputs.sponsors || []
                 };
-                endpoint = '/GoldTree/crud/confirmation_records/save.php';
+                endpoint = getApiEndpoint('/crud/confirmation_records/save.php');
                 break;
 
             case 'First Communion':
@@ -2457,7 +2464,7 @@ async function loadConfirmationRecords(page = 1) {
         const minister = document.getElementById('confirmationMinister').value;
 
         
-        const url = new URL('/GoldTree/crud/confirmation_records/get_all.php', window.location.origin);
+        const url = new URL(getApiEndpoint('/crud/confirmation_records/get_all.php'), window.location.origin);
         if (dateFrom) url.searchParams.append('dateFrom', dateFrom);
         if (dateTo) url.searchParams.append('dateTo', dateTo);
         if (name) url.searchParams.append('name', name);
@@ -3436,7 +3443,8 @@ async function loadBaptismalRecords(page = 1) {
         const minister = document.getElementById('baptismMinister')?.value || '';
         const limit = 10; 
 
-        const url = new URL('/GoldTree/crud/baptismal_records/get_all.php', window.location.origin);
+        const basePath = document.body.getAttribute('data-base-path') || '/GoldTree';
+        const url = new URL(`${basePath}/crud/baptismal_records/get_all.php`, window.location.origin);
         url.searchParams.append('page', page);
         url.searchParams.append('limit', limit);
         if (dateFrom) url.searchParams.append('dateFrom', dateFrom);
@@ -3616,7 +3624,8 @@ async function saveBaptismalRecord() {
         await validateBaptismForm(formData);
 
        
-        const response = await fetch('/GoldTree/crud/baptismal_records/save.php', {
+        const basePath = document.body.getAttribute('data-base-path');
+        const response = await fetch(`${basePath}/crud/baptismal_records/save.php`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -3667,7 +3676,7 @@ async function saveBaptismalRecord() {
 async function editBaptismalRecord(id) {
     try {
        
-        const response = await fetch(`/GoldTree/crud/baptismal_records/get.php?id=${id}`);
+        const response = await fetch(getApiEndpoint(`/crud/baptismal_records/get.php?id=${id}`));
         const record = await response.json();
 
         if (!response.ok) {
@@ -3762,7 +3771,7 @@ async function confirmDeleteBaptismalRecord() {
         const formData = new FormData();
         formData.append('id', id);
         
-        const response = await fetch('/GoldTree/crud/baptismal_records/delete.php', {
+        const response = await fetch(getApiEndpoint('/crud/baptismal_records/delete.php'), {
             method: 'POST',
             body: formData
         });
