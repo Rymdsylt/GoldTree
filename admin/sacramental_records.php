@@ -3431,7 +3431,7 @@ async function saveConfirmationRecord() {
     } catch (error) {
         alert(error.message);
     }
-}
+}//
 
 async function loadBaptismalRecords(page = 1) {
     try {
