@@ -338,7 +338,7 @@ function getApiEndpoint(path) {
     return `${basePath}${path}`;
 }
 </script>
-<script src="/GoldTree/js/first_communion_filters.js"></script>
+<script src="/js/first_communion_filters.js"></script>
 
 <div class="modal fade" id="viewRecordModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
@@ -1677,7 +1677,7 @@ function getApiEndpoint(path) {
 <script>
 async function viewRecord(id) {
     try {
-        const response = await fetch(`/GoldTree/crud/sacramental_records/get.php?id=${id}`);
+        const response = await fetch(`/crud/sacramental_records/get.php?id=${id}`);
         const result = await response.json();
 
         if (!response.ok) {
@@ -1862,7 +1862,7 @@ async function saveMarriageRecord() {
                 .filter(sponsor => sponsor.trim() !== '')
         };
 
-        const response = await fetch('/GoldTree/crud/matrimony_records/create.php', {
+        const response = await fetch('/crud/matrimony_records/create.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -1899,10 +1899,10 @@ async function editRecord(id, recordType) {
         let endpoint = '';
         switch(recordType) {
             case 'First Communion':
-                endpoint = `/GoldTree/crud/first_communion_records/get.php?id=${id}`;
+                endpoint = `/crud/first_communion_records/get.php?id=${id}`;
                 break;
             default:
-                endpoint = `/GoldTree/crud/sacramental_records/get.php?id=${id}`;
+                endpoint = `/crud/sacramental_records/get.php?id=${id}`;
         }
 
         const response = await fetch(endpoint);
@@ -2011,8 +2011,8 @@ async function updateRecord(recordType) {
         }
 
         const endpoint = recordType === 'First Communion' 
-            ? '/GoldTree/crud/first_communion_records/update.php'
-            : '/GoldTree/crud/sacramental_records/update.php';
+            ? '/crud/first_communion_records/update.php'
+            : '/crud/sacramental_records/update.php';
 
         const response = await fetch(endpoint, {
             method: 'POST',
@@ -2042,7 +2042,7 @@ async function deleteRecord(id, recordType) {
     if (recordType === 'First Communion') {
         try {
  
-            const response = await fetch(`/GoldTree/crud/first_communion_records/get.php?id=${id}`);
+            const response = await fetch(`/crud/first_communion_records/get.php?id=${id}`);
             const result = await response.json();
 
             if (!response.ok) {
@@ -2063,7 +2063,7 @@ async function deleteRecord(id, recordType) {
     } else {
         if (confirm('Are you sure you want to delete this record?')) {
             try {
-                const response = await fetch('/GoldTree/crud/sacramental_records/delete.php', {
+                const response = await fetch('/crud/sacramental_records/delete.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -2089,7 +2089,7 @@ async function deleteRecord(id, recordType) {
 async function confirmDeleteRecord() {
     try {
         const id = document.getElementById('deleteRecordId').value;
-        const response = await fetch('/GoldTree/crud/first_communion_records/delete.php', {
+        const response = await fetch('/crud/first_communion_records/delete.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -2205,7 +2205,7 @@ async function saveRecord() {
                     confirmation_date: formInputs.confirmation_date,
                     minister: formInputs.minister
                 };
-                endpoint = '/GoldTree/crud/first_communion_records/save.php';
+                endpoint = '/crud/first_communion_records/save.php';
                 break;
 
             case 'Marriage':
@@ -2254,7 +2254,7 @@ async function saveRecord() {
                     ],
                     sponsors: formInputs.matrimony_sponsors || []
                 };
-                endpoint = '/GoldTree/crud/matrimony_records/save.php';
+                endpoint = '/crud/matrimony_records/save.php';
                 break;
 
             default:
@@ -2378,7 +2378,7 @@ async function filterRecords(page = 1) {
 
 async function loadBaptismalRecords() {
     try {
-        const response = await fetch('/GoldTree/crud/baptismal_records/get_all.php');
+        const response = await fetch('/crud/baptismal_records/get_all.php');
         const records = await response.json();
 
         const tbody = document.getElementById('baptismTableBody');
@@ -2438,7 +2438,7 @@ async function loadBaptismalRecords() {
 
 async function loadBaptismalSponsors(recordId) {
     try {
-        const response = await fetch(`/GoldTree/crud/baptismal_records/get_sponsors.php?record_id=${recordId}`);
+        const response = await fetch(`/crud/baptismal_records/get_sponsors.php?record_id=${recordId}`);
         const sponsors = await response.json();
 
         const sponsorCell = document.getElementById(`sponsors-${recordId}`);
@@ -2571,7 +2571,7 @@ async function loadConfirmationRecords(page = 1) {
 
 async function loadConfirmationSponsors(recordId) {
     try {
-        const response = await fetch(`/GoldTree/crud/confirmation_records/get_sponsors.php?record_id=${recordId}`);
+        const response = await fetch(`/crud/confirmation_records/get_sponsors.php?record_id=${recordId}`);
         const sponsors = await response.json();
 
         const sponsorCell = document.getElementById(`confirmation-sponsors-${recordId}`);
@@ -2589,7 +2589,7 @@ async function loadConfirmationSponsors(recordId) {
 
 async function editMatrimonyRecord(id) {
     try {
-        const response = await fetch(`/GoldTree/crud/matrimony_records/get.php?id=${id}`);
+        const response = await fetch(`/crud/matrimony_records/get.php?id=${id}`);
         if (!response.ok) {
             throw new Error('Failed to fetch marriage record');
         }
@@ -2725,7 +2725,7 @@ async function updateMarriageRecord() {
                 .filter(name => name !== '')
         };
 
-        const response = await fetch('/GoldTree/crud/matrimony_records/update.php', {
+        const response = await fetch('/crud/matrimony_records/update.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -2788,7 +2788,7 @@ function updateSponsorNumbers(containerId) {
 
 function deleteMatrimonyRecord(id) {
     try {
-        fetch(`/GoldTree/crud/matrimony_records/get.php?id=${id}`)
+        fetch(`/crud/matrimony_records/get.php?id=${id}`)
             .then(response => response.json())
             .then(result => {
                 if (!result.data) {
@@ -2821,7 +2821,7 @@ async function confirmDeleteMarriage() {
     try {
         const id = document.getElementById('deleteMarriageId').value;
         
-        const response = await fetch('/GoldTree/crud/matrimony_records/delete.php', {
+        const response = await fetch('/crud/matrimony_records/delete.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -2856,7 +2856,7 @@ async function loadMatrimonyRecords(page = 1) {
         const brideName = document.getElementById('brideName')?.value || '';
         const groomName = document.getElementById('groomName')?.value || '';
 
-        const url = new URL('/GoldTree/crud/matrimony_records/get_all.php', window.location.origin);
+        const url = new URL('/crud/matrimony_records/get_all.php', window.location.origin);
         url.searchParams.append('page', page);
         url.searchParams.append('per_page', 10);
         if (dateFrom) url.searchParams.append('dateFrom', dateFrom);
@@ -3020,7 +3020,7 @@ async function loadMatrimonyRecords(page = 1) {
 
 async function loadMatrimonySponsors(recordId) {
     try {
-        const response = await fetch(`/GoldTree/crud/matrimony_records/get_sponsors.php?record_id=${recordId}`);
+        const response = await fetch(`/crud/matrimony_records/get_sponsors.php?record_id=${recordId}`);
         const result = await response.json();
 
         if (result.status !== 'success') {
@@ -3044,7 +3044,7 @@ async function loadMatrimonySponsors(recordId) {
 async function viewMatrimonyRecord(id) {
     try {
        
-        const response = await fetch(`/GoldTree/crud/matrimony_records/get.php?id=${id}`);
+        const response = await fetch(`/crud/matrimony_records/get.php?id=${id}`);
         if (!response.ok) {
             throw new Error('Failed to fetch marriage record');
         }
@@ -3138,7 +3138,7 @@ async function loadFirstCommunionRecords(page = 1) {
         const parent = document.getElementById('communionParent')?.value || '';
         const minister = document.getElementById('communionMinister')?.value || '';
  
-        const url = new URL('/GoldTree/crud/first_communion_records/get_all.php', window.location.origin);
+        const url = new URL('/crud/first_communion_records/get_all.php', window.location.origin);
         url.searchParams.append('page', page);
         url.searchParams.append('per_page', 10);
         if (dateFrom) url.searchParams.append('dateFrom', dateFrom);
@@ -3391,7 +3391,7 @@ async function saveConfirmationRecord() {
   
         await validateConfirmationForm(formData);
 
-        const response = await fetch('/GoldTree/crud/confirmation_records/save.php', {
+        const response = await fetch('/crud/confirmation_records/save.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -3420,7 +3420,7 @@ async function saveConfirmationRecord() {
                 </div>
             `;
         }
-        //
+        
     
         const modal = bootstrap.Modal.getInstance(document.getElementById('addConfirmationModal'));
         modal.hide();
@@ -3443,7 +3443,7 @@ async function loadBaptismalRecords(page = 1) {
         const minister = document.getElementById('baptismMinister')?.value || '';
         const limit = 10; 
 
-        const basePath = document.body.getAttribute('data-base-path') || '/GoldTree';
+        const basePath = document.body.getAttribute('data-base-path') || '';
         const url = new URL(`${basePath}/crud/baptismal_records/get_all.php`, window.location.origin);
         url.searchParams.append('page', page);
         url.searchParams.append('limit', limit);
@@ -3700,7 +3700,7 @@ async function editBaptismalRecord(id) {
         const sponsorsContainer = document.getElementById('editBaptismSponsorsContainer');
         sponsorsContainer.innerHTML = ''; 
 
-        const sponsorsResponse = await fetch(`/GoldTree/crud/baptismal_records/get_sponsors.php?record_id=${id}`);
+        const sponsorsResponse = await fetch(`/crud/baptismal_records/get_sponsors.php?record_id=${id}`);
         const sponsors = await sponsorsResponse.json();
 
         if (sponsors && sponsors.length > 0) {
@@ -3743,7 +3743,7 @@ async function editBaptismalRecord(id) {
 async function deleteBaptismalRecord(id) {
     try {
        
-        const response = await fetch(`/GoldTree/crud/baptismal_records/get.php?id=${id}`);
+        const response = await fetch(`/crud/baptismal_records/get.php?id=${id}`);
         const record = await response.json();
 
         if (!response.ok) {
@@ -3834,7 +3834,7 @@ async function updateBaptismalRecord() {
         await validateBaptismForm(formData);
 
        
-        const response = await fetch('/GoldTree/crud/baptismal_records/update.php', {
+        const response = await fetch('/crud/baptismal_records/update.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -3864,7 +3864,7 @@ async function updateBaptismalRecord() {
 async function viewBaptismalRecord(id) {
     try {
 
-        const response = await fetch(`/GoldTree/crud/baptismal_records/get.php?id=${id}`);
+        const response = await fetch(`/crud/baptismal_records/get.php?id=${id}`);
         const record = await response.json();
 
         if (!response.ok) {
@@ -3893,7 +3893,7 @@ async function viewBaptismalRecord(id) {
             new Date(record.baptism_date).toLocaleDateString();
         document.getElementById('viewBaptismMinister').textContent = record.minister;
 
-        const sponsorsResponse = await fetch(`/GoldTree/crud/baptismal_records/get_sponsors.php?record_id=${id}`);
+        const sponsorsResponse = await fetch(`/crud/baptismal_records/get_sponsors.php?record_id=${id}`);
         const sponsors = await sponsorsResponse.json();
 
         const sponsorsContainer = document.getElementById('viewBaptismSponsors');
@@ -4056,7 +4056,7 @@ async function saveMarriageRecord() {
             sponsors: sponsors
         };
 
-        const response = await fetch('/GoldTree/crud/matrimony_records/create.php', {
+        const response = await fetch('/crud/matrimony_records/create.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -4266,7 +4266,7 @@ function validateMatrimonyTypes() {
 async function editConfirmationRecord(id) {
     try {
     
-        const response = await fetch(`/GoldTree/crud/confirmation_records/get.php?id=${id}`);
+        const response = await fetch(`/crud/confirmation_records/get.php?id=${id}`);
         const record = await response.json();
 
         if (!response.ok) {
@@ -4291,7 +4291,7 @@ async function editConfirmationRecord(id) {
         const sponsorsContainer = document.getElementById('editConfirmationSponsorsContainer');
         sponsorsContainer.innerHTML = '';
 
-        const sponsorsResponse = await fetch(`/GoldTree/crud/confirmation_records/get_sponsors.php?record_id=${id}`);
+        const sponsorsResponse = await fetch(`/crud/confirmation_records/get_sponsors.php?record_id=${id}`);
         const sponsors = await sponsorsResponse.json();
 
         if (sponsors && sponsors.length > 0) {
@@ -4365,7 +4365,7 @@ async function updateConfirmationRecord() {
         await validateConfirmationForm(formData);
 
        
-        const response = await fetch('/GoldTree/crud/confirmation_records/update.php', {
+        const response = await fetch('/crud/confirmation_records/update.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -4394,7 +4394,7 @@ async function updateConfirmationRecord() {
 async function deleteConfirmationRecord(id) {
     try {
     
-        const response = await fetch(`/GoldTree/crud/confirmation_records/get.php?id=${id}`);
+        const response = await fetch(`/crud/confirmation_records/get.php?id=${id}`);
         const record = await response.json();
 
         if (!response.ok) {
@@ -4422,7 +4422,7 @@ async function confirmDeleteConfirmationRecord() {
         const formData = new FormData();
         formData.append('id', id);
         
-        const response = await fetch('/GoldTree/crud/confirmation_records/delete.php', {
+        const response = await fetch('/crud/confirmation_records/delete.php', {
             method: 'POST',
             body: formData
         });
@@ -4506,7 +4506,7 @@ async function viewFirstCommunionRecord(id) {
         }
 
     
-        const response = await fetch(`/GoldTree/crud/first_communion_records/get.php?id=${id}`);
+        const response = await fetch(`/crud/first_communion_records/get.php?id=${id}`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -4585,7 +4585,7 @@ async function saveFirstCommunionRecord() {
         await validateFirstCommunionForm(formData);
 
 
-        const response = await fetch('/GoldTree/crud/first_communion_records/save.php', {
+        const response = await fetch('/crud/first_communion_records/save.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -4617,7 +4617,7 @@ async function saveFirstCommunionRecord() {
 async function viewConfirmationRecord(id) {
     try {
      
-        const response = await fetch(`/GoldTree/crud/confirmation_records/get.php?id=${id}`);
+        const response = await fetch(`/crud/confirmation_records/get.php?id=${id}`);
         const record = await response.json();
 
         if (!response.ok) {
@@ -4648,7 +4648,7 @@ async function viewConfirmationRecord(id) {
         document.getElementById('viewConfirmationMinister').textContent = record.minister;
 
 
-        const sponsorsResponse = await fetch(`/GoldTree/crud/confirmation_records/get_sponsors.php?record_id=${id}`);
+        const sponsorsResponse = await fetch(`/crud/confirmation_records/get_sponsors.php?record_id=${id}`);
         const sponsors = await sponsorsResponse.json();
 
         const sponsorsContainer = document.getElementById('viewConfirmationSponsors');
