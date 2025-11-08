@@ -3420,7 +3420,7 @@ async function saveConfirmationRecord() {
                 </div>
             `;
         }
-        
+        //
     
         const modal = bootstrap.Modal.getInstance(document.getElementById('addConfirmationModal'));
         modal.hide();
@@ -3431,7 +3431,7 @@ async function saveConfirmationRecord() {
     } catch (error) {
         alert(error.message);
     }
-}//
+}
 
 async function loadBaptismalRecords(page = 1) {
     try {
