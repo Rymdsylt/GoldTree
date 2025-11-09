@@ -4,8 +4,11 @@ require_once '../../auth/check_admin.php';
 
 header('Content-Type: application/json');
 
-try {
+// Enable error reporting for debugging
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
+try {
     $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
     $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
     $offset = ($page - 1) * $limit;
@@ -56,9 +59,9 @@ try {
     $totalRecords = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
     $totalPages = ceil($totalRecords / $limit);
 
-    $query = "SELECT br.*, GROUP_CONCAT(bs.name SEPARATOR ', ') as sponsors 
+    $query = "SELECT br.*, GROUP_CONCAT(bs.sponsor_name SEPARATOR ', ') as sponsors 
              FROM baptismal_records br 
-             LEFT JOIN baptismal_sponsors bs ON br.id = bs.record_id 
+             LEFT JOIN baptismal_sponsors bs ON br.id = bs.baptismal_record_id 
              $whereClause 
              GROUP BY br.id 
              ORDER BY br.baptism_date DESC LIMIT :limit OFFSET :offset";
