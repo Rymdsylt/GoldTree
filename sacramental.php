@@ -3427,7 +3427,7 @@ async function loadBaptismalRecords(page = 1) {
                 <td>${birthDetails}</td>
                 <td>${new Date(record.baptism_date).toLocaleDateString()}</td>
                 <td>${htmlEscape(record.minister)}</td>
-                <td>${record.sponsors ? record.sponsors.join(', ') : ''}</td>
+                <td>${record.sponsors || ''}</td>
                 <td class="text-end">
                     <button class="btn btn-sm btn-primary me-2" onclick="viewBaptismalRecord(${record.id})">
                         <i class="bi bi-eye"></i>
