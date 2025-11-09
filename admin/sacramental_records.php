@@ -3484,34 +3484,12 @@ async function loadBaptismalRecords(page = 1) {
                 <td>${htmlEscape(record.name)}</td>
                 <td>${htmlEscape(record.address)}</td>
                 <td>${birthDetails}</td>
-                <td>${parentsInfo.join('<br>')}</td>
+                <td>${parentsInfo.length ? parentsInfo.join('<br>') : 'N/A'}</td>
                 <td>${new Date(record.baptism_date).toLocaleDateString()}</td>
                 <td>${htmlEscape(record.minister)}</td>
                 <td>${htmlEscape(record.sponsors || '')}</td>
-                <td>
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-info" onclick="viewBaptismalRecord(${record.id})">
-                            <i class="bi bi-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-primary" onclick="editBaptismalRecord(${record.id})">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteBaptismalRecord(${record.id})">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            `;
-
-            row.innerHTML = `
-                <td>${htmlEscape(record.name)}</td>
-                <td></td>
-                <td>${birthDetails}</td>
-                <td>${new Date(record.baptism_date).toLocaleDateString()}</td>
-                <td>${htmlEscape(record.minister)}</td>
-                <td>${record.sponsors || ''}</td>
                 <td class="text-end">
-                    <button class="btn btn-sm btn-primary me-2" onclick="viewBaptismalRecord(${record.id})">
+                    <button class="btn btn-sm btn-info me-2" onclick="viewBaptismalRecord(${record.id})">
                         <i class="bi bi-eye"></i>
                     </button>
                     <button class="btn btn-sm btn-warning me-2" onclick="editBaptismalRecord(${record.id})">
@@ -3522,7 +3500,6 @@ async function loadBaptismalRecords(page = 1) {
                     </button>
                 </td>
             `;
-            row.cells[1].replaceWith(parentsCell);
             tbody.appendChild(row);
         });
 
