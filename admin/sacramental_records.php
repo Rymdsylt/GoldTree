@@ -3478,15 +3478,30 @@ async function loadBaptismalRecords(page = 1) {
             }
 
             const birthDetails = `Born: ${new Date(record.birth_date).toLocaleDateString()}<br>Place: ${record.birth_place}`;
-
+            
             const row = document.createElement('tr');
-            const parentsCell = document.createElement('td');
-            parentsInfo.forEach((info, index) => {
-                parentsCell.appendChild(document.createTextNode(info));
-                if (index < parentsInfo.length - 1) {
-                    parentsCell.appendChild(document.createElement('br'));
-                }
-            });
+            row.innerHTML = `
+                <td>${htmlEscape(record.name)}</td>
+                <td>${htmlEscape(record.address)}</td>
+                <td>${birthDetails}</td>
+                <td>${parentsInfo.join('<br>')}</td>
+                <td>${new Date(record.baptism_date).toLocaleDateString()}</td>
+                <td>${htmlEscape(record.minister)}</td>
+                <td>${htmlEscape(record.sponsors || '')}</td>
+                <td>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-info" onclick="viewBaptismalRecord(${record.id})">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="editBaptismalRecord(${record.id})">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteBaptismalRecord(${record.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
 
             row.innerHTML = `
                 <td>${htmlEscape(record.name)}</td>

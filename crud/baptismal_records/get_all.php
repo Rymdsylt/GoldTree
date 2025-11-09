@@ -47,7 +47,7 @@ try {
     }
 
 
-    $countQuery = "SELECT COUNT(*) as total FROM baptismal_records $whereClause";
+    $countQuery = "SELECT COUNT(DISTINCT br.id) as total FROM baptismal_records br $whereClause";
     $countStmt = $conn->prepare($countQuery);
     foreach ($params as $key => $value) {
         $countStmt->bindValue($key, $value);
@@ -56,7 +56,13 @@ try {
     $totalRecords = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
     $totalPages = ceil($totalRecords / $limit);
 
-    $query = "SELECT * FROM baptismal_records $whereClause ORDER BY baptism_date DESC LIMIT :limit OFFSET :offset";
+    $query = "SELECT br.*, GROUP_CONCAT(bs.name SEPARATOR ', ') as sponsors 
+             FROM baptismal_records br 
+             LEFT JOIN baptismal_sponsors bs ON br.id = bs.record_id 
+             $whereClause 
+             GROUP BY br.id 
+             ORDER BY br.baptism_date DESC LIMIT :limit OFFSET :offset";
+    
     $stmt = $conn->prepare($query);
     $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
