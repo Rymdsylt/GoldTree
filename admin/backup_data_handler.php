@@ -144,7 +144,7 @@ function handleExport() {
         $json = json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         error_log('Export: JSON size: ' . strlen($json) . ' bytes');
         
-        exit($json);
+        exit($json); //
         
     } catch (Throwable $e) {
         error_log('Export error: ' . $e->getMessage());
