@@ -154,22 +154,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             throw new Exception('Could not read uploaded file');
         }
 
-        // Parse and execute SQL statements
-        $statements = preg_split('/;(?=(?:[^\']*\'[^\']*\')*[^\']*$)/', $file_content);
+        error_log('Import file size: ' . strlen($file_content) . ' bytes');
+
+        // Split by semicolon but respect quoted strings
+        // Remove comments first
+        $lines = explode("\n", $file_content);
+        $cleanedContent = '';
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+            // Skip comment lines and empty lines
+            if (empty($trimmed) || strpos($trimmed, '--') === 0) {
+                continue;
+            }
+            $cleanedContent .= $line . "\n";
+        }
+
+        // Now split statements by semicolon
+        $statements = array_filter(array_map('trim', explode(';', $cleanedContent)));
+
+        error_log('Found ' . count($statements) . ' SQL statements to execute');
 
         $executed = 0;
-        foreach ($statements as $statement) {
-            $statement = trim($statement);
-            if (!empty($statement) && !preg_match('/^--/', $statement)) {
-                // Skip comment lines
+        $errors = [];
+        
+        foreach ($statements as $index => $statement) {
+            if (empty($statement)) {
+                continue;
+            }
+            
+            try {
+                error_log('Executing statement ' . ($index + 1) . ': ' . substr($statement, 0, 100) . '...');
                 $conn->exec($statement);
                 $executed++;
+            } catch (Exception $e) {
+                $errors[] = 'Statement ' . ($index + 1) . ': ' . $e->getMessage();
+                error_log('Error executing statement ' . ($index + 1) . ': ' . $e->getMessage());
             }
+        }
+
+        if ($executed === 0 && count($statements) > 0) {
+            throw new Exception('No statements were executed. File may be invalid or empty.');
+        }
+
+        $message = "Database imported successfully! ($executed statements executed)";
+        if (!empty($errors)) {
+            $message .= " with " . count($errors) . " errors";
+            error_log('Import errors: ' . json_encode($errors));
         }
 
         echo json_encode([
             'success' => true,
-            'message' => "Database imported successfully! ($executed statements executed)"
+            'message' => $message,
+            'executed' => $executed,
+            'errors' => $errors
         ]);
         exit;
     } catch (Exception $e) {

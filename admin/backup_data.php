@@ -332,21 +332,30 @@ async function importDatabase() {
     try {
         console.log('Starting import...');
         console.log('Handler URL:', handlerUrl);
+        console.log('File selected:', fileInput.files[0].name, 'Size:', fileInput.files[0].size);
+        
         const formData = new FormData();
         formData.append('action', 'import');
         formData.append('backup_file', fileInput.files[0]);
         
+        // 10 minute timeout for import
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 600000);
+        
         const response = await fetch(handlerUrl, {
             method: 'POST',
             body: formData,
-            credentials: 'same-origin'
+            credentials: 'same-origin',
+            signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
         
         console.log('Response status:', response.status);
         
         if (!response.ok) {
             const text = await response.text();
-            console.log('Error response:', text);
+            console.error('Error response:', text);
             throw new Error(`HTTP error! status: ${response.status} - ${text}`);
         }
         
@@ -359,17 +368,26 @@ async function importDatabase() {
         }
         
         const data = JSON.parse(text);
-        console.log('Response data keys:', Object.keys(data));
+        console.log('Response data:', data);
         
         if (data.success) {
-            showAlert(data.message, 'success');
+            let message = data.message;
+            if (data.errors && data.errors.length > 0) {
+                message += '<br><strong>Errors encountered:</strong><br>' + data.errors.join('<br>');
+            }
+            showAlert(message, 'success');
             fileInput.value = '';
         } else {
             showAlert('Import failed: ' + data.error, 'danger');
         }
     } catch (error) {
-        console.error('Import error:', error);
-        showAlert('Import error: ' + error.message, 'danger');
+        if (error.name === 'AbortError') {
+            console.error('Import timeout: Database import exceeded 10 minute limit');
+            showAlert('Import timed out after 10 minutes. Database may be too large.', 'danger');
+        } else {
+            console.error('Import error:', error);
+            showAlert('Import error: ' + error.message, 'danger');
+        }
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-upload"></i> Import Database';
