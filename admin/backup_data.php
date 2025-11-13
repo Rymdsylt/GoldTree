@@ -21,7 +21,7 @@ require_once '../config.php';
 require_once '../templates/admin_header.php';
 ?>
 
-<div class="fade-in">
+    <div class="fade-in">
     <div class="mb-4">
         <h2 class="mb-3"><i class="bi bi-cloud-arrow-up-down"></i> Backup Data</h2>
         <p class="text-muted">Export your database or import a previously saved backup</p>
@@ -108,6 +108,109 @@ require_once '../templates/admin_header.php';
     </div>
 </div>
 
+</main>
+<script src="<?php echo BASE_PATH; ?>js/bootstrap.bundle.min.js"></script>
+<style>
+    .fade-in {
+        animation: fadeIn 0.3s ease-in;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .admin-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .admin-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+
+    .btn {
+        font-weight: 500;
+        border-radius: 6px;
+    }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .card-title {
+        margin-bottom: 0.75rem;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .card-text {
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    @media (max-width: 768px) {
+        .row.g-4 {
+            gap: 1rem !important;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .mb-4 {
+            margin-bottom: 1.5rem !important;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+        }
+
+        .card {
+            margin-bottom: 1rem;
+        }
+
+        .col-md-6 {
+            margin-bottom: 0.5rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        h2 {
+            font-size: 1.25rem;
+        }
+
+        .card-title {
+            font-size: 1rem;
+        }
+
+        .btn {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+        }
+
+        .alert {
+            padding: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .row {
+            gap: 0.75rem !important;
+        }
+    }
+</style>
 <script>
 async function exportDatabase() {
     const btn = document.getElementById('exportBtn');
@@ -211,3 +314,6 @@ function showAlert(message, type) {
     `;
     alertContainer.innerHTML = alertHTML;
 }
+</script>
+</body>
+</html>
