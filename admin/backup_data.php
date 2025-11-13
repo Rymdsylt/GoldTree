@@ -246,23 +246,34 @@ async function exportDatabase() {
         
         console.log('FormData action:', formData.get('action'));
         
+        // 10 minute timeout with AbortController
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 600000);
+        
         const response = await fetch(handlerUrl, {
             method: 'POST',
             body: formData,
-            credentials: 'same-origin'
+            credentials: 'same-origin',
+            signal: controller.signal
         });
         
+        clearTimeout(timeoutId);
+        
         console.log('Response status:', response.status);
+        console.log('Response headers:', {
+            contentType: response.headers.get('content-type'),
+            contentLength: response.headers.get('content-length')
+        });
         
         if (!response.ok) {
             const text = await response.text();
-            console.log('Error response:', text);
-            throw new Error(`HTTP error! status: ${response.status} - ${text}`);
+            console.error('Error response:', text);
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const text = await response.text();
         console.log('Response text length:', text.length);
-        console.log('Response text:', text);
+        console.log('Response text (first 300 chars):', text.substring(0, 300));
         
         if (!text) {
             throw new Error('Empty response from server');
@@ -273,7 +284,7 @@ async function exportDatabase() {
         
         if (data.success) {
             // Create blob and download
-            const blob = new Blob([data.data], { type: 'application/sql' });
+            const blob = new Blob([data.data], { type: 'text/plain;charset=utf-8' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -288,8 +299,13 @@ async function exportDatabase() {
             showAlert('Export failed: ' + data.error, 'danger');
         }
     } catch (error) {
-        console.error('Export error:', error);
-        showAlert('Export error: ' + error.message, 'danger');
+        if (error.name === 'AbortError') {
+            console.error('Export timeout: Database export exceeded 10 minute limit');
+            showAlert('Export timed out after 10 minutes. Database may be too large.', 'danger');
+        } else {
+            console.error('Export error:', error);
+            showAlert('Export error: ' + error.message, 'danger');
+        }
     } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-download"></i> Export Database';

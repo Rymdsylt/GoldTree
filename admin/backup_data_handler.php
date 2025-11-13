@@ -46,6 +46,7 @@ error_log('REQUEST_CONTENT_TYPE: ' . ($_SERVER['CONTENT_TYPE'] ?? 'NOT SET'));
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'export') {
     try {
         error_log('Starting database export...');
+        set_time_limit(600); // 10 minute timeout for export
         
         // Get all tables
         $tables = [];
@@ -56,12 +57,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         error_log('Found ' . count($tables) . ' tables');
 
-        // Build SQL dump
+        // Build SQL dump more efficiently
         $dump = "-- GoldTree Database Backup\n";
         $dump .= "-- Generated: " . date('Y-m-d H:i:s') . "\n";
-        $dump .= "-- Database: " . DB_NAME . "\n\n";
+        $dump .= "-- Database: " . DB_NAME . "\n";
+        $dump .= "-- Tables: " . count($tables) . "\n\n";
 
-        foreach ($tables as $table) {
+        foreach ($tables as $index => $table) {
+            error_log('Exporting table ' . ($index + 1) . '/' . count($tables) . ': ' . $table);
+            
             // Get CREATE TABLE statement
             $createResult = $conn->query("SHOW CREATE TABLE `$table`");
             $createRow = $createResult->fetch(PDO::FETCH_NUM);
@@ -69,26 +73,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $dump .= "DROP TABLE IF EXISTS `$table`;\n";
             $dump .= $createRow[1] . ";\n\n";
 
-            // Get table data
-            $dataResult = $conn->query("SELECT * FROM `$table`");
-            $rows = $dataResult->fetchAll(PDO::FETCH_ASSOC);
+            // Get table data in chunks if very large
+            $dataResult = $conn->query("SELECT COUNT(*) as cnt FROM `$table`");
+            $countRow = $dataResult->fetch(PDO::FETCH_ASSOC);
+            $rowCount = $countRow['cnt'];
+            
+            if ($rowCount > 0) {
+                error_log('  - Exporting ' . $rowCount . ' rows from ' . $table);
+                
+                // Fetch in chunks for very large tables
+                $chunkSize = 1000;
+                $offset = 0;
+                
+                while ($offset < $rowCount) {
+                    $dataResult = $conn->query("SELECT * FROM `$table` LIMIT " . $chunkSize . " OFFSET " . $offset);
+                    $rows = $dataResult->fetchAll(PDO::FETCH_ASSOC);
+                    
+                    if (empty($rows)) break;
+                    
+                    $columns = array_keys($rows[0]);
+                    $columnList = '`' . implode('`, `', $columns) . '`';
 
-            if (!empty($rows)) {
-                $columns = array_keys($rows[0]);
-                $columnList = '`' . implode('`, `', $columns) . '`';
-
-                foreach ($rows as $row) {
-                    $values = [];
-                    foreach ($row as $value) {
-                        if ($value === null) {
-                            $values[] = 'NULL';
-                        } else {
-                            // Ensure valid UTF-8
-                            $cleanValue = ensureUtf8($value);
-                            $values[] = "'" . str_replace("'", "''", $cleanValue) . "'";
+                    foreach ($rows as $row) {
+                        $values = [];
+                        foreach ($row as $value) {
+                            if ($value === null) {
+                                $values[] = 'NULL';
+                            } else {
+                                // Ensure valid UTF-8
+                                $cleanValue = ensureUtf8($value);
+                                $values[] = "'" . str_replace("'", "''", $cleanValue) . "'";
+                            }
                         }
+                        $dump .= "INSERT INTO `$table` ($columnList) VALUES (" . implode(', ', $values) . ");\n";
                     }
-                    $dump .= "INSERT INTO `$table` ($columnList) VALUES (" . implode(', ', $values) . ");\n";
+                    
+                    $offset += $chunkSize;
                 }
                 $dump .= "\n";
             }
