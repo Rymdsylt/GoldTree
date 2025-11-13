@@ -242,7 +242,7 @@ async function exportDatabase() {
         console.log('Handler URL:', handlerUrl);
         
         const formData = new FormData();
-        formData.append('action', 'export');
+        formData.append('action', 'export'); //
         
         console.log('FormData action:', formData.get('action'));
         
