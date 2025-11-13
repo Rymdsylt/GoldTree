@@ -127,12 +127,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         }
         
         error_log('Export response sent - JSON size: ' . strlen($json) . ' bytes');
+        header('Content-Length: ' . strlen($json));
         echo $json;
+        flush();
         exit;
     } catch (Exception $e) {
         error_log('Export exception: ' . $e->getMessage());
         http_response_code(400);
-        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        $error_response = json_encode(['success' => false, 'error' => $e->getMessage()]);
+        header('Content-Length: ' . strlen($error_response));
+        echo $error_response;
+        flush();
         exit;
     }
 }
@@ -204,13 +209,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             'errors' => $errors
         ];
         
-        error_log('Import response: ' . json_encode($response));
-        echo json_encode($response);
+        $json = json_encode($response);
+        error_log('Import response: ' . $json);
+        header('Content-Length: ' . strlen($json));
+        echo $json;
+        flush();
         exit;
     } catch (Exception $e) {
         error_log('Import exception: ' . $e->getMessage());
         http_response_code(400);
-        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        $error_response = json_encode(['success' => false, 'error' => $e->getMessage()]);
+        header('Content-Length: ' . strlen($error_response));
+        echo $error_response;
+        flush();
         exit;
     }
 }
