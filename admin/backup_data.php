@@ -39,7 +39,7 @@ require_once '../templates/admin_header.php';
                     </h5>
                     <p class="card-text text-muted">Download a complete backup of your database including all tables and data.</p>
                     <div class="mt-4">
-                        <button type="button" class="btn btn-success w-100" id="exportBtn" onclick="exportDatabase()" data-handler="<?php echo BASE_PATH; ?>admin/backup_data_handler.php">
+                        <button type="button" class="btn btn-success w-100" id="exportBtn" data-handler="<?php echo BASE_PATH; ?>admin/backup_data_handler.php">
                             <i class="bi bi-download"></i> Export Database
                         </button>
                     </div>
@@ -71,7 +71,7 @@ require_once '../templates/admin_header.php';
                             <input type="file" class="form-control" id="backup_file" accept=".sql">
                             <small class="text-muted d-block mt-2">Accepted formats: .sql files only</small>
                         </div>
-                        <button type="button" class="btn btn-warning w-100" id="importBtn" onclick="importDatabase()" data-handler="<?php echo BASE_PATH; ?>admin/backup_data_handler.php">
+                        <button type="button" class="btn btn-warning w-100" id="importBtn" data-handler="<?php echo BASE_PATH; ?>admin/backup_data_handler.php">
                             <i class="bi bi-upload"></i> Import Database
                         </button>
                     </div>
@@ -212,6 +212,19 @@ require_once '../templates/admin_header.php';
     }
 </style>
 <script>
+// Initialize event listeners when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    const exportBtn = document.getElementById('exportBtn');
+    const importBtn = document.getElementById('importBtn');
+    
+    if (exportBtn) {
+        exportBtn.addEventListener('click', exportDatabase);
+    }
+    if (importBtn) {
+        importBtn.addEventListener('click', importDatabase);
+    }
+});
+
 async function exportDatabase() {
     const btn = document.getElementById('exportBtn');
     const handlerUrl = btn.getAttribute('data-handler');
