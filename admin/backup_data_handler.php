@@ -1,6 +1,8 @@
 <?php
-require_once __DIR__ . '/../config.php';
+session_start();
+require_once __DIR__ . '/../auth/login_status.php';
 require_once __DIR__ . '/../db/connection.php';
+require_once __DIR__ . '/../config.php';
 
 // Verify admin status
 if (!isset($_SESSION['user_id'])) {

@@ -1,7 +1,24 @@
 <?php
-require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../db/connection.php';
-require_once __DIR__ . '/../templates/admin_header.php';
+session_start();
+require_once '../auth/login_status.php';
+require_once '../db/connection.php';
+
+if (!isset($_SESSION['user_id'])){
+    header("Location: ../login.php");
+    exit();
+}
+
+$stmt = $conn->prepare("SELECT admin_status FROM users WHERE id = ?");
+$stmt->execute([$_SESSION['user_id']]);
+$user = $stmt->fetch();
+
+if (!$user || $user['admin_status'] != 1) {
+    header("Location: ../dashboard.php");
+    exit();
+}
+
+require_once '../config.php';
+require_once '../templates/admin_header.php';
 ?>
 
 <div class="fade-in">
