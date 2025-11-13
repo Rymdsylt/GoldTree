@@ -2,8 +2,9 @@
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../db/connection.php';
 
-// Handle export
+// Handle AJAX export request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'export') {
+    header('Content-Type: application/json');
     try {
         // Get all tables
         $tables = [];
@@ -39,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         if ($value === null) {
                             $values[] = 'NULL';
                         } else {
-                            $values[] = "'" . $conn->quote(trim($value)) . "'";
+                            $values[] = "'" . str_replace("'", "''", $value) . "'";
                         }
                     }
                     $dump .= "INSERT INTO `$table` ($columnList) VALUES (" . implode(', ', $values) . ");\n";
@@ -48,18 +49,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             }
         }
 
-        // Send as download
-        header('Content-Type: application/sql');
-        header('Content-Disposition: attachment; filename="goldtree_backup_' . date('Y-m-d_H-i-s') . '.sql"');
-        echo $dump;
+        echo json_encode([
+            'success' => true,
+            'data' => $dump,
+            'filename' => 'goldtree_backup_' . date('Y-m-d_H-i-s') . '.sql'
+        ]);
         exit;
     } catch (Exception $e) {
-        $error = "Export failed: " . $e->getMessage();
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        exit;
     }
 }
 
-// Handle import
+// Handle AJAX import request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'import') {
+    header('Content-Type: application/json');
     try {
         if (!isset($_FILES['backup_file']) || $_FILES['backup_file']['error'] !== UPLOAD_ERR_OK) {
             throw new Exception('No file uploaded or upload error occurred');
@@ -73,21 +78,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         // Parse and execute SQL statements
         $statements = preg_split('/;(?=(?:[^\']*\'[^\']*\')*[^\']*$)/', $file_content);
 
+        $executed = 0;
         foreach ($statements as $statement) {
             $statement = trim($statement);
             if (!empty($statement) && !preg_match('/^--/', $statement)) {
                 // Skip comment lines
                 $conn->exec($statement);
+                $executed++;
             }
         }
 
-        $success = "Database imported successfully!";
+        echo json_encode([
+            'success' => true,
+            'message' => "Database imported successfully! ($executed statements executed)"
+        ]);
+        exit;
     } catch (Exception $e) {
-        $error = "Import failed: " . $e->getMessage();
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        exit;
     }
 }
 
-// Now include header (after handling POST requests)
+// Include header for page display
 require_once __DIR__ . '/../templates/admin_header.php';
 ?>
 
@@ -97,19 +110,7 @@ require_once __DIR__ . '/../templates/admin_header.php';
         <p class="text-muted">Export your database or import a previously saved backup</p>
     </div>
 
-    <?php if (isset($success)): ?>
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="bi bi-check-circle"></i> <?php echo htmlspecialchars($success); ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endif; ?>
-
-    <?php if (isset($error)): ?>
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="bi bi-exclamation-triangle"></i> <?php echo htmlspecialchars($error); ?>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <?php endif; ?>
+    <div id="alertContainer"></div>
 
     <div class="row g-4">
         <!-- Export Section -->
@@ -120,12 +121,12 @@ require_once __DIR__ . '/../templates/admin_header.php';
                         <i class="bi bi-cloud-download"></i> Export Data
                     </h5>
                     <p class="card-text text-muted">Download a complete backup of your database including all tables and data.</p>
-                    <form method="POST" class="mt-4">
-                        <input type="hidden" name="action" value="export">
-                        <button type="submit" class="btn btn-success w-100">
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-success w-100" id="exportBtn" onclick="exportDatabase()">
                             <i class="bi bi-download"></i> Export Database
                         </button>
-                    </form>
+                    </div>
+                    </div>
                     <div class="mt-3 p-3 bg-light rounded">
                         <small class="text-muted">
                             <strong>Includes:</strong><br>
@@ -147,17 +148,16 @@ require_once __DIR__ . '/../templates/admin_header.php';
                         <i class="bi bi-cloud-upload"></i> Import Data
                     </h5>
                     <p class="card-text text-muted">Restore your database from a previously exported backup file.</p>
-                    <form method="POST" enctype="multipart/form-data" class="mt-4">
-                        <input type="hidden" name="action" value="import">
+                    <div class="mt-4">
                         <div class="mb-3">
                             <label for="backup_file" class="form-label">Select Backup File</label>
-                            <input type="file" class="form-control" id="backup_file" name="backup_file" accept=".sql" required>
+                            <input type="file" class="form-control" id="backup_file" accept=".sql">
                             <small class="text-muted d-block mt-2">Accepted formats: .sql files only</small>
                         </div>
-                        <button type="submit" class="btn btn-warning w-100" onclick="return confirm('⚠️ WARNING: This will replace all current data. Are you sure?')">
+                        <button type="button" class="btn btn-warning w-100" id="importBtn" onclick="importDatabase()">
                             <i class="bi bi-upload"></i> Import Database
                         </button>
-                    </form>
+                    </div>
                     <div class="mt-3 p-3 bg-light rounded">
                         <small class="text-muted">
                             <strong>Note:</strong> Importing will replace all existing data.<br>
@@ -191,7 +191,104 @@ require_once __DIR__ . '/../templates/admin_header.php';
     </div>
 </div>
 
-</main>
-<script src="<?php echo BASE_PATH; ?>js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<script>
+async function exportDatabase() {
+    const btn = document.getElementById('exportBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Exporting...';
+    
+    try {
+        console.log('Starting export...');
+        const formData = new FormData();
+        formData.append('action', 'export');
+        
+        const response = await fetch(window.location.href, {
+            method: 'POST',
+            body: formData
+        });
+        
+        console.log('Response status:', response.status);
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        if (data.success) {
+            // Create blob and download
+            const blob = new Blob([data.data], { type: 'application/sql' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = data.filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            showAlert('Database exported successfully!', 'success');
+        } else {
+            showAlert('Export failed: ' + data.error, 'danger');
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        showAlert('Export error: ' + error.message, 'danger');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-download"></i> Export Database';
+    }
+}
+
+async function importDatabase() {
+    const fileInput = document.getElementById('backup_file');
+    const btn = document.getElementById('importBtn');
+    
+    if (!fileInput.files.length) {
+        showAlert('Please select a backup file', 'warning');
+        return;
+    }
+    
+    if (!confirm('⚠️ WARNING: This will replace all current data. Are you sure?')) {
+        return;
+    }
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Importing...';
+    
+    try {
+        console.log('Starting import...');
+        const formData = new FormData();
+        formData.append('action', 'import');
+        formData.append('backup_file', fileInput.files[0]);
+        
+        const response = await fetch(window.location.href, {
+            method: 'POST',
+            body: formData
+        });
+        
+        console.log('Response status:', response.status);
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        if (data.success) {
+            showAlert(data.message, 'success');
+            fileInput.value = '';
+        } else {
+            showAlert('Import failed: ' + data.error, 'danger');
+        }
+    } catch (error) {
+        console.error('Import error:', error);
+        showAlert('Import error: ' + error.message, 'danger');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-upload"></i> Import Database';
+    }
+}
+
+function showAlert(message, type) {
+    const alertContainer = document.getElementById('alertContainer');
+    const alertHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : 'info-circle'}"></i> ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    alertContainer.innerHTML = alertHTML;
+}
