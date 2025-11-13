@@ -174,6 +174,14 @@ function handleImport() {
         
         error_log('Import: File size: ' . strlen($file_content) . ' bytes');
         
+        // Disable foreign key checks during import
+        error_log('Import: Disabling foreign key checks');
+        try {
+            $conn->exec('SET FOREIGN_KEY_CHECKS=0');
+        } catch (Throwable $e) {
+            error_log('Import: Could not disable foreign keys: ' . $e->getMessage());
+        }
+        
         // Simple and robust SQL parsing using explode by lines
         $lines = explode("\n", $file_content);
         $statements = [];
@@ -199,25 +207,29 @@ function handleImport() {
             }
         }
         
-        error_log('Import: Found ' . count($statements) . ' statements');
+        error_log('Import: Found ' . count($statements) . ' total statements');
         
         // Separate DROP and other statements
         $drop_stmts = [];
         $other_stmts = [];
         
         foreach ($statements as $stmt) {
-            // Trim and normalize whitespace
-            $stmt = preg_replace('/\s+/', ' ', $stmt);
-            if (stripos(trim($stmt), 'DROP TABLE') === 0) {
-                $drop_stmts[] = $stmt;
+            // Normalize whitespace
+            $normalized = preg_replace('/\s+/', ' ', trim($stmt));
+            error_log('Import: Statement: ' . substr($normalized, 0, 80));
+            
+            if (stripos($normalized, 'DROP TABLE') === 0) {
+                error_log('Import: Found DROP TABLE statement');
+                $drop_stmts[] = $normalized;
             } else {
-                $other_stmts[] = $stmt;
+                $other_stmts[] = $normalized;
             }
         }
         
+        error_log('Import: Sorted into ' . count($drop_stmts) . ' DROP statements and ' . count($other_stmts) . ' other statements');
+        
         // Execute drops first
         $all_stmts = array_merge($drop_stmts, $other_stmts);
-        error_log('Import: Executing ' . count($drop_stmts) . ' DROP statements and ' . count($other_stmts) . ' other statements');
         
         $executed = 0;
         $errors = [];
@@ -228,14 +240,23 @@ function handleImport() {
             }
             
             try {
-                error_log('Import: Statement ' . ($index + 1) . ' - ' . substr($statement, 0, 100));
-                $result = $conn->exec($statement);
+                error_log('Import: [' . ($index + 1) . '/' . count($all_stmts) . '] Executing: ' . substr($statement, 0, 100));
+                $conn->exec($statement);
                 $executed++;
+                error_log('Import: [' . ($index + 1) . '] SUCCESS');
             } catch (Throwable $e) {
                 $msg = $e->getMessage();
-                error_log('Import: Error on statement ' . ($index + 1) . ': ' . $msg);
-                $errors[] = $msg;
+                error_log('Import: [' . ($index + 1) . '] ERROR: ' . $msg);
+                $errors[] = 'Statement ' . ($index + 1) . ': ' . $msg;
             }
+        }
+        
+        // Re-enable foreign key checks
+        error_log('Import: Re-enabling foreign key checks');
+        try {
+            $conn->exec('SET FOREIGN_KEY_CHECKS=1');
+        } catch (Throwable $e) {
+            error_log('Import: Could not re-enable foreign keys: ' . $e->getMessage());
         }
         
         error_log('Import: Completed - ' . $executed . ' executed, ' . count($errors) . ' errors');
