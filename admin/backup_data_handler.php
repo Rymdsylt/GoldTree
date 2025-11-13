@@ -174,19 +174,62 @@ function handleImport() {
         
         error_log('Import: File size: ' . strlen($file_content) . ' bytes');
         
-        // Parse SQL statements
-        $lines = explode("\n", $file_content);
-        $cleanedContent = '';
-        foreach ($lines as $line) {
-            $trimmed = trim($line);
-            if (empty($trimmed) || strpos($trimmed, '--') === 0) {
-                continue;
+        // Parse SQL statements - split by semicolon but keep quoted content intact
+        $statements = [];
+        $current_statement = '';
+        $in_quote = false;
+        $quote_char = '';
+        
+        for ($i = 0; $i < strlen($file_content); $i++) {
+            $char = $file_content[$i];
+            $next_char = $i + 1 < strlen($file_content) ? $file_content[$i + 1] : '';
+            
+            // Handle quotes
+            if (($char === '"' || $char === "'") && ($i === 0 || $file_content[$i-1] !== '\\')) {
+                if (!$in_quote) {
+                    $in_quote = true;
+                    $quote_char = $char;
+                } elseif ($char === $quote_char) {
+                    $in_quote = false;
+                }
             }
-            $cleanedContent .= $line . "\n";
+            
+            // Handle statement terminator
+            if ($char === ';' && !$in_quote) {
+                $stmt = trim($current_statement);
+                // Skip comments and empty statements
+                if (!empty($stmt) && strpos($stmt, '--') !== 0 && strpos($stmt, '/*') !== 0) {
+                    $statements[] = $stmt;
+                }
+                $current_statement = '';
+            } else {
+                $current_statement .= $char;
+            }
         }
         
-        $statements = array_filter(array_map('trim', explode(';', $cleanedContent)));
+        // Add any remaining statement
+        $stmt = trim($current_statement);
+        if (!empty($stmt) && strpos($stmt, '--') !== 0 && strpos($stmt, '/*') !== 0) {
+            $statements[] = $stmt;
+        }
+        
         error_log('Import: Found ' . count($statements) . ' statements');
+        
+        // Sort statements so DROP TABLE comes first
+        $drop_statements = [];
+        $other_statements = [];
+        
+        foreach ($statements as $stmt) {
+            if (stripos(trim($stmt), 'DROP TABLE') === 0) {
+                $drop_statements[] = $stmt;
+            } else {
+                $other_statements[] = $stmt;
+            }
+        }
+        
+        // Execute DROP statements first, then others
+        $statements = array_merge($drop_statements, $other_statements);
+        error_log('Import: Sorted ' . count($drop_statements) . ' DROP statements and ' . count($other_statements) . ' other statements');
         
         $executed = 0;
         $errors = [];
@@ -197,7 +240,7 @@ function handleImport() {
             }
             
             try {
-                error_log('Import: Executing statement ' . ($index + 1) . '/' . count($statements));
+                error_log('Import: Executing statement ' . ($index + 1) . '/' . count($statements) . ': ' . substr($statement, 0, 80));
                 $conn->exec($statement);
                 $executed++;
             } catch (Throwable $e) {
