@@ -1,36 +1,32 @@
 <?php
-// Set strict error handling
+// Disable error display, log instead
 ini_set('display_errors', '0');
 error_reporting(E_ALL);
 
-// Start output buffering at the very beginning to catch any accidental output
-ob_start();
-
-// Start session and set header first
+// Start session FIRST before any output
 session_start();
+
+// Set JSON header
 header('Content-Type: application/json; charset=utf-8');
 
-// Require essentials
+// Require configs
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../db/connection.php';
 
-// Verify admin status
+// Check authentication
 if (!isset($_SESSION['user_id'])) {
-    ob_end_clean();
     http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-    exit;
+    exit(json_encode(['success' => false, 'error' => 'Unauthorized']));
 }
 
+// Check admin status
 $stmt = $conn->prepare("SELECT admin_status FROM users WHERE id = ?");
 $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch();
 
 if (!$user || $user['admin_status'] != 1) {
-    ob_end_clean();
     http_response_code(403);
-    echo json_encode(['success' => false, 'error' => 'Forbidden - Admin access required']);
-    exit;
+    exit(json_encode(['success' => false, 'error' => 'Forbidden - Admin access required']));
 }
 
 // Helper function to ensure valid UTF-8
@@ -41,16 +37,35 @@ function ensureUtf8($str) {
     return $str;
 }
 
-// Log the request for debugging
-error_log('Handler called - Method: ' . $_SERVER['REQUEST_METHOD'] . ', POST action: ' . ($_POST['action'] ?? 'NOT SET'));
-error_log('POST data: ' . json_encode($_POST));
-error_log('REQUEST_CONTENT_TYPE: ' . ($_SERVER['CONTENT_TYPE'] ?? 'NOT SET'));
+// Log the request
+error_log('Handler called - Method: ' . $_SERVER['REQUEST_METHOD'] . ', Action: ' . ($_POST['action'] ?? 'NONE'));
 
-// Handle AJAX export request
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'export') {
+// Route the request
+$action = $_POST['action'] ?? null;
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    exit(json_encode(['success' => false, 'error' => 'Method not allowed']));
+}
+
+if ($action === 'export') {
+    handleExport();
+} elseif ($action === 'import') {
+    handleImport();
+} else {
+    http_response_code(400);
+    exit(json_encode(['success' => false, 'error' => 'Invalid action']));
+}
+
+/**
+ * Handle database export
+ */
+function handleExport() {
+    global $conn;
+    
     try {
         error_log('Starting database export...');
-        set_time_limit(600); // 10 minute timeout for export
+        set_time_limit(600);
         
         // Get all tables
         $tables = [];
@@ -58,15 +73,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         while ($row = $result->fetch(PDO::FETCH_NUM)) {
             $tables[] = $row[0];
         }
-
+        
         error_log('Found ' . count($tables) . ' tables');
-
-        // Build SQL dump more efficiently
+        
+        // Build SQL dump
         $dump = "-- GoldTree Database Backup\n";
         $dump .= "-- Generated: " . date('Y-m-d H:i:s') . "\n";
         $dump .= "-- Database: " . DB_NAME . "\n";
         $dump .= "-- Tables: " . count($tables) . "\n\n";
-
+        
         foreach ($tables as $index => $table) {
             error_log('Exporting table ' . ($index + 1) . '/' . count($tables) . ': ' . $table);
             
@@ -76,8 +91,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $dump .= "\n-- Table: `$table`\n";
             $dump .= "DROP TABLE IF EXISTS `$table`;\n";
             $dump .= $createRow[1] . ";\n\n";
-
-            // Get table data in chunks if very large
+            
+            // Get row count
             $dataResult = $conn->query("SELECT COUNT(*) as cnt FROM `$table`");
             $countRow = $dataResult->fetch(PDO::FETCH_ASSOC);
             $rowCount = $countRow['cnt'];
@@ -85,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             if ($rowCount > 0) {
                 error_log('  - Exporting ' . $rowCount . ' rows from ' . $table);
                 
-                // Fetch in chunks for very large tables
+                // Fetch in chunks
                 $chunkSize = 1000;
                 $offset = 0;
                 
@@ -97,14 +112,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     
                     $columns = array_keys($rows[0]);
                     $columnList = '`' . implode('`, `', $columns) . '`';
-
+                    
                     foreach ($rows as $row) {
                         $values = [];
                         foreach ($row as $value) {
                             if ($value === null) {
                                 $values[] = 'NULL';
                             } else {
-                                // Ensure valid UTF-8
                                 $cleanValue = ensureUtf8($value);
                                 $values[] = "'" . str_replace("'", "''", $cleanValue) . "'";
                             }
@@ -114,13 +128,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     
                     $offset += $chunkSize;
                 }
-                $dump .= "\n";
             }
         }
-
+        
         error_log('Dump size: ' . strlen($dump) . ' bytes');
-
-        // Ensure the entire dump is valid UTF-8
         $dump = ensureUtf8($dump);
         
         $response = [
@@ -129,60 +140,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             'filename' => 'goldtree_backup_' . date('Y-m-d_H-i-s') . '.sql'
         ];
         
+        error_log('Export: Building JSON response...');
         $json = json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        error_log('Export: JSON size: ' . strlen($json) . ' bytes');
         
-        if ($json === false) {
-            throw new Exception('JSON encoding failed: ' . json_last_error_msg());
-        }
-        
-        error_log('Export response sent - JSON size: ' . strlen($json) . ' bytes');
-        ob_end_clean();
         header('Content-Length: ' . strlen($json));
-        echo $json;
-        exit;
-    } catch (Exception $e) {
-        error_log('Export exception: ' . $e->getMessage());
-        ob_end_clean();
+        exit($json);
+        
+    } catch (Throwable $e) {
+        error_log('Export error: ' . $e->getMessage());
         http_response_code(400);
-        $error_response = json_encode(['success' => false, 'error' => $e->getMessage()]);
-        header('Content-Length: ' . strlen($error_response));
-        echo $error_response;
-        exit;
+        exit(json_encode(['success' => false, 'error' => 'Export error: ' . $e->getMessage()]));
     }
 }
 
-// Handle AJAX import request
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'import') {
+/**
+ * Handle database import
+ */
+function handleImport() {
+    global $conn;
+    
     try {
+        error_log('Starting database import...');
+        
         if (!isset($_FILES['backup_file']) || $_FILES['backup_file']['error'] !== UPLOAD_ERR_OK) {
-            throw new Exception('No file uploaded or upload error occurred');
+            throw new Exception('No file uploaded or upload error');
         }
-
+        
         $file_content = file_get_contents($_FILES['backup_file']['tmp_name']);
         if ($file_content === false) {
             throw new Exception('Could not read uploaded file');
         }
-
-        error_log('Import file size: ' . strlen($file_content) . ' bytes');
-
-        // Split by semicolon but respect quoted strings
-        // Remove comments first
+        
+        error_log('Import: File size: ' . strlen($file_content) . ' bytes');
+        
+        // Parse SQL statements
         $lines = explode("\n", $file_content);
         $cleanedContent = '';
         foreach ($lines as $line) {
             $trimmed = trim($line);
-            // Skip comment lines and empty lines
             if (empty($trimmed) || strpos($trimmed, '--') === 0) {
                 continue;
             }
             $cleanedContent .= $line . "\n";
         }
-
-        // Now split statements by semicolon
+        
         $statements = array_filter(array_map('trim', explode(';', $cleanedContent)));
-
-        error_log('Found ' . count($statements) . ' SQL statements to execute');
-
+        error_log('Import: Found ' . count($statements) . ' statements');
+        
         $executed = 0;
         $errors = [];
         
@@ -192,28 +197,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             }
             
             try {
-                error_log('Executing statement ' . ($index + 1) . ': ' . substr($statement, 0, 100) . '...');
+                error_log('Import: Executing statement ' . ($index + 1) . '/' . count($statements));
                 $conn->exec($statement);
                 $executed++;
-            } catch (PDOException $e) {
-                $errors[] = 'Statement ' . ($index + 1) . ': ' . $e->getMessage();
-                error_log('Error executing statement ' . ($index + 1) . ': ' . $e->getMessage());
             } catch (Throwable $e) {
                 $errors[] = 'Statement ' . ($index + 1) . ': ' . $e->getMessage();
-                error_log('Error executing statement ' . ($index + 1) . ': ' . $e->getMessage());
+                error_log('Import: Statement error: ' . $e->getMessage());
             }
         }
-
-        if ($executed === 0 && count($statements) > 0) {
-            throw new Exception('No statements were executed. File may be invalid or empty.');
-        }
-
+        
+        error_log('Import: Executed ' . $executed . ' statements, ' . count($errors) . ' errors');
+        
         $message = "Database imported successfully! ($executed statements executed)";
         if (!empty($errors)) {
             $message .= " with " . count($errors) . " errors";
-            error_log('Import errors: ' . json_encode($errors));
         }
-
+        
         $response = [
             'success' => true,
             'message' => $message,
@@ -221,34 +220,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             'errors' => $errors
         ];
         
+        error_log('Import: Building JSON response...');
         $json = json_encode($response);
-        error_log('Import response: ' . $json);
-        ob_end_clean();
+        error_log('Import: JSON response: ' . $json);
+        
         header('Content-Length: ' . strlen($json));
-        echo $json;
-        exit;
-    } catch (PDOException $e) {
-        error_log('Import PDO exception: ' . $e->getMessage());
-        ob_end_clean();
-        http_response_code(400);
-        $error_response = json_encode(['success' => false, 'error' => 'Database error: ' . $e->getMessage()]);
-        header('Content-Length: ' . strlen($error_response));
-        echo $error_response;
-        exit;
+        exit($json);
+        
     } catch (Throwable $e) {
-        error_log('Import exception: ' . $e->getMessage());
-        ob_end_clean();
+        error_log('Import error: ' . $e->getMessage());
         http_response_code(400);
-        $error_response = json_encode(['success' => false, 'error' => $e->getMessage()]);
-        header('Content-Length: ' . strlen($error_response));
-        echo $error_response;
-        exit;
+        exit(json_encode(['success' => false, 'error' => 'Import error: ' . $e->getMessage()]));
     }
 }
-
-// No valid action
-error_log('No valid action provided. POST: ' . json_encode($_POST));
-ob_end_clean();
-http_response_code(400);
-echo json_encode(['success' => false, 'error' => 'No valid action provided']);
 ?>
