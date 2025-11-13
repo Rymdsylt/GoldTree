@@ -1,4 +1,11 @@
 <?php
+// Set strict error handling
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+
+// Start output buffering at the very beginning to catch any accidental output
+ob_start();
+
 // Start session and set header first
 session_start();
 header('Content-Type: application/json; charset=utf-8');
@@ -9,6 +16,7 @@ require_once __DIR__ . '/../db/connection.php';
 
 // Verify admin status
 if (!isset($_SESSION['user_id'])) {
+    ob_end_clean();
     http_response_code(401);
     echo json_encode(['success' => false, 'error' => 'Unauthorized']);
     exit;
@@ -19,6 +27,7 @@ $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch();
 
 if (!$user || $user['admin_status'] != 1) {
+    ob_end_clean();
     http_response_code(403);
     echo json_encode(['success' => false, 'error' => 'Forbidden - Admin access required']);
     exit;
@@ -127,17 +136,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         }
         
         error_log('Export response sent - JSON size: ' . strlen($json) . ' bytes');
+        ob_end_clean();
         header('Content-Length: ' . strlen($json));
         echo $json;
-        flush();
         exit;
     } catch (Exception $e) {
         error_log('Export exception: ' . $e->getMessage());
+        ob_end_clean();
         http_response_code(400);
         $error_response = json_encode(['success' => false, 'error' => $e->getMessage()]);
         header('Content-Length: ' . strlen($error_response));
         echo $error_response;
-        flush();
         exit;
     }
 }
@@ -186,7 +195,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 error_log('Executing statement ' . ($index + 1) . ': ' . substr($statement, 0, 100) . '...');
                 $conn->exec($statement);
                 $executed++;
-            } catch (Exception $e) {
+            } catch (PDOException $e) {
+                $errors[] = 'Statement ' . ($index + 1) . ': ' . $e->getMessage();
+                error_log('Error executing statement ' . ($index + 1) . ': ' . $e->getMessage());
+            } catch (Throwable $e) {
                 $errors[] = 'Statement ' . ($index + 1) . ': ' . $e->getMessage();
                 error_log('Error executing statement ' . ($index + 1) . ': ' . $e->getMessage());
             }
@@ -211,23 +223,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         
         $json = json_encode($response);
         error_log('Import response: ' . $json);
+        ob_end_clean();
         header('Content-Length: ' . strlen($json));
         echo $json;
-        flush();
         exit;
-    } catch (Exception $e) {
+    } catch (PDOException $e) {
+        error_log('Import PDO exception: ' . $e->getMessage());
+        ob_end_clean();
+        http_response_code(400);
+        $error_response = json_encode(['success' => false, 'error' => 'Database error: ' . $e->getMessage()]);
+        header('Content-Length: ' . strlen($error_response));
+        echo $error_response;
+        exit;
+    } catch (Throwable $e) {
         error_log('Import exception: ' . $e->getMessage());
+        ob_end_clean();
         http_response_code(400);
         $error_response = json_encode(['success' => false, 'error' => $e->getMessage()]);
         header('Content-Length: ' . strlen($error_response));
         echo $error_response;
-        flush();
         exit;
     }
 }
 
 // No valid action
 error_log('No valid action provided. POST: ' . json_encode($_POST));
+ob_end_clean();
 http_response_code(400);
 echo json_encode(['success' => false, 'error' => 'No valid action provided']);
 ?>
