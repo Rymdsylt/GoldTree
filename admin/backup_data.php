@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../db/connection.php';
-require_once __DIR__ . '/../templates/admin_header.php';
 
 // Handle export
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'export') {
@@ -87,6 +86,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $error = "Import failed: " . $e->getMessage();
     }
 }
+
+// Now include header (after handling POST requests)
+require_once __DIR__ . '/../templates/admin_header.php';
 ?>
 
 <div class="fade-in">
@@ -190,6 +192,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 </div>
 
 </main>
-<script src="<?php echo base_path('js/bootstrap.bundle.min.js'); ?>"></script>
+<script src="<?php echo BASE_PATH; ?>js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
