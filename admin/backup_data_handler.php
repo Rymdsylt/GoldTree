@@ -1,10 +1,7 @@
 <?php
-// Start output buffering to catch any stray output
-ob_start();
-
 // Start session and set header first
 session_start();
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 
 // Require essentials
 require_once __DIR__ . '/../config.php';
@@ -12,7 +9,6 @@ require_once __DIR__ . '/../db/connection.php';
 
 // Verify admin status
 if (!isset($_SESSION['user_id'])) {
-    ob_end_clean();
     http_response_code(401);
     echo json_encode(['success' => false, 'error' => 'Unauthorized']);
     exit;
@@ -23,7 +19,6 @@ $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch();
 
 if (!$user || $user['admin_status'] != 1) {
-    ob_end_clean();
     http_response_code(403);
     echo json_encode(['success' => false, 'error' => 'Forbidden - Admin access required']);
     exit;
@@ -131,15 +126,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             throw new Exception('JSON encoding failed: ' . json_last_error_msg());
         }
         
-        // Clear output buffer and send response
-        ob_end_clean();
-        header('Content-Length: ' . strlen($json));
-        echo $json;
         error_log('Export response sent - JSON size: ' . strlen($json) . ' bytes');
+        echo $json;
         exit;
     } catch (Exception $e) {
         error_log('Export exception: ' . $e->getMessage());
-        ob_end_clean();
         http_response_code(400);
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         exit;
@@ -214,14 +205,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         ];
         
         error_log('Import response: ' . json_encode($response));
-        
-        // Clear output buffer and send response
-        ob_end_clean();
         echo json_encode($response);
         exit;
     } catch (Exception $e) {
         error_log('Import exception: ' . $e->getMessage());
-        ob_end_clean();
         http_response_code(400);
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         exit;
