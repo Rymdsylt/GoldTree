@@ -84,6 +84,30 @@ require_once '../templates/admin_header.php';
                 </div>
             </div>
         </div>
+
+        <!-- Delete All Data Section -->
+        <div class="col-md-6">
+            <div class="card admin-card border-danger">
+                <div class="card-body">
+                    <h5 class="card-title text-danger">
+                        <i class="bi bi-trash"></i> Delete All Data
+                    </h5>
+                    <p class="card-text text-muted">Permanently delete all database records. The root admin account will be preserved.</p>
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-danger w-100" id="deleteBtn">
+                            <i class="bi bi-exclamation-triangle"></i> Delete All Data
+                        </button>
+                    </div>
+                    <div class="mt-3 p-3 bg-danger bg-opacity-10 rounded">
+                        <small class="text-danger">
+                            <strong>Warning:</strong> This action is irreversible.<br>
+                            <strong>Preserved:</strong> Root admin account only<br>
+                            <strong>Deleted:</strong> All members, events, donations, records, etc.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Information Section -->
@@ -216,12 +240,16 @@ require_once '../templates/admin_header.php';
 document.addEventListener('DOMContentLoaded', function() {
     const exportBtn = document.getElementById('exportBtn');
     const importBtn = document.getElementById('importBtn');
+    const deleteBtn = document.getElementById('deleteBtn');
     
     if (exportBtn) {
         exportBtn.addEventListener('click', exportDatabase);
     }
     if (importBtn) {
         importBtn.addEventListener('click', importDatabase);
+    }
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', deleteAllData);
     }
 });
 
@@ -367,7 +395,7 @@ async function importDatabase() {
             // If response is empty but HTTP 200, treat as success
             // The import probably worked even if response is empty
             console.log('Empty response received, but HTTP 200 status - treating as success');
-            showAlert('Database imported successfully! (Response received but empty)', 'success');
+            showAlert('Database imported successfully!', 'success');
             fileInput.value = '';
             return;
         }
@@ -408,6 +436,82 @@ function showAlert(message, type) {
         </div>
     `;
     alertContainer.innerHTML = alertHTML;
+}
+
+async function deleteAllData() {
+    const btn = document.getElementById('deleteBtn');
+    const handlerUrl = getHandlerUrl();
+    
+    // Multiple confirmation steps for this dangerous action
+    if (!confirm('⚠️ WARNING: This will DELETE ALL DATA except the root admin account.\n\nAre you sure you want to continue?')) {
+        return;
+    }
+    
+    if (!confirm('⚠️ FINAL WARNING: This action is IRREVERSIBLE. All members, events, donations, and records will be permanently deleted.\n\nClick OK to confirm you understand this will be permanent:')) {
+        return;
+    }
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Deleting...';
+    
+    try {
+        console.log('Starting data deletion...');
+        console.log('Handler URL:', handlerUrl);
+        
+        const formData = new FormData();
+        formData.append('action', 'delete_all');
+        
+        // 5 minute timeout for deletion
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 300000);
+        
+        const response = await fetch(handlerUrl, {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin',
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            const text = await response.text();
+            console.error('Error response:', text);
+            throw new Error(`HTTP error! status: ${response.status} - ${text}`);
+        }
+        
+        const text = await response.text();
+        console.log('Response text length:', text.length);
+        console.log('Response text:', text);
+        
+        if (!text) {
+            console.log('Empty response received, but HTTP 200 status - treating as success');
+            showAlert('All data deleted successfully! Root admin account preserved.', 'success');
+            return;
+        }
+        
+        const data = JSON.parse(text);
+        console.log('Response data:', data);
+        
+        if (data.success) {
+            showAlert(data.message, 'success');
+        } else {
+            showAlert('Deletion failed: ' + data.error, 'danger');
+        }
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            console.error('Deletion timeout');
+            showAlert('Deletion timed out. Please try again.', 'danger');
+        } else {
+            console.error('Deletion error:', error);
+            showAlert('Deletion error: ' + error.message, 'danger');
+        }
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-trash"></i> Delete All Data';
+    }
 }
 </script>
 </body>

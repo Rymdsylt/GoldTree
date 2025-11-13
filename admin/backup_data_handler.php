@@ -66,6 +66,8 @@ if ($action === 'export') {
     handleExport();
 } elseif ($action === 'import') {
     handleImport();
+} elseif ($action === 'delete_all') {
+    handleDeleteAll();
 } else {
     http_response_code(400);
     exit(json_encode(['success' => false, 'error' => 'Invalid action']));
@@ -303,6 +305,113 @@ function handleImport() {
         // Write error to flag file
         global $flag_file;
         $error_response = ['success' => false, 'error' => 'Import error: ' . $e->getMessage()];
+        file_put_contents($flag_file, json_encode($error_response));
+        
+        exit(json_encode($error_response));
+    }
+}
+
+/**
+ * Handle delete all data (except root admin)
+ */
+function handleDeleteAll() {
+    global $conn, $flag_file;
+    
+    try {
+        error_log('Starting delete all data operation...');
+        set_time_limit(300);
+        
+        // Disable foreign key checks to allow deletion
+        error_log('DeleteAll: Disabling foreign key checks');
+        try {
+            $conn->exec('SET FOREIGN_KEY_CHECKS=0');
+        } catch (Throwable $e) {
+            error_log('DeleteAll: Could not disable foreign keys: ' . $e->getMessage());
+        }
+        
+        // Get all tables
+        $tables = [];
+        $result = $conn->query("SHOW TABLES");
+        while ($row = $result->fetch(PDO::FETCH_NUM)) {
+            $tables[] = $row[0];
+        }
+        
+        error_log('DeleteAll: Found ' . count($tables) . ' tables to process');
+        
+        $deleted_count = 0;
+        $errors = [];
+        
+        foreach ($tables as $table) {
+            try {
+                error_log('DeleteAll: Processing table: ' . $table);
+                
+                // For users table, only delete non-root users
+                if ($table === 'users') {
+                    error_log('DeleteAll: Clearing users table except root');
+                    $stmt = $conn->prepare("DELETE FROM $table WHERE username != ?");
+                    $stmt->execute(['root']);
+                    $deleted_count += $stmt->rowCount();
+                    error_log('DeleteAll: Deleted ' . $stmt->rowCount() . ' user records');
+                }
+                // For members table, delete all
+                elseif ($table === 'members') {
+                    error_log('DeleteAll: Clearing members table');
+                    $conn->exec("DELETE FROM `$table`");
+                    $deleted_count += $conn->query("SELECT FOUND_ROWS()")->fetchColumn();
+                    error_log('DeleteAll: Cleared members table');
+                }
+                // For all other tables, delete all records
+                else {
+                    error_log('DeleteAll: Clearing table: ' . $table);
+                    $conn->exec("DELETE FROM `$table`");
+                    $deleted_count += $conn->query("SELECT FOUND_ROWS()")->fetchColumn();
+                    error_log('DeleteAll: Cleared table: ' . $table);
+                }
+            } catch (Throwable $e) {
+                $msg = 'Error clearing table ' . $table . ': ' . $e->getMessage();
+                error_log('DeleteAll: ' . $msg);
+                $errors[] = $msg;
+            }
+        }
+        
+        // Re-enable foreign key checks
+        error_log('DeleteAll: Re-enabling foreign key checks');
+        try {
+            $conn->exec('SET FOREIGN_KEY_CHECKS=1');
+        } catch (Throwable $e) {
+            error_log('DeleteAll: Could not re-enable foreign keys: ' . $e->getMessage());
+        }
+        
+        error_log('DeleteAll: Operation completed - ' . $deleted_count . ' records deleted, ' . count($errors) . ' errors');
+        
+        $message = "All data deleted successfully! ($deleted_count records removed) Root admin account preserved.";
+        if (!empty($errors)) {
+            $message .= " (" . count($errors) . " errors encountered)";
+        }
+        
+        $response = [
+            'success' => true,
+            'message' => $message,
+            'deleted' => $deleted_count,
+            'errors' => $errors
+        ];
+        
+        // Write response to flag file
+        file_put_contents($flag_file, json_encode($response));
+        error_log('DeleteAll: Wrote response to flag file: ' . $flag_file);
+        
+        // Send response via JSON
+        $json = json_encode($response);
+        error_log('DeleteAll: Response JSON - ' . $json);
+        exit($json);
+        
+    } catch (Throwable $e) {
+        error_log('DeleteAll error: ' . $e->getMessage());
+        http_response_code(400);
+        
+        // Write error to flag file
+        global $flag_file;
+        $error_response = ['success' => false, 'error' => 'Delete operation failed: ' . $e->getMessage()];
         file_put_contents($flag_file, json_encode($error_response));
         
         exit(json_encode($error_response));
