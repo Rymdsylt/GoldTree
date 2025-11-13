@@ -144,7 +144,6 @@ function handleExport() {
         $json = json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         error_log('Export: JSON size: ' . strlen($json) . ' bytes');
         
-        header('Content-Length: ' . strlen($json));
         exit($json);
         
     } catch (Throwable $e) {
@@ -274,7 +273,7 @@ function handleImport() {
         ];
         
         $json = json_encode($response);
-        header('Content-Length: ' . strlen($json));
+        error_log('Import: Response JSON - ' . $json);
         exit($json);
         
     } catch (Throwable $e) {
