@@ -39,7 +39,7 @@ require_once '../templates/admin_header.php';
                     </h5>
                     <p class="card-text text-muted">Download a complete backup of your database including all tables and data.</p>
                     <div class="mt-4">
-                        <button type="button" class="btn btn-success w-100" id="exportBtn" data-handler="<?php echo BASE_PATH; ?>admin/backup_data_handler.php">
+                        <button type="button" class="btn btn-success w-100" id="exportBtn">
                             <i class="bi bi-download"></i> Export Database
                         </button>
                     </div>
@@ -71,7 +71,7 @@ require_once '../templates/admin_header.php';
                             <input type="file" class="form-control" id="backup_file" accept=".sql">
                             <small class="text-muted d-block mt-2">Accepted formats: .sql files only</small>
                         </div>
-                        <button type="button" class="btn btn-warning w-100" id="importBtn" data-handler="<?php echo BASE_PATH; ?>admin/backup_data_handler.php">
+                        <button type="button" class="btn btn-warning w-100" id="importBtn">
                             <i class="bi bi-upload"></i> Import Database
                         </button>
                     </div>
@@ -225,23 +225,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Get the handler URL - construct from current page location
+function getHandlerUrl() {
+    // Use relative path from current directory
+    return './backup_data_handler.php';
+}
+
 async function exportDatabase() {
     const btn = document.getElementById('exportBtn');
-    const handlerUrl = btn.getAttribute('data-handler');
+    const handlerUrl = getHandlerUrl();
     btn.disabled = true;
     btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Exporting...';
     
     try {
         console.log('Starting export...');
+        console.log('Handler URL:', handlerUrl);
         const formData = new FormData();
         formData.append('action', 'export');
         
         const response = await fetch(handlerUrl, {
             method: 'POST',
-            body: formData
+            body: formData,
+            credentials: 'same-origin'
         });
         
         console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         console.log('Response data:', data);
         
@@ -273,7 +286,7 @@ async function exportDatabase() {
 async function importDatabase() {
     const fileInput = document.getElementById('backup_file');
     const btn = document.getElementById('importBtn');
-    const handlerUrl = btn.getAttribute('data-handler');
+    const handlerUrl = getHandlerUrl();
     
     if (!fileInput.files.length) {
         showAlert('Please select a backup file', 'warning');
@@ -289,16 +302,23 @@ async function importDatabase() {
     
     try {
         console.log('Starting import...');
+        console.log('Handler URL:', handlerUrl);
         const formData = new FormData();
         formData.append('action', 'import');
         formData.append('backup_file', fileInput.files[0]);
         
         const response = await fetch(handlerUrl, {
             method: 'POST',
-            body: formData
+            body: formData,
+            credentials: 'same-origin'
         });
         
         console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         console.log('Response data:', data);
         
