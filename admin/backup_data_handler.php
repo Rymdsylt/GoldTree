@@ -1,11 +1,18 @@
 <?php
+// Start output buffering to catch any stray output
+ob_start();
+
+// Start session and set header first
 session_start();
-require_once __DIR__ . '/../auth/login_status.php';
-require_once __DIR__ . '/../db/connection.php';
+header('Content-Type: application/json');
+
+// Require essentials
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../db/connection.php';
 
 // Verify admin status
 if (!isset($_SESSION['user_id'])) {
+    ob_end_clean();
     http_response_code(401);
     echo json_encode(['success' => false, 'error' => 'Unauthorized']);
     exit;
@@ -16,12 +23,14 @@ $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch();
 
 if (!$user || $user['admin_status'] != 1) {
+    ob_end_clean();
     http_response_code(403);
     echo json_encode(['success' => false, 'error' => 'Forbidden - Admin access required']);
     exit;
 }
 
-header('Content-Type: application/json');
+// Clear any buffered output
+ob_end_clean();
 
 // Handle AJAX export request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'export') {
