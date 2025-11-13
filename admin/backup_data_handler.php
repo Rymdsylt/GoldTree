@@ -32,15 +32,22 @@ if (!$user || $user['admin_status'] != 1) {
 // Clear any buffered output
 ob_end_clean();
 
+// Log the request for debugging
+error_log('Handler called - Method: ' . $_SERVER['REQUEST_METHOD'] . ', POST action: ' . ($_POST['action'] ?? 'NOT SET'));
+
 // Handle AJAX export request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'export') {
     try {
+        error_log('Starting database export...');
+        
         // Get all tables
         $tables = [];
         $result = $conn->query("SHOW TABLES");
         while ($row = $result->fetch(PDO::FETCH_NUM)) {
             $tables[] = $row[0];
         }
+
+        error_log('Found ' . count($tables) . ' tables');
 
         // Build SQL dump
         $dump = "-- GoldTree Database Backup\n";
@@ -78,11 +85,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             }
         }
 
-        echo json_encode([
+        error_log('Dump size: ' . strlen($dump) . ' bytes');
+
+        $response = [
             'success' => true,
             'data' => $dump,
             'filename' => 'goldtree_backup_' . date('Y-m-d_H-i-s') . '.sql'
-        ]);
+        ];
+        
+        echo json_encode($response);
+        error_log('Export response sent');
         exit;
     } catch (Exception $e) {
         http_response_code(400);
@@ -129,6 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // No valid action
+error_log('No valid action provided. POST: ' . json_encode($_POST));
 http_response_code(400);
 echo json_encode(['success' => false, 'error' => 'No valid action provided']);
 ?>
