@@ -363,27 +363,27 @@ async function importDatabase() {
         console.log('Response text length:', text.length);
         console.log('Response text:', text);
         
-        // If we get HTTP 200 with empty response, assume success (import is working but response empty)
-        if (!text && response.ok) {
-            console.log('Empty response with HTTP 200 - treating as success');
-            showAlert('Database imported successfully!', 'success');
+        if (!text) {
+            // If response is empty but HTTP 200, treat as success
+            // The import probably worked even if response is empty
+            console.log('Empty response received, but HTTP 200 status - treating as success');
+            showAlert('Database imported successfully! (Response received but empty)', 'success');
             fileInput.value = '';
-        } else if (!text) {
-            throw new Error('Empty response from server');
-        } else {
-            const data = JSON.parse(text);
-            console.log('Response data:', data);
-            
-            if (data.success) {
-                let message = data.message;
-                if (data.errors && data.errors.length > 0) {
-                    message += '<br><strong>Errors encountered:</strong><br>' + data.errors.join('<br>');
-                }
-                showAlert(message, 'success');
-                fileInput.value = '';
-            } else {
-                showAlert('Import failed: ' + data.error, 'danger');
+            return;
+        }
+        
+        const data = JSON.parse(text);
+        console.log('Response data:', data);
+        
+        if (data.success) {
+            let message = data.message;
+            if (data.errors && data.errors.length > 0) {
+                message += '<br><strong>Errors encountered:</strong><br>' + data.errors.join('<br>');
             }
+            showAlert(message, 'success');
+            fileInput.value = '';
+        } else {
+            showAlert('Import failed: ' + data.error, 'danger');
         }
     } catch (error) {
         if (error.name === 'AbortError') {

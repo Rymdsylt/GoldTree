@@ -9,6 +9,20 @@ session_start();
 // Set JSON header
 header('Content-Type: application/json; charset=utf-8');
 
+// Define flag file path for storing responses
+$flag_dir = sys_get_temp_dir();
+$flag_file = $flag_dir . '/goldtree_import_response_' . session_id() . '.json';
+
+// Cleanup old flag files
+$cleanup_files = glob($flag_dir . '/goldtree_import_response_*.json');
+if ($cleanup_files) {
+    foreach ($cleanup_files as $old_file) {
+        if (filemtime($old_file) < time() - 300) { // older than 5 minutes
+            @unlink($old_file);
+        }
+    }
+}
+
 // Require configs
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../db/connection.php';
@@ -272,6 +286,12 @@ function handleImport() {
             'errors' => $errors
         ];
         
+        // Write response to flag file
+        global $flag_file;
+        file_put_contents($flag_file, json_encode($response));
+        error_log('Import: Wrote response to flag file: ' . $flag_file);
+        
+        // Send response via JSON
         $json = json_encode($response);
         error_log('Import: Response JSON - ' . $json);
         exit($json);
@@ -279,7 +299,13 @@ function handleImport() {
     } catch (Throwable $e) {
         error_log('Import error: ' . $e->getMessage());
         http_response_code(400);
-        exit(json_encode(['success' => false, 'error' => 'Import error: ' . $e->getMessage()]));
+        
+        // Write error to flag file
+        global $flag_file;
+        $error_response = ['success' => false, 'error' => 'Import error: ' . $e->getMessage()];
+        file_put_contents($flag_file, json_encode($error_response));
+        
+        exit(json_encode($error_response));
     }
 }
 ?>
