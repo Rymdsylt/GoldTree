@@ -131,11 +131,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             throw new Exception('JSON encoding failed: ' . json_last_error_msg());
         }
         
+        // Clear output buffer and send response
+        ob_end_clean();
         header('Content-Length: ' . strlen($json));
         echo $json;
         error_log('Export response sent - JSON size: ' . strlen($json) . ' bytes');
         exit;
     } catch (Exception $e) {
+        error_log('Export exception: ' . $e->getMessage());
+        ob_end_clean();
         http_response_code(400);
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         exit;
@@ -202,14 +206,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             error_log('Import errors: ' . json_encode($errors));
         }
 
-        echo json_encode([
+        $response = [
             'success' => true,
             'message' => $message,
             'executed' => $executed,
             'errors' => $errors
-        ]);
+        ];
+        
+        error_log('Import response: ' . json_encode($response));
+        
+        // Clear output buffer and send response
+        ob_end_clean();
+        echo json_encode($response);
         exit;
     } catch (Exception $e) {
+        error_log('Import exception: ' . $e->getMessage());
+        ob_end_clean();
         http_response_code(400);
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         exit;
