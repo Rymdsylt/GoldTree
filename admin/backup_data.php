@@ -240,8 +240,11 @@ async function exportDatabase() {
     try {
         console.log('Starting export...');
         console.log('Handler URL:', handlerUrl);
+        
         const formData = new FormData();
         formData.append('action', 'export');
+        
+        console.log('FormData action:', formData.get('action'));
         
         const response = await fetch(handlerUrl, {
             method: 'POST',
@@ -252,12 +255,14 @@ async function exportDatabase() {
         console.log('Response status:', response.status);
         
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const text = await response.text();
+            console.log('Error response:', text);
+            throw new Error(`HTTP error! status: ${response.status} - ${text}`);
         }
         
         const text = await response.text();
         console.log('Response text length:', text.length);
-        console.log('Response text (first 500 chars):', text.substring(0, 500));
+        console.log('Response text:', text);
         
         if (!text) {
             throw new Error('Empty response from server');
@@ -324,11 +329,21 @@ async function importDatabase() {
         console.log('Response status:', response.status);
         
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const text = await response.text();
+            console.log('Error response:', text);
+            throw new Error(`HTTP error! status: ${response.status} - ${text}`);
         }
         
-        const data = await response.json();
-        console.log('Response data:', data);
+        const text = await response.text();
+        console.log('Response text length:', text.length);
+        console.log('Response text:', text);
+        
+        if (!text) {
+            throw new Error('Empty response from server');
+        }
+        
+        const data = JSON.parse(text);
+        console.log('Response data keys:', Object.keys(data));
         
         if (data.success) {
             showAlert(data.message, 'success');

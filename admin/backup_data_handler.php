@@ -34,6 +34,8 @@ ob_end_clean();
 
 // Log the request for debugging
 error_log('Handler called - Method: ' . $_SERVER['REQUEST_METHOD'] . ', POST action: ' . ($_POST['action'] ?? 'NOT SET'));
+error_log('POST data: ' . json_encode($_POST));
+error_log('REQUEST_CONTENT_TYPE: ' . ($_SERVER['CONTENT_TYPE'] ?? 'NOT SET'));
 
 // Handle AJAX export request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'export') {
