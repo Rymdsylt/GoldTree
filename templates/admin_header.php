@@ -266,6 +266,9 @@ if (!$user || $user['admin_status'] != 1) {
                 <a href="<?php echo base_path('admin/sacramental_records.php'); ?>" class="sidebar-link <?php echo $current_page == 'sacramental_records.php' ? 'active' : ''; ?>">
                     <i class="bi bi-journal-text"></i> Sacramental Records
                 </a>
+                <a href="<?php echo base_path('admin/backup_data.php'); ?>" class="sidebar-link <?php echo $current_page == 'backup_data.php' ? 'active' : ''; ?>">
+                    <i class="bi bi-cloud-arrow-up-down"></i> Backup Data
+                </a>
             </nav>
         </div>
     </div>    <!-- Main Content Container -->
