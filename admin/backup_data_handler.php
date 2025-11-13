@@ -29,8 +29,13 @@ if (!$user || $user['admin_status'] != 1) {
     exit;
 }
 
-// Clear any buffered output
-ob_end_clean();
+// Helper function to ensure valid UTF-8
+function ensureUtf8($str) {
+    if (is_string($str)) {
+        return mb_convert_encoding($str, 'UTF-8', 'UTF-8');
+    }
+    return $str;
+}
 
 // Log the request for debugging
 error_log('Handler called - Method: ' . $_SERVER['REQUEST_METHOD'] . ', POST action: ' . ($_POST['action'] ?? 'NOT SET'));
@@ -78,7 +83,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         if ($value === null) {
                             $values[] = 'NULL';
                         } else {
-                            $values[] = "'" . str_replace("'", "''", $value) . "'";
+                            // Ensure valid UTF-8
+                            $cleanValue = ensureUtf8($value);
+                            $values[] = "'" . str_replace("'", "''", $cleanValue) . "'";
                         }
                     }
                     $dump .= "INSERT INTO `$table` ($columnList) VALUES (" . implode(', ', $values) . ");\n";
@@ -89,13 +96,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         error_log('Dump size: ' . strlen($dump) . ' bytes');
 
+        // Ensure the entire dump is valid UTF-8
+        $dump = ensureUtf8($dump);
+        
         $response = [
             'success' => true,
             'data' => $dump,
             'filename' => 'goldtree_backup_' . date('Y-m-d_H-i-s') . '.sql'
         ];
         
-        $json = json_encode($response);
+        $json = json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         
         if ($json === false) {
             throw new Exception('JSON encoding failed: ' . json_last_error_msg());
