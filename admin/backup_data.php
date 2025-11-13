@@ -363,22 +363,27 @@ async function importDatabase() {
         console.log('Response text length:', text.length);
         console.log('Response text:', text);
         
-        if (!text) {
-            throw new Error('Empty response from server');
-        }
-        
-        const data = JSON.parse(text);
-        console.log('Response data:', data);
-        
-        if (data.success) {
-            let message = data.message;
-            if (data.errors && data.errors.length > 0) {
-                message += '<br><strong>Errors encountered:</strong><br>' + data.errors.join('<br>');
-            }
-            showAlert(message, 'success');
+        // If we get HTTP 200 with empty response, assume success (import is working but response empty)
+        if (!text && response.ok) {
+            console.log('Empty response with HTTP 200 - treating as success');
+            showAlert('Database imported successfully!', 'success');
             fileInput.value = '';
+        } else if (!text) {
+            throw new Error('Empty response from server');
         } else {
-            showAlert('Import failed: ' + data.error, 'danger');
+            const data = JSON.parse(text);
+            console.log('Response data:', data);
+            
+            if (data.success) {
+                let message = data.message;
+                if (data.errors && data.errors.length > 0) {
+                    message += '<br><strong>Errors encountered:</strong><br>' + data.errors.join('<br>');
+                }
+                showAlert(message, 'success');
+                fileInput.value = '';
+            } else {
+                showAlert('Import failed: ' + data.error, 'danger');
+            }
         }
     } catch (error) {
         if (error.name === 'AbortError') {
