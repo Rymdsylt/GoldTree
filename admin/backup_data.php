@@ -255,8 +255,16 @@ async function exportDatabase() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        const data = await response.json();
-        console.log('Response data:', data);
+        const text = await response.text();
+        console.log('Response text length:', text.length);
+        console.log('Response text (first 500 chars):', text.substring(0, 500));
+        
+        if (!text) {
+            throw new Error('Empty response from server');
+        }
+        
+        const data = JSON.parse(text);
+        console.log('Response data keys:', Object.keys(data));
         
         if (data.success) {
             // Create blob and download

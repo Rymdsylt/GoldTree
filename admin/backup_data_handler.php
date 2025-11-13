@@ -93,8 +93,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             'filename' => 'goldtree_backup_' . date('Y-m-d_H-i-s') . '.sql'
         ];
         
-        echo json_encode($response);
-        error_log('Export response sent');
+        $json = json_encode($response);
+        
+        if ($json === false) {
+            throw new Exception('JSON encoding failed: ' . json_last_error_msg());
+        }
+        
+        header('Content-Length: ' . strlen($json));
+        echo $json;
+        error_log('Export response sent - JSON size: ' . strlen($json) . ' bytes');
         exit;
     } catch (Exception $e) {
         http_response_code(400);
