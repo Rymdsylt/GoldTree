@@ -174,82 +174,71 @@ function handleImport() {
         
         error_log('Import: File size: ' . strlen($file_content) . ' bytes');
         
-        // Parse SQL statements - split by semicolon but keep quoted content intact
+        // Simple and robust SQL parsing using explode by lines
+        $lines = explode("\n", $file_content);
         $statements = [];
-        $current_statement = '';
-        $in_quote = false;
-        $quote_char = '';
+        $current = '';
         
-        for ($i = 0; $i < strlen($file_content); $i++) {
-            $char = $file_content[$i];
-            $next_char = $i + 1 < strlen($file_content) ? $file_content[$i + 1] : '';
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
             
-            // Handle quotes
-            if (($char === '"' || $char === "'") && ($i === 0 || $file_content[$i-1] !== '\\')) {
-                if (!$in_quote) {
-                    $in_quote = true;
-                    $quote_char = $char;
-                } elseif ($char === $quote_char) {
-                    $in_quote = false;
-                }
+            // Skip empty lines and comments
+            if (empty($trimmed) || substr($trimmed, 0, 2) === '--') {
+                continue;
             }
             
-            // Handle statement terminator
-            if ($char === ';' && !$in_quote) {
-                $stmt = trim($current_statement);
-                // Skip comments and empty statements
-                if (!empty($stmt) && strpos($stmt, '--') !== 0 && strpos($stmt, '/*') !== 0) {
+            $current .= $line . "\n";
+            
+            // Check if line ends with semicolon
+            if (substr($trimmed, -1) === ';') {
+                $stmt = trim(str_replace("\n", ' ', $current));
+                if (!empty($stmt)) {
                     $statements[] = $stmt;
                 }
-                $current_statement = '';
-            } else {
-                $current_statement .= $char;
+                $current = '';
             }
-        }
-        
-        // Add any remaining statement
-        $stmt = trim($current_statement);
-        if (!empty($stmt) && strpos($stmt, '--') !== 0 && strpos($stmt, '/*') !== 0) {
-            $statements[] = $stmt;
         }
         
         error_log('Import: Found ' . count($statements) . ' statements');
         
-        // Sort statements so DROP TABLE comes first
-        $drop_statements = [];
-        $other_statements = [];
+        // Separate DROP and other statements
+        $drop_stmts = [];
+        $other_stmts = [];
         
         foreach ($statements as $stmt) {
+            // Trim and normalize whitespace
+            $stmt = preg_replace('/\s+/', ' ', $stmt);
             if (stripos(trim($stmt), 'DROP TABLE') === 0) {
-                $drop_statements[] = $stmt;
+                $drop_stmts[] = $stmt;
             } else {
-                $other_statements[] = $stmt;
+                $other_stmts[] = $stmt;
             }
         }
         
-        // Execute DROP statements first, then others
-        $statements = array_merge($drop_statements, $other_statements);
-        error_log('Import: Sorted ' . count($drop_statements) . ' DROP statements and ' . count($other_statements) . ' other statements');
+        // Execute drops first
+        $all_stmts = array_merge($drop_stmts, $other_stmts);
+        error_log('Import: Executing ' . count($drop_stmts) . ' DROP statements and ' . count($other_stmts) . ' other statements');
         
         $executed = 0;
         $errors = [];
         
-        foreach ($statements as $index => $statement) {
-            if (empty($statement)) {
+        foreach ($all_stmts as $index => $statement) {
+            if (empty(trim($statement))) {
                 continue;
             }
             
             try {
-                error_log('Import: Executing statement ' . ($index + 1) . '/' . count($statements) . ': ' . substr($statement, 0, 80));
-                $conn->exec($statement);
+                error_log('Import: Statement ' . ($index + 1) . ' - ' . substr($statement, 0, 100));
+                $result = $conn->exec($statement);
                 $executed++;
             } catch (Throwable $e) {
-                $errors[] = 'Statement ' . ($index + 1) . ': ' . $e->getMessage();
-                error_log('Import: Statement error: ' . $e->getMessage());
+                $msg = $e->getMessage();
+                error_log('Import: Error on statement ' . ($index + 1) . ': ' . $msg);
+                $errors[] = $msg;
             }
         }
         
-        error_log('Import: Executed ' . $executed . ' statements, ' . count($errors) . ' errors');
+        error_log('Import: Completed - ' . $executed . ' executed, ' . count($errors) . ' errors');
         
         $message = "Database imported successfully! ($executed statements executed)";
         if (!empty($errors)) {
@@ -263,10 +252,7 @@ function handleImport() {
             'errors' => $errors
         ];
         
-        error_log('Import: Building JSON response...');
         $json = json_encode($response);
-        error_log('Import: JSON response: ' . $json);
-        
         header('Content-Length: ' . strlen($json));
         exit($json);
         
