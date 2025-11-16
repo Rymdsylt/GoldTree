@@ -144,7 +144,17 @@ if (!$user || $user['admin_status'] != 1) {
 
         @media (max-width: 768px) {
             .admin-sidebar {
-                display: none;
+                position: fixed;
+                top: var(--header-height);
+                left: 0;
+                width: 280px;
+                max-width: 85vw;
+                height: calc(100vh - var(--header-height));
+                background: var(--white);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+                z-index: 1001;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease-in-out;
             }
 
             .collapse.navbar-collapse {
@@ -159,21 +169,11 @@ if (!$user || $user['admin_status'] != 1) {
             }
 
             .collapse.navbar-collapse.show {
-                display: flex !important;
+                display: block !important;
             }
 
-            .collapse.navbar-collapse.show .admin-sidebar {
-                display: flex;
-                flex-direction: column;
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 280px;
-                max-width: 85vw;
-                height: 100%;
-                background: var(--white);
-                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
-                z-index: 1000;
+            .collapse.navbar-collapse.show ~ .admin-sidebar {
+                transform: translateX(0);
             }
 
             .main-content {
@@ -217,34 +217,6 @@ if (!$user || $user['admin_status'] != 1) {
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="adminSidebar">
-                <div class="sidebar admin-sidebar">
-                    <div class="p-3">
-                        <h5 class="mb-4 text-primary">Admin Controls</h5>
-                        <nav class="nav flex-column">
-                            <a href="<?php echo base_path('admin/manage_accounts.php'); ?>" class="sidebar-link <?php echo $current_page == 'manage_accounts.php' ? 'active' : ''; ?>">
-                                <i class="bi bi-person-badge"></i> Manage Accounts
-                            </a>
-                            <a href="<?php echo base_path('admin/manage_members.php'); ?>" class="sidebar-link <?php echo $current_page == 'manage_members.php' ? 'active' : ''; ?>">
-                                <i class="bi bi-people-fill"></i> Manage Members
-                            </a>
-                            <a href="<?php echo base_path('admin/add_donations.php'); ?>" class="sidebar-link <?php echo $current_page == 'add_donations.php' ? 'active' : ''; ?>">
-                                <i class="bi bi-cash-coin"></i> Add Donations
-                            </a>
-                            <a href="<?php echo base_path('admin/add_events.php'); ?>" class="sidebar-link <?php echo $current_page == 'add_events.php' ? 'active' : ''; ?>">
-                                <i class="bi bi-calendar-plus"></i> Add Events
-                            </a>
-                            <a href="<?php echo base_path('admin/notify_members.php'); ?>" class="sidebar-link <?php echo $current_page == 'notify_members.php' ? 'active' : ''; ?>">
-                                <i class="bi bi-envelope"></i> Notify Members
-                            </a>
-                            <a href="<?php echo base_path('admin/sacramental_records.php'); ?>" class="sidebar-link <?php echo $current_page == 'sacramental_records.php' ? 'active' : ''; ?>">
-                                <i class="bi bi-journal-text"></i> Sacramental Records
-                            </a>
-                            <a href="<?php echo base_path('admin/backup_data.php'); ?>" class="sidebar-link <?php echo $current_page == 'backup_data.php' ? 'active' : ''; ?>">
-                                <i class="bi bi-cloud-arrow-up-down"></i> Backup Data
-                            </a>
-                        </nav>
-                    </div>
-                </div>
                 <div class="ms-auto d-flex align-items-center">
                     <a href="<?php echo base_path('Dashboard_intro.php'); ?>?page=dashboard" class="btn btn-outline-primary me-2 d-none d-md-inline-block">
                         <i class="bi bi-house"></i> Main Dashboard
@@ -268,6 +240,36 @@ if (!$user || $user['admin_status'] != 1) {
             </div>
         </div>
     </nav>
+
+    <!-- Admin Sidebar -->
+    <div class="sidebar admin-sidebar">
+        <div class="p-3">
+            <h5 class="mb-4 text-primary">Admin Controls</h5>
+            <nav class="nav flex-column">
+                <a href="<?php echo base_path('admin/manage_accounts.php'); ?>" class="sidebar-link <?php echo $current_page == 'manage_accounts.php' ? 'active' : ''; ?>">
+                    <i class="bi bi-person-badge"></i> Manage Accounts
+                </a>
+                <a href="<?php echo base_path('admin/manage_members.php'); ?>" class="sidebar-link <?php echo $current_page == 'manage_members.php' ? 'active' : ''; ?>">
+                    <i class="bi bi-people-fill"></i> Manage Members
+                </a>
+                <a href="<?php echo base_path('admin/add_donations.php'); ?>" class="sidebar-link <?php echo $current_page == 'add_donations.php' ? 'active' : ''; ?>">
+                    <i class="bi bi-cash-coin"></i> Add Donations
+                </a>
+                <a href="<?php echo base_path('admin/add_events.php'); ?>" class="sidebar-link <?php echo $current_page == 'add_events.php' ? 'active' : ''; ?>">
+                    <i class="bi bi-calendar-plus"></i> Add Events
+                </a>
+                <a href="<?php echo base_path('admin/notify_members.php'); ?>" class="sidebar-link <?php echo $current_page == 'notify_members.php' ? 'active' : ''; ?>">
+                    <i class="bi bi-envelope"></i> Notify Members
+                </a>
+                <a href="<?php echo base_path('admin/sacramental_records.php'); ?>" class="sidebar-link <?php echo $current_page == 'sacramental_records.php' ? 'active' : ''; ?>">
+                    <i class="bi bi-journal-text"></i> Sacramental Records
+                </a>
+                <a href="<?php echo base_path('admin/backup_data.php'); ?>" class="sidebar-link <?php echo $current_page == 'backup_data.php' ? 'active' : ''; ?>">
+                    <i class="bi bi-cloud-arrow-up-down"></i> Backup Data
+                </a>
+            </nav>
+        </div>
+    </div>
 
     <!-- Main Content Container -->
     <main class="main-content admin-content">
