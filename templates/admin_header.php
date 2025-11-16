@@ -73,6 +73,12 @@ if (!$user || $user['admin_status'] != 1) {
 
         .collapse.navbar-collapse {
             position: static;
+            background: transparent !important;
+            pointer-events: none;
+        }
+        
+        .collapse.navbar-collapse.show {
+            pointer-events: auto;
         }
 
         .admin-content {
@@ -155,26 +161,12 @@ if (!$user || $user['admin_status'] != 1) {
                 z-index: 1001;
                 transform: translateX(-100%);
                 transition: transform 0.3s ease-in-out;
+                pointer-events: auto;
             }
 
             .admin-sidebar.show {
                 transform: translateX(0);
-            }
-
-            .collapse.navbar-collapse {
-                position: fixed;
-                top: var(--header-height);
-                left: 280px;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.5);
-                z-index: 1000;
-                display: none !important;
-                max-width: calc(85vw);
-            }
-
-            .collapse.navbar-collapse.show {
-                display: block !important;
+                pointer-events: auto;
             }
 
             .main-content {
@@ -309,8 +301,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Close sidebar when clicking overlay
+    // Close sidebar when clicking overlay (but not sidebar itself)
     collapseEl.addEventListener('click', function(e) {
+        // Only close if clicking the overlay background, not the sidebar
         if (e.target === collapseEl && window.innerWidth <= 768) {
             const bsCollapse = new bootstrap.Collapse(collapseEl, { toggle: false });
             bsCollapse.hide();
