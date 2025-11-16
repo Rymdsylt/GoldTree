@@ -160,19 +160,20 @@ if (!$user || $user['admin_status'] != 1) {
 
             .collapse.navbar-collapse.show {
                 display: flex !important;
-                flex-direction: column;
-                align-items: stretch;
             }
 
             .collapse.navbar-collapse.show .admin-sidebar {
-                display: block;
-                position: fixed;
-                top: var(--header-height);
+                display: flex;
+                flex-direction: column;
+                position: absolute;
+                top: 0;
                 left: 0;
-                width: var(--sidebar-width);
-                height: calc(100vh - var(--header-height));
+                width: 280px;
+                max-width: 85vw;
+                height: 100%;
                 background: var(--white);
-                z-index: 1001;
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+                z-index: 1000;
             }
 
             .main-content {
