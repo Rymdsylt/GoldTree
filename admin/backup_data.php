@@ -36,7 +36,7 @@ require_once '../templates/admin_header.php';
     </div>
 
     <!-- Alert Container -->
-    <div id="alertContainer" class="position-sticky" style="top: 20px; z-index: 1000;"></div>
+    <div id="alertContainer" class="position-sticky" style="top: 20px; z-index: 2000;"></div>
 
     <!-- Main Operations Grid -->
     <div class="row g-4 mb-5">
