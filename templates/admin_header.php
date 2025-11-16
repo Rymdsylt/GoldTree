@@ -168,13 +168,13 @@ if (!$user || $user['admin_status'] != 1) {
             .collapse.navbar-collapse {
                 position: fixed;
                 top: var(--header-height);
-                left: 0;
+                left: 280px;
                 right: 0;
                 bottom: 0;
                 background: rgba(0, 0, 0, 0.5);
-                z-index: 999;
+                z-index: 1000;
                 display: none !important;
-                pointer-events: auto;
+                pointer-events: none;
             }
 
             .collapse.navbar-collapse.show {
