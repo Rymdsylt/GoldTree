@@ -157,6 +157,10 @@ if (!$user || $user['admin_status'] != 1) {
                 transition: transform 0.3s ease-in-out;
             }
 
+            .admin-sidebar.show {
+                transform: translateX(0);
+            }
+
             .collapse.navbar-collapse {
                 position: fixed;
                 top: var(--header-height);
@@ -170,10 +174,6 @@ if (!$user || $user['admin_status'] != 1) {
 
             .collapse.navbar-collapse.show {
                 display: block !important;
-            }
-
-            .collapse.navbar-collapse.show ~ .admin-sidebar {
-                transform: translateX(0);
             }
 
             .main-content {
@@ -278,3 +278,43 @@ if (!$user || $user['admin_status'] != 1) {
         require_once __DIR__ . '/privacy_policy_modal.php';
     }
     ?>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const collapseEl = document.getElementById('adminSidebar');
+    const sidebar = document.querySelector('.admin-sidebar');
+    
+    if (!collapseEl || !sidebar) return;
+    
+    // When collapse is toggled, also toggle sidebar visibility
+    collapseEl.addEventListener('show.bs.collapse', function() {
+        sidebar.classList.add('show');
+    });
+    
+    collapseEl.addEventListener('hide.bs.collapse', function() {
+        sidebar.classList.remove('show');
+    });
+    
+    // Close sidebar when clicking on a link
+    const sidebarLinks = sidebar.querySelectorAll('.sidebar-link');
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            if (window.innerWidth <= 768) {
+                // Close the collapse
+                const bsCollapse = new bootstrap.Collapse(collapseEl, { toggle: false });
+                bsCollapse.hide();
+                sidebar.classList.remove('show');
+            }
+        });
+    });
+    
+    // Close sidebar when clicking overlay
+    collapseEl.addEventListener('click', function(e) {
+        if (e.target === collapseEl && window.innerWidth <= 768) {
+            const bsCollapse = new bootstrap.Collapse(collapseEl, { toggle: false });
+            bsCollapse.hide();
+            sidebar.classList.remove('show');
+        }
+    });
+});
+</script>
