@@ -74,10 +74,6 @@ if (!$user || $user['admin_status'] != 1) {
         .collapse.navbar-collapse {
             position: static;
             background: transparent !important;
-            pointer-events: none;
-        }
-        
-        .collapse.navbar-collapse.show {
             pointer-events: auto;
         }
 
@@ -166,6 +162,23 @@ if (!$user || $user['admin_status'] != 1) {
 
             .admin-sidebar.show {
                 transform: translateX(0);
+                pointer-events: auto;
+            }
+
+            .collapse.navbar-collapse {
+                position: fixed;
+                top: var(--header-height);
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 999;
+                display: none !important;
+                pointer-events: auto;
+            }
+
+            .collapse.navbar-collapse.show {
+                display: block !important;
                 pointer-events: auto;
             }
 
