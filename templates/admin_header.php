@@ -71,18 +71,6 @@ if (!$user || $user['admin_status'] != 1) {
             transition: var(--transition);
         }
 
-        .admin-card {
-            transition: transform 0.2s ease;
-        }
-
-        .admin-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .sidebar-collapsed .admin-sidebar {
-            transform: translateX(-100%);
-        }
-
         .admin-content {
             transition: margin-left 0.3s ease;
         }
@@ -152,21 +140,13 @@ if (!$user || $user['admin_status'] != 1) {
 
         @media (max-width: 768px) {
             .admin-sidebar {
-                transform: translateX(-100%);
-            }
-
-            .admin-sidebar.active {
-                transform: translateX(0);
+                display: none;
             }
 
             .main-content {
                 margin-left: 0;
                 width: 100%;
                 padding: 15px;
-            }
-
-            .main-content.sidebar-hidden {
-                margin-left: var(--sidebar-width);
             }
 
             .navbar .container-fluid {
@@ -183,23 +163,6 @@ if (!$user || $user['admin_status'] != 1) {
                 font-size: 0.875rem;
             }
 
-            .sidebar {
-                width: 100%;
-                position: fixed;
-                z-index: 1000;
-                transform: translateX(-100%);
-                transition: transform 0.3s ease-in-out;
-            }
-            .sidebar.show {
-                transform: translateX(0);
-            }
-            .main-content {
-                margin-left: 0 !important;
-                width: 100% !important;
-            }
-            .navbar-brand {
-                font-size: 1.2rem;
-            }
             .dropdown-menu {
                 position: fixed !important;
                 width: 100%;
@@ -214,9 +177,6 @@ if (!$user || $user['admin_status'] != 1) {
     <!-- Admin Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container-fluid">
-            <button class="navbar-toggler border-0" type="button" id="adminSidebarToggle">
-                <i class="bi bi-list"></i>
-            </button>
             <a class="navbar-brand" href="">
                 <i class="bi bi-shield-lock"></i> Admin Panel
             </a>
