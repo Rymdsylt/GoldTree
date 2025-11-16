@@ -71,6 +71,10 @@ if (!$user || $user['admin_status'] != 1) {
             transition: var(--transition);
         }
 
+        .collapse.navbar-collapse {
+            position: static;
+        }
+
         .admin-content {
             transition: margin-left 0.3s ease;
         }
@@ -143,6 +147,34 @@ if (!$user || $user['admin_status'] != 1) {
                 display: none;
             }
 
+            .collapse.navbar-collapse {
+                position: fixed;
+                top: var(--header-height);
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 1000;
+                display: none !important;
+            }
+
+            .collapse.navbar-collapse.show {
+                display: flex !important;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .collapse.navbar-collapse.show .admin-sidebar {
+                display: block;
+                position: fixed;
+                top: var(--header-height);
+                left: 0;
+                width: var(--sidebar-width);
+                height: calc(100vh - var(--header-height));
+                background: var(--white);
+                z-index: 1001;
+            }
+
             .main-content {
                 margin-left: 0;
                 width: 100%;
@@ -180,58 +212,63 @@ if (!$user || $user['admin_status'] != 1) {
             <a class="navbar-brand" href="">
                 <i class="bi bi-shield-lock"></i> Admin Panel
             </a>
-            <div class="d-flex align-items-center">
-                <a href="<?php echo base_path('Dashboard_intro.php'); ?>?page=dashboard" class="btn btn-outline-primary me-2 d-none d-md-inline-block">
-                    <i class="bi bi-house"></i> Main Dashboard
-                </a>
-                <a href="<?php echo base_path('reports.php'); ?>" class="btn btn-outline-primary me-2 d-none d-md-inline-block">
-                    <i class="bi bi-graph-up"></i> Reports
-                </a>
-                <div class="dropdown">
-                    <button class="btn btn-link dropdown-toggle text-dark" type="button" id="userMenu" data-bs-toggle="dropdown">
-                        <i class="bi bi-person-circle"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="<?php echo base_path('profile.php'); ?>">Profile</a></li>
-                        <li><a class="dropdown-item d-md-none" href="<?php echo base_path('Dashboard_intro.php'); ?>?page=dashboard">Main Dashboard</a></li>
-                        <li><a class="dropdown-item d-md-none" href="<?php echo base_path('reports.php'); ?>">Reports</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="<?php echo base_path('auth/logout_user.php'); ?>">Logout</a></li>
-                    </ul>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminSidebar" aria-controls="adminSidebar" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="adminSidebar">
+                <div class="sidebar admin-sidebar">
+                    <div class="p-3">
+                        <h5 class="mb-4 text-primary">Admin Controls</h5>
+                        <nav class="nav flex-column">
+                            <a href="<?php echo base_path('admin/manage_accounts.php'); ?>" class="sidebar-link <?php echo $current_page == 'manage_accounts.php' ? 'active' : ''; ?>">
+                                <i class="bi bi-person-badge"></i> Manage Accounts
+                            </a>
+                            <a href="<?php echo base_path('admin/manage_members.php'); ?>" class="sidebar-link <?php echo $current_page == 'manage_members.php' ? 'active' : ''; ?>">
+                                <i class="bi bi-people-fill"></i> Manage Members
+                            </a>
+                            <a href="<?php echo base_path('admin/add_donations.php'); ?>" class="sidebar-link <?php echo $current_page == 'add_donations.php' ? 'active' : ''; ?>">
+                                <i class="bi bi-cash-coin"></i> Add Donations
+                            </a>
+                            <a href="<?php echo base_path('admin/add_events.php'); ?>" class="sidebar-link <?php echo $current_page == 'add_events.php' ? 'active' : ''; ?>">
+                                <i class="bi bi-calendar-plus"></i> Add Events
+                            </a>
+                            <a href="<?php echo base_path('admin/notify_members.php'); ?>" class="sidebar-link <?php echo $current_page == 'notify_members.php' ? 'active' : ''; ?>">
+                                <i class="bi bi-envelope"></i> Notify Members
+                            </a>
+                            <a href="<?php echo base_path('admin/sacramental_records.php'); ?>" class="sidebar-link <?php echo $current_page == 'sacramental_records.php' ? 'active' : ''; ?>">
+                                <i class="bi bi-journal-text"></i> Sacramental Records
+                            </a>
+                            <a href="<?php echo base_path('admin/backup_data.php'); ?>" class="sidebar-link <?php echo $current_page == 'backup_data.php' ? 'active' : ''; ?>">
+                                <i class="bi bi-cloud-arrow-up-down"></i> Backup Data
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+                <div class="ms-auto d-flex align-items-center">
+                    <a href="<?php echo base_path('Dashboard_intro.php'); ?>?page=dashboard" class="btn btn-outline-primary me-2 d-none d-md-inline-block">
+                        <i class="bi bi-house"></i> Main Dashboard
+                    </a>
+                    <a href="<?php echo base_path('reports.php'); ?>" class="btn btn-outline-primary me-2 d-none d-md-inline-block">
+                        <i class="bi bi-graph-up"></i> Reports
+                    </a>
+                    <div class="dropdown">
+                        <button class="btn btn-link dropdown-toggle text-dark" type="button" id="userMenu" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="<?php echo base_path('profile.php'); ?>">Profile</a></li>
+                            <li><a class="dropdown-item d-md-none" href="<?php echo base_path('Dashboard_intro.php'); ?>?page=dashboard">Main Dashboard</a></li>
+                            <li><a class="dropdown-item d-md-none" href="<?php echo base_path('reports.php'); ?>">Reports</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="<?php echo base_path('auth/logout_user.php'); ?>">Logout</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- Admin Sidebar -->
-    <div class="sidebar admin-sidebar">
-        <div class="p-3">
-            <h5 class="mb-4 text-primary">Admin Controls</h5>
-            <nav class="nav flex-column">
-                <a href="<?php echo base_path('admin/manage_accounts.php'); ?>" class="sidebar-link <?php echo $current_page == 'manage_accounts.php' ? 'active' : ''; ?>">
-                    <i class="bi bi-person-badge"></i> Manage Accounts
-                </a>
-                <a href="<?php echo base_path('admin/manage_members.php'); ?>" class="sidebar-link <?php echo $current_page == 'manage_members.php' ? 'active' : ''; ?>">
-                    <i class="bi bi-people-fill"></i> Manage Members
-                </a>
-                <a href="<?php echo base_path('admin/add_donations.php'); ?>" class="sidebar-link <?php echo $current_page == 'add_donations.php' ? 'active' : ''; ?>">
-                    <i class="bi bi-cash-coin"></i> Add Donations
-                </a>
-                <a href="<?php echo base_path('admin/add_events.php'); ?>" class="sidebar-link <?php echo $current_page == 'add_events.php' ? 'active' : ''; ?>">
-                    <i class="bi bi-calendar-plus"></i> Add Events
-                </a>
-                <a href="<?php echo base_path('admin/notify_members.php'); ?>" class="sidebar-link <?php echo $current_page == 'notify_members.php' ? 'active' : ''; ?>">
-                    <i class="bi bi-envelope"></i> Notify Members
-                </a>
-                <a href="<?php echo base_path('admin/sacramental_records.php'); ?>" class="sidebar-link <?php echo $current_page == 'sacramental_records.php' ? 'active' : ''; ?>">
-                    <i class="bi bi-journal-text"></i> Sacramental Records
-                </a>
-                <a href="<?php echo base_path('admin/backup_data.php'); ?>" class="sidebar-link <?php echo $current_page == 'backup_data.php' ? 'active' : ''; ?>">
-                    <i class="bi bi-cloud-arrow-up-down"></i> Backup Data
-                </a>
-            </nav>
-        </div>
-    </div>    <!-- Main Content Container -->
+    <!-- Main Content Container -->
     <main class="main-content admin-content">
     <?php
     if (isset($_SESSION['user_id'])) {
