@@ -36,7 +36,7 @@ require_once '../templates/admin_header.php';
     </div>
 
     <!-- Alert Container -->
-    <div id="alertContainer" style="z-index: 950; pointer-events: none;"></div>
+    <div id="alertContainer" style="pointer-events: none;"></div>
 
     <!-- Main Operations Grid -->
     <div class="row g-4 mb-5">
