@@ -36,7 +36,7 @@ require_once '../templates/admin_header.php';
     </div>
 
     <!-- Alert Container -->
-    <div id="alertContainer" style="z-index: 950;"></div>
+    <div id="alertContainer" style="z-index: 950; pointer-events: none;"></div>
 
     <!-- Main Operations Grid -->
     <div class="row g-4 mb-5">
@@ -481,6 +481,11 @@ require_once '../templates/admin_header.php';
     /* Alert Positioning */
     #alertContainer {
         margin-bottom: 1.5rem;
+        pointer-events: none;
+    }
+
+    #alertContainer .alert {
+        pointer-events: auto;
     }
 
     .alert {
