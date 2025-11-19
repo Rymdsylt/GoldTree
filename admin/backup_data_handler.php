@@ -62,7 +62,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit(json_encode(['success' => false, 'error' => 'Method not allowed']));
 }
 
-if ($action === 'export') {
+if ($action === 'verify_credentials') {
+    verifyCredentials($conn);
+} elseif ($action === 'export') {
     handleExport();
 } elseif ($action === 'import') {
     handleImport();
@@ -71,6 +73,53 @@ if ($action === 'export') {
 } else {
     http_response_code(400);
     exit(json_encode(['success' => false, 'error' => 'Invalid action']));
+}
+
+/**
+ * Verify admin credentials
+ */
+function verifyCredentials($conn) {
+    $username = $_POST['username'] ?? '';
+    $password = $_POST['password'] ?? '';
+    
+    if (empty($username) || empty($password)) {
+        exit(json_encode(['success' => false, 'error' => 'Username and password required']));
+    }
+    
+    try {
+        // Get current user from session
+        $stmt = $conn->prepare("SELECT id, username, password FROM users WHERE admin_status = 1 LIMIT 1");
+        $stmt->execute();
+        $user = $stmt->fetch();
+        
+        if (!$user) {
+            exit(json_encode(['success' => false, 'error' => 'Admin user not found']));
+        }
+        
+        // Verify credentials
+        $adminUser = $conn->prepare("SELECT id FROM users WHERE username = ? AND admin_status = 1");
+        $adminUser->execute([$username]);
+        $admin = $adminUser->fetch();
+        
+        if (!$admin) {
+            exit(json_encode(['success' => false, 'error' => 'Invalid admin credentials']));
+        }
+        
+        // Get the user to verify password
+        $userStmt = $conn->prepare("SELECT password FROM users WHERE id = ? AND admin_status = 1");
+        $userStmt->execute([$admin['id']]);
+        $userRow = $userStmt->fetch();
+        
+        if (!$userRow || !password_verify($password, $userRow['password'])) {
+            exit(json_encode(['success' => false, 'error' => 'Invalid admin credentials']));
+        }
+        
+        // Credentials verified
+        exit(json_encode(['success' => true, 'message' => 'Credentials verified']));
+    } catch (Exception $e) {
+        error_log('Credential verification error: ' . $e->getMessage());
+        exit(json_encode(['success' => false, 'error' => 'Verification failed']));
+    }
 }
 
 /**

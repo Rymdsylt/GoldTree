@@ -356,6 +356,38 @@ require_once '../templates/admin_header.php';
     <!-- Alert Container -->
     <div id="alertContainer" style="pointer-events: none;"></div>
 
+    <!-- Credential Verification Modal -->
+    <div class="modal fade" id="credentialModal" tabindex="-1" aria-labelledby="credentialModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title" id="credentialModalLabel">
+                        <i class="bi bi-shield-lock"></i> Verify Credentials
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="modalCloseBtn"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted mb-4">This is a sensitive operation. Please enter your credentials to confirm.</p>
+                    <form id="credentialForm">
+                        <div class="mb-3">
+                            <label for="credentialUsername" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="credentialUsername" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="credentialPassword" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="credentialPassword" required>
+                        </div>
+                        <div id="credentialError" class="alert alert-danger d-none" role="alert"></div>
+                    </form>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="verifyBtn">Verify & Proceed</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Operations Grid -->
     <div class="row g-4 mb-5">
         <!-- Export Section -->
@@ -518,21 +550,39 @@ require_once '../templates/admin_header.php';
 </div>
 
 <script>
+// Credential modal state
+let credentialModal = null;
+let pendingAction = null;
+
 // Initialize event listeners when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     const exportBtn = document.getElementById('exportBtn');
     const importBtn = document.getElementById('importBtn');
     const deleteBtn = document.getElementById('deleteBtn');
     const fileInput = document.getElementById('backup_file');
+    const verifyBtn = document.getElementById('verifyBtn');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+    
+    credentialModal = new bootstrap.Modal(document.getElementById('credentialModal'));
     
     if (exportBtn) {
-        exportBtn.addEventListener('click', exportDatabase);
+        exportBtn.addEventListener('click', () => showCredentialModal('export'));
     }
     if (importBtn) {
-        importBtn.addEventListener('click', importDatabase);
+        importBtn.addEventListener('click', () => showCredentialModal('import'));
     }
     if (deleteBtn) {
         deleteBtn.addEventListener('click', deleteAllData);
+    }
+    
+    if (verifyBtn) {
+        verifyBtn.addEventListener('click', verifyCredentials);
+    }
+    
+    if (modalCloseBtn) {
+        modalCloseBtn.addEventListener('click', () => {
+            pendingAction = null;
+        });
     }
     
     if (fileInput) {
@@ -541,6 +591,77 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+function showCredentialModal(action) {
+    const fileInput = document.getElementById('backup_file');
+    
+    // For import, check if file is selected
+    if (action === 'import' && !fileInput.files.length) {
+        showAlert('Please select a backup file to import', 'warning');
+        return;
+    }
+    
+    pendingAction = action;
+    document.getElementById('credentialForm').reset();
+    document.getElementById('credentialError').classList.add('d-none');
+    credentialModal.show();
+}
+
+async function verifyCredentials() {
+    const username = document.getElementById('credentialUsername').value.trim();
+    const password = document.getElementById('credentialPassword').value;
+    const errorDiv = document.getElementById('credentialError');
+    
+    if (!username || !password) {
+        errorDiv.textContent = 'Please enter both username and password';
+        errorDiv.classList.remove('d-none');
+        return;
+    }
+    
+    const verifyBtn = document.getElementById('verifyBtn');
+    verifyBtn.disabled = true;
+    verifyBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Verifying...';
+    
+    try {
+        const formData = new FormData();
+        formData.append('action', 'verify_credentials');
+        formData.append('username', username);
+        formData.append('password', password);
+        
+        const response = await fetch('./backup_data_handler.php', {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            credentialModal.hide();
+            
+            // Execute the pending action
+            if (pendingAction === 'export') {
+                exportDatabase();
+            } else if (pendingAction === 'import') {
+                importDatabase();
+            }
+        } else {
+            errorDiv.textContent = data.error || 'Credential verification failed';
+            errorDiv.classList.remove('d-none');
+        }
+    } catch (error) {
+        console.error('Verification error:', error);
+        errorDiv.textContent = 'An error occurred during verification';
+        errorDiv.classList.remove('d-none');
+    } finally {
+        verifyBtn.disabled = false;
+        verifyBtn.innerHTML = 'Verify & Proceed';
+    }
+}
 
 function getHandlerUrl() {
     return './backup_data_handler.php';
