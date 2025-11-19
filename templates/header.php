@@ -39,8 +39,13 @@ if (isset($_SESSION['user_id'])) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <style>
         :root {
-            --header-height: 56px;
+            --primary: #6a1b9a;
+            --primary-hover: #4a148c;
+            --header-height: 60px;
             --sidebar-width: 250px;
+            --transition: all 0.3s ease;
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            --white: #ffffff;
         }
 
         body {
@@ -50,7 +55,6 @@ if (isset($_SESSION['user_id'])) {
         .navbar {
             position: fixed;
             width: 100%;
-            top: 0;
             z-index: 1030;
         }
 
@@ -66,6 +70,7 @@ if (isset($_SESSION['user_id'])) {
             min-width: 1.5rem;
             text-align: center;
         }
+
         .sidebar-link {
             position: relative;
             display: inline-block;
@@ -80,9 +85,35 @@ if (isset($_SESSION['user_id'])) {
             height: calc(100vh - var(--header-height));
             overflow-y: auto;
             background: var(--white);
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--shadow);
             z-index: 1020;
-            transition: transform 0.3s ease-in-out;
+            transition: var(--transition);
+        }
+
+        .sidebar .sidebar-link {
+            color: #495057;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar .sidebar-link:hover {
+            background: linear-gradient(45deg, var(--primary), var(--primary-hover));
+            color: white;
+        }
+
+        .sidebar .sidebar-link.active {
+            background: linear-gradient(45deg, var(--primary), var(--primary-hover));
+            color: white;
+            font-weight: 500;
+        }
+
+        .sidebar .sidebar-link i {
+            margin-right: 10px;
+            font-size: 1.1rem;
         }
 
         .collapse.navbar-collapse {
@@ -96,25 +127,34 @@ if (isset($_SESSION['user_id'])) {
             margin-top: var(--header-height);
             padding: 20px;
             min-height: calc(100vh - var(--header-height));
-            transition: margin-left 0.3s ease;
+            transition: var(--transition);
         }
 
         @media (max-width: 768px) {
             .sidebar {
+                position: fixed;
+                top: var(--header-height);
+                left: 0;
                 width: 280px;
                 max-width: 85vw;
-                transform: translateX(-100%);
+                height: calc(100vh - var(--header-height));
+                background: var(--white);
                 box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+                z-index: 1001;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease-in-out;
+                pointer-events: auto;
             }
 
             .sidebar.show {
                 transform: translateX(0);
+                pointer-events: auto;
             }
 
             .collapse.navbar-collapse {
                 position: fixed;
                 top: var(--header-height);
-                left: 0;
+                left: 280px;
                 right: 0;
                 bottom: 0;
                 background: rgba(0, 0, 0, 0.5);
@@ -347,7 +387,26 @@ document.addEventListener('DOMContentLoaded', function() {
     ?>
 
     <script>
+    function updateNotificationBadge() {
+        fetch('<?php echo base_path('crud/notifications/get_unread_count.php'); ?>')
+            .then(response => response.json())
+            .then(data => {
+                const badge = document.getElementById('unreadNotificationsBadge');
+                if (data.success) {
+                    if (data.unread_count > 0) {
+                        badge.textContent = data.unread_count > 99 ? '99+' : data.unread_count;
+                        badge.classList.remove('d-none');
+                    } else {
+                        badge.classList.add('d-none');
+                    }
+                }
+            })
+            .catch(console.error);
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
+        updateNotificationBadge();
+        
         const collapseEl = document.getElementById('navbarNav');
         const sidebar = document.querySelector('.sidebar');
         
@@ -375,9 +434,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
         
-        // Close sidebar when clicking overlay (but not sidebar itself)
+        // Close sidebar when clicking overlay
         collapseEl.addEventListener('click', function(e) {
-            // Only close if clicking the overlay background, not the sidebar
             if (e.target === collapseEl && window.innerWidth <= 768) {
                 const bsCollapse = new bootstrap.Collapse(collapseEl, { toggle: false });
                 bsCollapse.hide();
@@ -385,25 +443,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-
-    function updateNotificationBadge() {
-        fetch('<?php echo base_path('crud/notifications/get_unread_count.php'); ?>')
-            .then(response => response.json())
-            .then(data => {
-                const badge = document.getElementById('unreadNotificationsBadge');
-                if (data.success) {
-                    if (data.unread_count > 0) {
-                        badge.textContent = data.unread_count > 99 ? '99+' : data.unread_count;
-                        badge.classList.remove('d-none');
-                    } else {
-                        badge.classList.add('d-none');
-                    }
-                }
-            })
-            .catch(console.error);
-    }
-
-    document.addEventListener('DOMContentLoaded', updateNotificationBadge);
+    
     setInterval(updateNotificationBadge, 60000);
     </script>
 </body>
