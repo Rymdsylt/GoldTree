@@ -140,7 +140,7 @@ if (isset($_SESSION['user_id'])) {
                 z-index: 1001;
                 transform: translateX(-100%);
                 transition: transform 0.3s ease-in-out;
-                pointer-events: none;
+                pointer-events: auto;
             }
 
             .sidebar.show {
@@ -151,7 +151,7 @@ if (isset($_SESSION['user_id'])) {
             .collapse.navbar-collapse {
                 position: fixed;
                 top: var(--header-height);
-                left: 0;
+                left: 280px;
                 right: 0;
                 bottom: 0;
                 background: rgba(0, 0, 0, 0.5);
