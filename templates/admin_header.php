@@ -230,18 +230,6 @@ if (!$user || $user['admin_status'] != 1) {
                     <a href="<?php echo base_path('reports.php'); ?>" class="btn btn-outline-primary me-2 d-none d-md-inline-block">
                         <i class="bi bi-graph-up"></i> Reports
                     </a>
-                    <div class="dropdown">
-                        <button class="btn btn-link dropdown-toggle text-dark" type="button" id="userMenu" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle"></i>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="<?php echo base_path('profile.php'); ?>">Profile</a></li>
-                            <li><a class="dropdown-item d-md-none" href="<?php echo base_path('Dashboard_intro.php'); ?>?page=dashboard">Main Dashboard</a></li>
-                            <li><a class="dropdown-item d-md-none" href="<?php echo base_path('reports.php'); ?>">Reports</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="<?php echo base_path('auth/logout_user.php'); ?>">Logout</a></li>
-                        </ul>
-                    </div>
                 </div>
             </div>
         </div>
@@ -272,6 +260,13 @@ if (!$user || $user['admin_status'] != 1) {
                 </a>
                 <a href="<?php echo base_path('admin/backup_data.php'); ?>" class="sidebar-link <?php echo $current_page == 'backup_data.php' ? 'active' : ''; ?>">
                     <i class="bi bi-cloud-arrow-up-down"></i> Backup Data
+                </a>
+                <hr class="my-3">
+                <a href="<?php echo base_path('profile.php'); ?>" class="sidebar-link">
+                    <i class="bi bi-person-circle"></i> Profile
+                </a>
+                <a href="<?php echo base_path('auth/logout_user.php'); ?>" class="sidebar-link">
+                    <i class="bi bi-box-arrow-right"></i> Logout
                 </a>
             </nav>
         </div>
