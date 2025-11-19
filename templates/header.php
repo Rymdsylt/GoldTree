@@ -147,7 +147,7 @@ if (isset($_SESSION['user_id'])) {
             .collapse.navbar-collapse {
                 position: fixed;
                 top: var(--header-height);
-                left: 280px;
+                left: 0;
                 right: 0;
                 bottom: 0;
                 background: rgba(0, 0, 0, 0.5);
@@ -420,12 +420,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // When collapse is shown, also toggle sidebar visibility
         collapseEl.addEventListener('show.bs.collapse', function() {
-            sidebar.classList.add('active');
+            sidebar.classList.add('show');
         });
         
         // When collapse is hidden, also hide sidebar
         collapseEl.addEventListener('hide.bs.collapse', function() {
-            sidebar.classList.remove('active');
+            sidebar.classList.remove('show');
         });
         
         // Close sidebar when clicking on a link
