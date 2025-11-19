@@ -201,7 +201,6 @@ require_once '../templates/admin_header.php';
 </div>
 
 </main>
-<script src="<?php echo BASE_PATH; ?>js/bootstrap.bundle.min.js"></script>
 <style>
     /* General Styles */
     :root {
@@ -912,5 +911,3 @@ async function deleteAllData() {
     }
 }
 </script>
-</body>
-</html>
