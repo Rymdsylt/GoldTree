@@ -38,6 +38,22 @@ if (isset($_SESSION['user_id'])) {
     <link href="css/theme.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <style>
+        :root {
+            --header-height: 56px;
+            --sidebar-width: 250px;
+        }
+
+        body {
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1030;
+        }
+
         .notification-badge {
             position: absolute;
             top: -8px;
@@ -53,6 +69,70 @@ if (isset($_SESSION['user_id'])) {
         .sidebar-link {
             position: relative;
             display: inline-block;
+        }
+
+        /* Sidebar styles */
+        .sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            width: var(--sidebar-width);
+            height: calc(100vh - var(--header-height));
+            overflow-y: auto;
+            background: var(--white);
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            z-index: 1020;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .collapse.navbar-collapse {
+            position: static;
+            background: transparent !important;
+            pointer-events: auto;
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            padding: 20px;
+            min-height: calc(100vh - var(--header-height));
+            transition: margin-left 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 280px;
+                max-width: 85vw;
+                transform: translateX(-100%);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .collapse.navbar-collapse {
+                position: fixed;
+                top: var(--header-height);
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 1000;
+                display: none !important;
+                pointer-events: none;
+            }
+
+            .collapse.navbar-collapse.show {
+                display: block !important;
+                pointer-events: auto;
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 15px;
+            }
         }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -267,6 +347,45 @@ document.addEventListener('DOMContentLoaded', function() {
     ?>
 
     <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const collapseEl = document.getElementById('navbarNav');
+        const sidebar = document.querySelector('.sidebar');
+        
+        if (!collapseEl || !sidebar) return;
+        
+        // When collapse is toggled, also toggle sidebar visibility
+        collapseEl.addEventListener('show.bs.collapse', function() {
+            sidebar.classList.add('show');
+        });
+        
+        collapseEl.addEventListener('hide.bs.collapse', function() {
+            sidebar.classList.remove('show');
+        });
+        
+        // Close sidebar when clicking on a link
+        const sidebarLinks = sidebar.querySelectorAll('.sidebar-link');
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    // Close the collapse
+                    const bsCollapse = new bootstrap.Collapse(collapseEl, { toggle: false });
+                    bsCollapse.hide();
+                    sidebar.classList.remove('show');
+                }
+            });
+        });
+        
+        // Close sidebar when clicking overlay (but not sidebar itself)
+        collapseEl.addEventListener('click', function(e) {
+            // Only close if clicking the overlay background, not the sidebar
+            if (e.target === collapseEl && window.innerWidth <= 768) {
+                const bsCollapse = new bootstrap.Collapse(collapseEl, { toggle: false });
+                bsCollapse.hide();
+                sidebar.classList.remove('show');
+            }
+        });
+    });
+
     function updateNotificationBadge() {
         fetch('<?php echo base_path('crud/notifications/get_unread_count.php'); ?>')
             .then(response => response.json())
