@@ -124,6 +124,10 @@ if (isset($_SESSION['user_id'])) {
         }
 
         @media (max-width: 768px) {
+            :root {
+                --sidebar-width: 0;
+            }
+
             .sidebar {
                 position: fixed;
                 top: var(--header-height);
@@ -165,8 +169,6 @@ if (isset($_SESSION['user_id'])) {
                 margin-left: 0;
                 width: 100%;
                 padding: 15px;
-                position: relative;
-                z-index: 1;
             }
 
             .navbar .container-fluid {
