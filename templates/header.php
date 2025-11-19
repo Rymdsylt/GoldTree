@@ -43,9 +43,6 @@ if (isset($_SESSION['user_id'])) {
             --primary-hover: #4a148c;
             --header-height: 60px;
             --sidebar-width: 250px;
-            --transition: all 0.3s ease;
-            --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            --white: #ffffff;
         }
 
         body {
@@ -58,25 +55,6 @@ if (isset($_SESSION['user_id'])) {
             z-index: 1030;
         }
 
-        .notification-badge {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background-color: #dc3545;
-            color: white;
-            border-radius: 50%;
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
-            min-width: 1.5rem;
-            text-align: center;
-        }
-
-        .sidebar-link {
-            position: relative;
-            display: inline-block;
-        }
-
-        /* Sidebar styles */
         .sidebar {
             position: fixed;
             top: var(--header-height);
@@ -84,36 +62,10 @@ if (isset($_SESSION['user_id'])) {
             width: var(--sidebar-width);
             height: calc(100vh - var(--header-height));
             overflow-y: auto;
-            background: var(--white);
-            box-shadow: var(--shadow);
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
             z-index: 1020;
-            transition: var(--transition);
-        }
-
-        .sidebar .sidebar-link {
-            color: #495057;
-            padding: 0.75rem 1rem;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            text-decoration: none;
-            transition: all 0.2s ease;
-        }
-
-        .sidebar .sidebar-link:hover {
-            background: linear-gradient(45deg, var(--primary), var(--primary-hover));
-            color: white;
-        }
-
-        .sidebar .sidebar-link.active {
-            background: linear-gradient(45deg, var(--primary), var(--primary-hover));
-            color: white;
-            font-weight: 500;
-        }
-
-        .sidebar .sidebar-link i {
-            margin-right: 10px;
-            font-size: 1.1rem;
+            transition: transform 0.3s ease-in-out;
         }
 
         .collapse.navbar-collapse {
@@ -127,7 +79,48 @@ if (isset($_SESSION['user_id'])) {
             margin-top: var(--header-height);
             padding: 20px;
             min-height: calc(100vh - var(--header-height));
-            transition: var(--transition);
+            transition: margin-left 0.3s ease;
+        }
+
+        .sidebar-link {
+            position: relative;
+            display: flex;
+            align-items: center;
+            color: #495057;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            margin-bottom: 0.25rem;
+        }
+
+        .sidebar-link:hover {
+            background: linear-gradient(45deg, var(--primary), var(--primary-hover));
+            color: white;
+        }
+
+        .sidebar-link.active {
+            background: linear-gradient(45deg, var(--primary), var(--primary-hover));
+            color: white;
+            font-weight: 500;
+        }
+
+        .sidebar-link i {
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background-color: #dc3545;
+            color: white;
+            border-radius: 50%;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            min-width: 1.5rem;
+            text-align: center;
         }
 
         @media (max-width: 768px) {
@@ -138,7 +131,7 @@ if (isset($_SESSION['user_id'])) {
                 width: 280px;
                 max-width: 85vw;
                 height: calc(100vh - var(--header-height));
-                background: var(--white);
+                background: white;
                 box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
                 z-index: 1001;
                 transform: translateX(-100%);
@@ -173,12 +166,21 @@ if (isset($_SESSION['user_id'])) {
                 width: 100%;
                 padding: 15px;
             }
+
+            .navbar .container-fluid {
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+
+            .navbar-brand {
+                font-size: 1.1rem;
+            }
         }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="js/bootstrap.bundle.min.js"></script>
 </head>
-<body>
+<body data-base-path="<?php echo BASE_PATH; ?>">
 
 <!-- Privacy Policy Modal -->
 <?php if (isset($_SESSION['user_id']) && $privacyStatus === null): ?>
@@ -287,6 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <?php endif; ?>
 
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container-fluid">
             <a class="navbar-brand d-flex align-items-center" href="dashboard.php">
@@ -326,7 +329,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <a href="<?php echo base_path('Dashboard_intro.php'); ?>?page=dashboard" 
                    class="sidebar-link <?php echo $_SESSION['active_page'] == 'dashboard' ? 'active' : ''; ?>">
                     <i class="bi bi-speedometer2"></i> Dashboard
-                </a>                <a href="<?php echo base_path('members.php'); ?>?page=members" 
+                </a>
+                <a href="<?php echo base_path('members.php'); ?>?page=members" 
                    class="sidebar-link <?php echo $_SESSION['active_page'] == 'members' ? 'active' : ''; ?>">
                     <i class="bi bi-people-fill"></i> Members
                 </a>
@@ -359,7 +363,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <a href="<?php echo base_path('admin/manage_accounts.php'); ?>" class="sidebar-link <?php echo $current_page == 'manage_accounts.php' ? 'active' : ''; ?>">
                             <i class="bi bi-gear"></i> Admin Panel
                         </a>
-
                     </div>
                 <?php endif; ?>
                 
@@ -379,7 +382,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <?php endif; ?>
 
     <!-- Main Content Container -->
-    <main class="main-content <?php echo !isset($_SESSION['user_id']) ? 'ml-0' : ''; ?>">
+    <main class="main-content">
     <?php 
     if (isset($_SESSION['user_id'])) {
         require_once __DIR__ . '/privacy_policy_modal.php';
@@ -406,7 +409,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.addEventListener('DOMContentLoaded', function() {
         updateNotificationBadge();
-        
+        setInterval(updateNotificationBadge, 60000);
+
+        // Sidebar toggle logic
         const collapseEl = document.getElementById('navbarNav');
         const sidebar = document.querySelector('.sidebar');
         
@@ -434,8 +439,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
         
-        // Close sidebar when clicking overlay
+        // Close sidebar when clicking overlay (but not sidebar itself)
         collapseEl.addEventListener('click', function(e) {
+            // Only close if clicking the overlay background, not the sidebar
             if (e.target === collapseEl && window.innerWidth <= 768) {
                 const bsCollapse = new bootstrap.Collapse(collapseEl, { toggle: false });
                 bsCollapse.hide();
@@ -443,8 +449,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-    
-    setInterval(updateNotificationBadge, 60000);
     </script>
 </body>
 </html>
