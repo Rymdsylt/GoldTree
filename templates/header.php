@@ -415,37 +415,42 @@ document.addEventListener('DOMContentLoaded', function() {
         updateNotificationBadge();
         setInterval(updateNotificationBadge, 60000);
 
-        // Sidebar toggle logic
-        const toggler = document.querySelector('.navbar-toggler');
-        const sidebar = document.querySelector('.sidebar');
+        // Sidebar toggle logic using Bootstrap Collapse events
         const collapseEl = document.getElementById('navbarNav');
+        const sidebar = document.querySelector('.sidebar');
         
-        if (!toggler || !sidebar || !collapseEl) return;
+        if (!collapseEl || !sidebar) return;
         
-        toggler.addEventListener('click', function() {
-            if (window.innerWidth <= 768) {
-                sidebar.classList.toggle('show');
-                collapseEl.classList.toggle('show');
-            }
+        // When collapse is shown, also toggle sidebar visibility
+        collapseEl.addEventListener('show.bs.collapse', function() {
+            sidebar.classList.add('show');
+        });
+        
+        // When collapse is hidden, also hide sidebar
+        collapseEl.addEventListener('hide.bs.collapse', function() {
+            sidebar.classList.remove('show');
         });
         
         // Close sidebar when clicking on a link
         const sidebarLinks = sidebar.querySelectorAll('.sidebar-link');
         sidebarLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
+            link.addEventListener('click', function() {
                 if (window.innerWidth <= 768) {
+                    // Close the collapse
+                    const bsCollapse = new bootstrap.Collapse(collapseEl, { toggle: false });
+                    bsCollapse.hide();
                     sidebar.classList.remove('show');
-                    collapseEl.classList.remove('show');
                 }
             });
         });
         
-        // Close sidebar when clicking on the overlay background
+        // Close sidebar when clicking overlay (but not sidebar itself)
         collapseEl.addEventListener('click', function(e) {
-            // Only close if clicking the overlay itself, not sidebar content
+            // Only close if clicking the overlay background, not the sidebar
             if (e.target === collapseEl && window.innerWidth <= 768) {
+                const bsCollapse = new bootstrap.Collapse(collapseEl, { toggle: false });
+                bsCollapse.hide();
                 sidebar.classList.remove('show');
-                collapseEl.classList.remove('show');
             }
         });
     });
