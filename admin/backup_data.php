@@ -200,20 +200,14 @@ require_once '../templates/admin_header.php';
     </div>
 </div>
 
-</main>
 <style>
-    /* General Styles */
+    /* Backup Data Page Styles */
     :root {
         --success-color: #28a745;
         --warning-color: #ffc107;
         --danger-color: #dc3545;
-        --primary-bg: #f8f9fa;
         --card-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
         --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.12);
-    }
-
-    body {
-        background-color: var(--primary-bg);
     }
 
     .fade-in {
@@ -231,7 +225,6 @@ require_once '../templates/admin_header.php';
         }
     }
 
-    /* Header Section */
     .header-section {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 2.5rem;
@@ -258,7 +251,6 @@ require_once '../templates/admin_header.php';
         flex-shrink: 0;
     }
 
-    /* Operation Cards */
     .operation-card {
         border: none;
         border-radius: 12px;
@@ -291,7 +283,6 @@ require_once '../templates/admin_header.php';
         flex-direction: column;
     }
 
-    /* Operation Icons */
     .operation-icon {
         width: 45px;
         height: 45px;
@@ -303,7 +294,6 @@ require_once '../templates/admin_header.php';
         flex-shrink: 0;
     }
 
-    /* Features List */
     .features-list {
         display: flex;
         flex-direction: column;
@@ -323,62 +313,6 @@ require_once '../templates/admin_header.php';
         flex-shrink: 0;
     }
 
-    /* Buttons */
-    .btn {
-        font-weight: 600;
-        border-radius: 8px;
-        transition: all 0.2s ease;
-        border: none;
-        padding: 0.625rem 1.25rem;
-    }
-
-    .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .btn:active {
-        transform: translateY(0);
-    }
-
-    .btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none !important;
-        box-shadow: none !important;
-    }
-
-    .btn-success {
-        background-color: var(--success-color);
-    }
-
-    .btn-success:hover {
-        background-color: #218838;
-    }
-
-    .btn-warning {
-        background-color: var(--warning-color);
-        color: #222;
-    }
-
-    .btn-warning:hover {
-        background-color: #e0a800;
-        color: #222;
-    }
-
-    .btn-outline-danger {
-        color: var(--danger-color);
-        border-color: var(--danger-color);
-        border-width: 2px;
-    }
-
-    .btn-outline-danger:hover {
-        background-color: var(--danger-color);
-        color: white;
-        border-color: var(--danger-color);
-    }
-
-    /* File Input Styling */
     .form-control {
         border-radius: 8px;
         border: 2px solid #e0e0e0;
@@ -397,7 +331,6 @@ require_once '../templates/admin_header.php';
         margin-bottom: 0.5rem;
     }
 
-    /* Info Card */
     .info-card {
         border: none;
         border-radius: 12px;
@@ -424,7 +357,6 @@ require_once '../templates/admin_header.php';
         border-radius: 8px;
     }
 
-    /* Help Card */
     .help-card {
         border: none;
         border-radius: 12px;
@@ -479,7 +411,6 @@ require_once '../templates/admin_header.php';
         color: #222;
     }
 
-    /* Alert Positioning */
     #alertContainer {
         margin-bottom: 1.5rem;
         pointer-events: none;
@@ -525,16 +456,13 @@ require_once '../templates/admin_header.php';
         border-left: 4px solid var(--warning-color);
     }
 
-    /* Responsive Design */
     @media (max-width: 992px) {
         .header-section {
             padding: 2rem;
         }
-
         .header-section h1 {
             font-size: 1.75rem;
         }
-
         .operation-card .card-header {
             padding: 1rem;
         }
@@ -544,30 +472,20 @@ require_once '../templates/admin_header.php';
         .header-section {
             padding: 1.5rem;
         }
-
         .header-section h1 {
             font-size: 1.5rem;
         }
-
         .header-section .icon-circle {
             width: 50px;
             height: 50px;
             font-size: 1.5rem;
         }
-
         .operation-card:hover {
             transform: translateY(-3px);
         }
-
-        .btn {
-            padding: 0.55rem 1rem;
-            font-size: 0.95rem;
-        }
-
         .guide-item {
             text-align: left;
         }
-
         .guide-number {
             margin: 0 0 0.5rem 0;
         }
@@ -577,54 +495,41 @@ require_once '../templates/admin_header.php';
         .header-section {
             padding: 1.25rem;
         }
-
         .header-section h1 {
             font-size: 1.25rem;
         }
-
         .d-flex.gap-3 {
             flex-direction: column;
         }
-
         .header-section .icon-circle {
             width: 45px;
             height: 45px;
             font-size: 1.25rem;
         }
-
         .operation-icon {
             width: 38px;
             height: 38px;
             font-size: 1.1rem;
         }
-
         .operation-card .card-header {
             padding: 0.875rem;
         }
-
         .operation-card .card-body {
             padding: 0.875rem;
         }
-
-        .btn {
-            padding: 0.5rem 0.875rem;
-            font-size: 0.875rem;
-        }
-
         .alert {
             font-size: 0.85rem;
             padding: 0.75rem 1rem;
         }
-
         .guide-item {
             padding: 1rem;
         }
-
         .row.g-4 {
             gap: 1rem !important;
         }
     }
 </style>
+
 <script>
 // Initialize event listeners when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
@@ -643,7 +548,6 @@ document.addEventListener('DOMContentLoaded', function() {
         deleteBtn.addEventListener('click', deleteAllData);
     }
     
-    // Enable/disable import button based on file selection
     if (fileInput) {
         fileInput.addEventListener('change', function() {
             importBtn.disabled = !this.files.length;
@@ -651,9 +555,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Get the handler URL - construct from current page location
 function getHandlerUrl() {
-    // Use relative path from current directory
     return './backup_data_handler.php';
 }
 
@@ -669,7 +571,6 @@ async function exportDatabase() {
         const formData = new FormData();
         formData.append('action', 'export');
         
-        // 10 minute timeout with AbortController
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 600000);
         
@@ -697,7 +598,6 @@ async function exportDatabase() {
         const data = JSON.parse(text);
         
         if (data.success) {
-            // Create blob and download
             const blob = new Blob([data.data], { type: 'text/plain;charset=utf-8' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -752,7 +652,6 @@ async function importDatabase() {
         formData.append('action', 'import');
         formData.append('backup_file', fileInput.files[0]);
         
-        // 10 minute timeout for import
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 600000);
         
@@ -827,7 +726,6 @@ function showAlert(message, type) {
     `;
     alertContainer.innerHTML = alertHTML;
     
-    // Auto-dismiss success alerts after 5 seconds
     if (type === 'success') {
         setTimeout(() => {
             const alert = alertContainer.querySelector('.alert');
@@ -845,7 +743,6 @@ async function deleteAllData() {
     const btn = document.getElementById('deleteBtn');
     const handlerUrl = getHandlerUrl();
     
-    // Multiple confirmation steps for this dangerous action
     if (!confirm('⚠️ WARNING: This will DELETE ALL DATA except the root admin account.\n\nAre you absolutely sure you want to continue?')) {
         return;
     }
@@ -863,7 +760,6 @@ async function deleteAllData() {
         const formData = new FormData();
         formData.append('action', 'delete_all');
         
-        // 5 minute timeout for deletion
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 300000);
         
@@ -911,3 +807,5 @@ async function deleteAllData() {
     }
 }
 </script>
+
+</main>
