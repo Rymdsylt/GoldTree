@@ -353,19 +353,6 @@ require_once '../templates/admin_header.php';
 
 <div class="container-fluid py-4">
     <div class="fade-in">
-    <!-- Header Section -->
-    <div class="header-section mb-5">
-        <div class="d-flex align-items-center gap-3 mb-3">
-            <div class="icon-circle">
-                <i class="bi bi-cloud-arrow-up-down"></i>
-            </div>
-            <div>
-                <h1 class="mb-1">Backup & Restore</h1>
-                <p class="text-muted mb-0">Manage your database backups with export, import, and data management tools</p>
-            </div>
-        </div>
-    </div>
-
     <!-- Alert Container -->
     <div id="alertContainer" style="pointer-events: none;"></div>
 
