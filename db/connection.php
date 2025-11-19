@@ -1,5 +1,5 @@
 <?php
-// Use Heroku DATABASE_URL or JAWSDB_MARIA_URL if available, otherwise use local defaults
+
 $dbUrl = getenv('JAWSDB_MARIA_URL');
 if (!$dbUrl) {
     $dbUrl = getenv('DATABASE_URL');
@@ -12,7 +12,7 @@ if ($dbUrl) {
     define('DB_NAME', ltrim($url['path'], '/'));
     $port = isset($url['port']) ? $url['port'] : 3306;
 } else {
-    // Local development defaults
+
     define('DB_HOST', 'localhost');
     define('DB_USER', 'root');
     define('DB_PASS', '');
@@ -23,11 +23,11 @@ if ($dbUrl) {
 try {
     date_default_timezone_set('Asia/Manila');
     
-    // For Heroku (ClearDB/JAWSDB), connect directly to the database (no CREATE DATABASE)
+
     if ($dbUrl) {
         $conn = new PDO("mysql:host=" . DB_HOST . ";port=" . $port . ";dbname=" . DB_NAME, DB_USER, DB_PASS);
     } else {
-        // Local development: create database if it doesn't exist
+  
         $conn = new PDO("mysql:host=" . DB_HOST, DB_USER, DB_PASS);
         $conn->exec("CREATE DATABASE IF NOT EXISTS " . DB_NAME);
         $conn->exec("USE " . DB_NAME);
