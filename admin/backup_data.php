@@ -21,6 +21,7 @@ require_once '../config.php';
 require_once '../templates/admin_header.php';
 ?>
 
+<div class="container-fluid py-4">
     <div class="fade-in">
     <!-- Header Section -->
     <div class="header-section mb-5">
@@ -195,6 +196,7 @@ require_once '../templates/admin_header.php';
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </div>
 
