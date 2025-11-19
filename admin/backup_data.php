@@ -566,13 +566,13 @@ document.addEventListener('DOMContentLoaded', function() {
     credentialModal = new bootstrap.Modal(document.getElementById('credentialModal'));
     
     if (exportBtn) {
-        exportBtn.addEventListener('click', () => showCredentialModal('export'));
+        exportBtn.addEventListener('click', exportDatabase);
     }
     if (importBtn) {
         importBtn.addEventListener('click', () => showCredentialModal('import'));
     }
     if (deleteBtn) {
-        deleteBtn.addEventListener('click', deleteAllData);
+        deleteBtn.addEventListener('click', () => showCredentialModal('delete'));
     }
     
     if (verifyBtn) {
@@ -644,10 +644,10 @@ async function verifyCredentials() {
             credentialModal.hide();
             
             // Execute the pending action
-            if (pendingAction === 'export') {
-                exportDatabase();
-            } else if (pendingAction === 'import') {
+            if (pendingAction === 'import') {
                 importDatabase();
+            } else if (pendingAction === 'delete') {
+                performDelete();
             }
         } else {
             errorDiv.textContent = data.error || 'Credential verification failed';
@@ -847,10 +847,7 @@ function showAlert(message, type) {
     }
 }
 
-async function deleteAllData() {
-    const btn = document.getElementById('deleteBtn');
-    const handlerUrl = getHandlerUrl();
-    
+function performDelete() {
     if (!confirm('⚠️ WARNING: This will DELETE ALL DATA except the root admin account.\n\nAre you absolutely sure you want to continue?')) {
         return;
     }
@@ -858,6 +855,13 @@ async function deleteAllData() {
     if (!confirm('⚠️ FINAL WARNING: This action is IRREVERSIBLE!\n\nAll members, events, donations, and records will be permanently deleted. The root admin account will be preserved.\n\nClick OK only if you are absolutely certain.')) {
         return;
     }
+    
+    executeDelete();
+}
+
+async function executeDelete() {
+    const btn = document.getElementById('deleteBtn');
+    const handlerUrl = getHandlerUrl();
     
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Deleting...';
