@@ -21,185 +21,6 @@ require_once '../config.php';
 require_once '../templates/admin_header.php';
 ?>
 
-<div class="container-fluid py-4">
-    <div class="fade-in">
-    <!-- Header Section -->
-    <div class="header-section mb-5">
-        <div class="d-flex align-items-center gap-3 mb-3">
-            <div class="icon-circle">
-                <i class="bi bi-cloud-arrow-up-down"></i>
-            </div>
-            <div>
-                <h1 class="mb-1">Backup & Restore</h1>
-                <p class="text-muted mb-0">Manage your database backups with export, import, and data management tools</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Alert Container -->
-    <div id="alertContainer" style="pointer-events: none;"></div>
-
-    <!-- Main Operations Grid -->
-    <div class="row g-4 mb-5">
-        <!-- Export Section -->
-        <div class="col-lg-4 col-md-6">
-            <div class="card operation-card export-card h-100">
-                <div class="card-header bg-success bg-opacity-10 border-0 pb-0">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="operation-icon bg-success text-white">
-                            <i class="bi bi-download"></i>
-                        </div>
-                        <h5 class="mb-0">Export Database</h5>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <p class="card-text text-muted small mb-3">Download a complete backup of your database including all tables, data, and structure.</p>
-                    <div class="features-list mb-4">
-                        <div class="feature-item">
-                            <i class="bi bi-check-circle-fill text-success"></i>
-                            <span>All database tables</span>
-                        </div>
-                        <div class="feature-item">
-                            <i class="bi bi-check-circle-fill text-success"></i>
-                            <span>Complete data & structure</span>
-                        </div>
-                        <div class="feature-item">
-                            <i class="bi bi-check-circle-fill text-success"></i>
-                            <span>Timestamped filename</span>
-                        </div>
-                    </div>
-                    <button type="button" class="btn btn-success w-100 py-2" id="exportBtn">
-                        <i class="bi bi-cloud-download"></i> Start Export
-                    </button>
-                    <small class="d-block text-muted text-center mt-2">May take a few minutes for large databases</small>
-                </div>
-            </div>
-        </div>
-
-        <!-- Import Section -->
-        <div class="col-lg-4 col-md-6">
-            <div class="card operation-card import-card h-100">
-                <div class="card-header bg-warning bg-opacity-10 border-0 pb-0">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="operation-icon bg-warning text-white">
-                            <i class="bi bi-upload"></i>
-                        </div>
-                        <h5 class="mb-0">Import Database</h5>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <p class="card-text text-muted small mb-3">Restore your database from a previously exported backup file.</p>
-                    <div class="mb-3">
-                        <label for="backup_file" class="form-label fw-500">Select File</label>
-                        <input type="file" class="form-control" id="backup_file" accept=".sql">
-                        <small class="d-block text-muted mt-2">📄 Only .sql files accepted</small>
-                    </div>
-                    <button type="button" class="btn btn-warning w-100 py-2" id="importBtn" disabled>
-                        <i class="bi bi-cloud-upload"></i> Start Import
-                    </button>
-                    <div class="alert alert-warning mt-3 py-2 mb-0" style="font-size: 0.85rem;">
-                        <i class="bi bi-exclamation-triangle-fill"></i> Replaces all existing data
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Delete All Data Section -->
-        <div class="col-lg-4 col-md-6">
-            <div class="card operation-card delete-card h-100 border-danger">
-                <div class="card-header bg-danger bg-opacity-10 border-0 pb-0">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="operation-icon bg-danger text-white">
-                            <i class="bi bi-trash"></i>
-                        </div>
-                        <h5 class="mb-0 text-danger">Delete All Data</h5>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <p class="card-text text-muted small mb-3">Permanently delete all records while preserving the root admin account.</p>
-                    <div class="alert alert-danger py-2 mb-3" style="font-size: 0.85rem;">
-                        <i class="bi bi-exclamation-circle-fill"></i> <strong>Irreversible action</strong>
-                    </div>
-                    <button type="button" class="btn btn-outline-danger w-100 py-2" id="deleteBtn">
-                        <i class="bi bi-trash"></i> Delete All Data
-                    </button>
-                    <small class="d-block text-danger text-center mt-2">Only root account preserved</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Database Info Section -->
-    <div class="row g-4 mb-5">
-        <div class="col-12">
-            <div class="card info-card">
-                <div class="card-header border-bottom-0">
-                    <h6 class="mb-0"><i class="bi bi-database"></i> Database Information</h6>
-                </div>
-                <div class="card-body">
-                    <div class="row g-4">
-                        <div class="col-md-4">
-                            <div class="info-item">
-                                <small class="text-muted d-block mb-1">Database Name</small>
-                                <p class="mb-0 fw-bold text-dark"><?php echo htmlspecialchars(DB_NAME); ?></p>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="info-item">
-                                <small class="text-muted d-block mb-1">Host</small>
-                                <p class="mb-0 fw-bold text-dark"><?php echo htmlspecialchars(DB_HOST); ?></p>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="info-item">
-                                <small class="text-muted d-block mb-1">Current Time</small>
-                                <p class="mb-0 fw-bold text-dark"><?php echo date('Y-m-d H:i:s'); ?></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Help Section -->
-    <div class="row g-4">
-        <div class="col-12">
-            <div class="card help-card">
-                <div class="card-header border-bottom-0">
-                    <h6 class="mb-0"><i class="bi bi-question-circle"></i> Quick Guide</h6>
-                </div>
-                <div class="card-body">
-                    <div class="row g-4">
-                        <div class="col-md-4">
-                            <div class="guide-item">
-                                <div class="guide-number">1</div>
-                                <h6>Export Regularly</h6>
-                                <p class="small text-muted mb-0">Create backups before making major changes to ensure data safety.</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="guide-item">
-                                <div class="guide-number">2</div>
-                                <h6>Verify Backups</h6>
-                                <p class="small text-muted mb-0">Test your backups periodically by importing them to verify they work properly.</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="guide-item">
-                                <div class="guide-number">3</div>
-                                <h6>Store Safely</h6>
-                                <p class="small text-muted mb-0">Keep backup files in a secure location separate from the main database.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    </div>
-</div>
-
 <style>
     /* Backup Data Page Styles */
     :root {
@@ -530,6 +351,185 @@ require_once '../templates/admin_header.php';
     }
 </style>
 
+<div class="container-fluid py-4">
+    <div class="fade-in">
+    <!-- Header Section -->
+    <div class="header-section mb-5">
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="icon-circle">
+                <i class="bi bi-cloud-arrow-up-down"></i>
+            </div>
+            <div>
+                <h1 class="mb-1">Backup & Restore</h1>
+                <p class="text-muted mb-0">Manage your database backups with export, import, and data management tools</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer" style="pointer-events: none;"></div>
+
+    <!-- Main Operations Grid -->
+    <div class="row g-4 mb-5">
+        <!-- Export Section -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card operation-card export-card h-100">
+                <div class="card-header bg-success bg-opacity-10 border-0 pb-0">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="operation-icon bg-success text-white">
+                            <i class="bi bi-download"></i>
+                        </div>
+                        <h5 class="mb-0">Export Database</h5>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="card-text text-muted small mb-3">Download a complete backup of your database including all tables, data, and structure.</p>
+                    <div class="features-list mb-4">
+                        <div class="feature-item">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            <span>All database tables</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            <span>Complete data & structure</span>
+                        </div>
+                        <div class="feature-item">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            <span>Timestamped filename</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-success w-100 py-2" id="exportBtn">
+                        <i class="bi bi-cloud-download"></i> Start Export
+                    </button>
+                    <small class="d-block text-muted text-center mt-2">May take a few minutes for large databases</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import Section -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card operation-card import-card h-100">
+                <div class="card-header bg-warning bg-opacity-10 border-0 pb-0">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="operation-icon bg-warning text-white">
+                            <i class="bi bi-upload"></i>
+                        </div>
+                        <h5 class="mb-0">Import Database</h5>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="card-text text-muted small mb-3">Restore your database from a previously exported backup file.</p>
+                    <div class="mb-3">
+                        <label for="backup_file" class="form-label fw-500">Select File</label>
+                        <input type="file" class="form-control" id="backup_file" accept=".sql">
+                        <small class="d-block text-muted mt-2">📄 Only .sql files accepted</small>
+                    </div>
+                    <button type="button" class="btn btn-warning w-100 py-2" id="importBtn" disabled>
+                        <i class="bi bi-cloud-upload"></i> Start Import
+                    </button>
+                    <div class="alert alert-warning mt-3 py-2 mb-0" style="font-size: 0.85rem;">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Replaces all existing data
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete All Data Section -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card operation-card delete-card h-100 border-danger">
+                <div class="card-header bg-danger bg-opacity-10 border-0 pb-0">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="operation-icon bg-danger text-white">
+                            <i class="bi bi-trash"></i>
+                        </div>
+                        <h5 class="mb-0 text-danger">Delete All Data</h5>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="card-text text-muted small mb-3">Permanently delete all records while preserving the root admin account.</p>
+                    <div class="alert alert-danger py-2 mb-3" style="font-size: 0.85rem;">
+                        <i class="bi bi-exclamation-circle-fill"></i> <strong>Irreversible action</strong>
+                    </div>
+                    <button type="button" class="btn btn-outline-danger w-100 py-2" id="deleteBtn">
+                        <i class="bi bi-trash"></i> Delete All Data
+                    </button>
+                    <small class="d-block text-danger text-center mt-2">Only root account preserved</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Info Section -->
+    <div class="row g-4 mb-5">
+        <div class="col-12">
+            <div class="card info-card">
+                <div class="card-header border-bottom-0">
+                    <h6 class="mb-0"><i class="bi bi-database"></i> Database Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="info-item">
+                                <small class="text-muted d-block mb-1">Database Name</small>
+                                <p class="mb-0 fw-bold text-dark"><?php echo htmlspecialchars(DB_NAME); ?></p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-item">
+                                <small class="text-muted d-block mb-1">Host</small>
+                                <p class="mb-0 fw-bold text-dark"><?php echo htmlspecialchars(DB_HOST); ?></p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-item">
+                                <small class="text-muted d-block mb-1">Current Time</small>
+                                <p class="mb-0 fw-bold text-dark"><?php echo date('Y-m-d H:i:s'); ?></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Section -->
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="card help-card">
+                <div class="card-header border-bottom-0">
+                    <h6 class="mb-0"><i class="bi bi-question-circle"></i> Quick Guide</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="guide-item">
+                                <div class="guide-number">1</div>
+                                <h6>Export Regularly</h6>
+                                <p class="small text-muted mb-0">Create backups before making major changes to ensure data safety.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="guide-item">
+                                <div class="guide-number">2</div>
+                                <h6>Verify Backups</h6>
+                                <p class="small text-muted mb-0">Test your backups periodically by importing them to verify they work properly.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="guide-item">
+                                <div class="guide-number">3</div>
+                                <h6>Store Safely</h6>
+                                <p class="small text-muted mb-0">Keep backup files in a secure location separate from the main database.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+</div>
+
 <script>
 // Initialize event listeners when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
@@ -808,4 +808,4 @@ async function deleteAllData() {
 }
 </script>
 
-</main>
+<?php require_once '../templates/admin_footer.php'; ?>
