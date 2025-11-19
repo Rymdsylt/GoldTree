@@ -22,7 +22,7 @@ require_once '../templates/admin_header.php';
 ?>
 
 <style>
-    /* Backup Data Page Styles */
+    
     :root {
         --success-color: #28a745;
         --warning-color: #ffc107;
@@ -353,10 +353,9 @@ require_once '../templates/admin_header.php';
 
 <div class="container-fluid py-4">
     <div class="fade-in">
-    <!-- Alert Container -->
+
     <div id="alertContainer" style="pointer-events: none;"></div>
 
-    <!-- Credential Verification Modal -->
     <div class="modal fade" id="credentialModal" tabindex="-1" aria-labelledby="credentialModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -388,9 +387,9 @@ require_once '../templates/admin_header.php';
         </div>
     </div>
 
-    <!-- Main Operations Grid -->
+
     <div class="row g-4 mb-5">
-        <!-- Export Section -->
+
         <div class="col-lg-4 col-md-6">
             <div class="card operation-card export-card h-100">
                 <div class="card-header bg-success bg-opacity-10 border-0 pb-0">
@@ -425,7 +424,6 @@ require_once '../templates/admin_header.php';
             </div>
         </div>
 
-        <!-- Import Section -->
         <div class="col-lg-4 col-md-6">
             <div class="card operation-card import-card h-100">
                 <div class="card-header bg-warning bg-opacity-10 border-0 pb-0">
@@ -453,7 +451,6 @@ require_once '../templates/admin_header.php';
             </div>
         </div>
 
-        <!-- Delete All Data Section -->
         <div class="col-lg-4 col-md-6">
             <div class="card operation-card delete-card h-100 border-danger">
                 <div class="card-header bg-danger bg-opacity-10 border-0 pb-0">
@@ -478,7 +475,6 @@ require_once '../templates/admin_header.php';
         </div>
     </div>
 
-    <!-- Database Info Section -->
     <div class="row g-4 mb-5">
         <div class="col-12">
             <div class="card info-card">
@@ -511,7 +507,6 @@ require_once '../templates/admin_header.php';
         </div>
     </div>
 
-    <!-- Help Section -->
     <div class="row g-4">
         <div class="col-12">
             <div class="card help-card">
@@ -550,11 +545,11 @@ require_once '../templates/admin_header.php';
 </div>
 
 <script>
-// Credential modal state
+
 let credentialModal = null;
 let pendingAction = null;
 
-// Initialize event listeners when DOM is ready
+
 document.addEventListener('DOMContentLoaded', function() {
     const exportBtn = document.getElementById('exportBtn');
     const importBtn = document.getElementById('importBtn');
@@ -595,7 +590,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function showCredentialModal(action) {
     const fileInput = document.getElementById('backup_file');
     
-    // For import, check if file is selected
+ 
     if (action === 'import' && !fileInput.files.length) {
         showAlert('Please select a backup file to import', 'warning');
         return;
@@ -643,7 +638,7 @@ async function verifyCredentials() {
         if (data.success) {
             credentialModal.hide();
             
-            // Execute the pending action
+           
             if (pendingAction === 'import') {
                 importDatabase();
             } else if (pendingAction === 'delete') {

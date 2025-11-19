@@ -1,39 +1,36 @@
 <?php
-// Disable error display, log instead
+
 ini_set('display_errors', '0');
 error_reporting(E_ALL);
 
-// Start session FIRST before any output
+
 session_start();
 
-// Set JSON header
+
 header('Content-Type: application/json; charset=utf-8');
 
-// Define flag file path for storing responses
 $flag_dir = sys_get_temp_dir();
 $flag_file = $flag_dir . '/goldtree_import_response_' . session_id() . '.json';
 
-// Cleanup old flag files
+
 $cleanup_files = glob($flag_dir . '/goldtree_import_response_*.json');
 if ($cleanup_files) {
     foreach ($cleanup_files as $old_file) {
-        if (filemtime($old_file) < time() - 300) { // older than 5 minutes
+        if (filemtime($old_file) < time() - 300) { 
             @unlink($old_file);
         }
     }
 }
 
-// Require configs
+
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../db/connection.php';
 
-// Check authentication
 if (!isset($_SESSION['user_id'])) {
     http_response_code(401);
     exit(json_encode(['success' => false, 'error' => 'Unauthorized']));
 }
 
-// Check admin status
 $stmt = $conn->prepare("SELECT admin_status FROM users WHERE id = ?");
 $stmt->execute([$_SESSION['user_id']]);
 $user = $stmt->fetch();
@@ -43,7 +40,7 @@ if (!$user || $user['admin_status'] != 1) {
     exit(json_encode(['success' => false, 'error' => 'Forbidden - Admin access required']));
 }
 
-// Helper function to ensure valid UTF-8
+
 function ensureUtf8($str) {
     if (is_string($str)) {
         return mb_convert_encoding($str, 'UTF-8', 'UTF-8');
@@ -51,10 +48,10 @@ function ensureUtf8($str) {
     return $str;
 }
 
-// Log the request
+
 error_log('Handler called - Method: ' . $_SERVER['REQUEST_METHOD'] . ', Action: ' . ($_POST['action'] ?? 'NONE'));
 
-// Route the request
+
 $action = $_POST['action'] ?? null;
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -75,9 +72,7 @@ if ($action === 'verify_credentials') {
     exit(json_encode(['success' => false, 'error' => 'Invalid action']));
 }
 
-/**
- * Verify admin credentials
- */
+
 function verifyCredentials($conn) {
     $username = $_POST['username'] ?? '';
     $password = $_POST['password'] ?? '';
@@ -87,7 +82,7 @@ function verifyCredentials($conn) {
     }
     
     try {
-        // Get current user from session
+   
         $stmt = $conn->prepare("SELECT id, username, password FROM users WHERE admin_status = 1 LIMIT 1");
         $stmt->execute();
         $user = $stmt->fetch();
@@ -96,7 +91,7 @@ function verifyCredentials($conn) {
             exit(json_encode(['success' => false, 'error' => 'Admin user not found']));
         }
         
-        // Verify credentials
+   
         $adminUser = $conn->prepare("SELECT id FROM users WHERE username = ? AND admin_status = 1");
         $adminUser->execute([$username]);
         $admin = $adminUser->fetch();
@@ -105,7 +100,7 @@ function verifyCredentials($conn) {
             exit(json_encode(['success' => false, 'error' => 'Invalid admin credentials']));
         }
         
-        // Get the user to verify password
+   
         $userStmt = $conn->prepare("SELECT password FROM users WHERE id = ? AND admin_status = 1");
         $userStmt->execute([$admin['id']]);
         $userRow = $userStmt->fetch();
@@ -114,7 +109,7 @@ function verifyCredentials($conn) {
             exit(json_encode(['success' => false, 'error' => 'Invalid admin credentials']));
         }
         
-        // Credentials verified
+       
         exit(json_encode(['success' => true, 'message' => 'Credentials verified']));
     } catch (Exception $e) {
         error_log('Credential verification error: ' . $e->getMessage());
@@ -122,9 +117,7 @@ function verifyCredentials($conn) {
     }
 }
 
-/**
- * Handle database export
- */
+
 function handleExport() {
     global $conn;
     
@@ -132,7 +125,7 @@ function handleExport() {
         error_log('Starting database export...');
         set_time_limit(600);
         
-        // Get all tables
+
         $tables = [];
         $result = $conn->query("SHOW TABLES");
         while ($row = $result->fetch(PDO::FETCH_NUM)) {
@@ -141,7 +134,7 @@ function handleExport() {
         
         error_log('Found ' . count($tables) . ' tables');
         
-        // Build SQL dump
+
         $dump = "-- GoldTree Database Backup\n";
         $dump .= "-- Generated: " . date('Y-m-d H:i:s') . "\n";
         $dump .= "-- Database: " . DB_NAME . "\n";
@@ -149,23 +142,20 @@ function handleExport() {
         
         foreach ($tables as $index => $table) {
             error_log('Exporting table ' . ($index + 1) . '/' . count($tables) . ': ' . $table);
-            
-            // Get CREATE TABLE statement
+
             $createResult = $conn->query("SHOW CREATE TABLE `$table`");
             $createRow = $createResult->fetch(PDO::FETCH_NUM);
             $dump .= "\n-- Table: `$table`\n";
             $dump .= "DROP TABLE IF EXISTS `$table`;\n";
             $dump .= $createRow[1] . ";\n\n";
-            
-            // Get row count
+
             $dataResult = $conn->query("SELECT COUNT(*) as cnt FROM `$table`");
             $countRow = $dataResult->fetch(PDO::FETCH_ASSOC);
             $rowCount = $countRow['cnt'];
             
             if ($rowCount > 0) {
                 error_log('  - Exporting ' . $rowCount . ' rows from ' . $table);
-                
-                // Fetch in chunks
+
                 $chunkSize = 1000;
                 $offset = 0;
                 
@@ -218,9 +208,7 @@ function handleExport() {
     }
 }
 
-/**
- * Handle database import
- */
+
 function handleImport() {
     global $conn;
     
@@ -238,7 +226,7 @@ function handleImport() {
         
         error_log('Import: File size: ' . strlen($file_content) . ' bytes');
         
-        // Disable foreign key checks during import
+
         error_log('Import: Disabling foreign key checks');
         try {
             $conn->exec('SET FOREIGN_KEY_CHECKS=0');
@@ -246,7 +234,7 @@ function handleImport() {
             error_log('Import: Could not disable foreign keys: ' . $e->getMessage());
         }
         
-        // Simple and robust SQL parsing using explode by lines
+    
         $lines = explode("\n", $file_content);
         $statements = [];
         $current = '';
@@ -254,14 +242,14 @@ function handleImport() {
         foreach ($lines as $line) {
             $trimmed = trim($line);
             
-            // Skip empty lines and comments
+     
             if (empty($trimmed) || substr($trimmed, 0, 2) === '--') {
                 continue;
             }
             
             $current .= $line . "\n";
             
-            // Check if line ends with semicolon
+         
             if (substr($trimmed, -1) === ';') {
                 $stmt = trim(str_replace("\n", ' ', $current));
                 if (!empty($stmt)) {
@@ -272,13 +260,12 @@ function handleImport() {
         }
         
         error_log('Import: Found ' . count($statements) . ' total statements');
-        
-        // Separate DROP and other statements
+      
         $drop_stmts = [];
         $other_stmts = [];
         
         foreach ($statements as $stmt) {
-            // Normalize whitespace
+   
             $normalized = preg_replace('/\s+/', ' ', trim($stmt));
             error_log('Import: Statement: ' . substr($normalized, 0, 80));
             
@@ -292,7 +279,7 @@ function handleImport() {
         
         error_log('Import: Sorted into ' . count($drop_stmts) . ' DROP statements and ' . count($other_stmts) . ' other statements');
         
-        // Execute drops first
+       
         $all_stmts = array_merge($drop_stmts, $other_stmts);
         
         $executed = 0;
@@ -315,7 +302,7 @@ function handleImport() {
             }
         }
         
-        // Re-enable foreign key checks
+    
         error_log('Import: Re-enabling foreign key checks');
         try {
             $conn->exec('SET FOREIGN_KEY_CHECKS=1');
@@ -337,12 +324,12 @@ function handleImport() {
             'errors' => $errors
         ];
         
-        // Write response to flag file
+
         global $flag_file;
         file_put_contents($flag_file, json_encode($response));
         error_log('Import: Wrote response to flag file: ' . $flag_file);
         
-        // Send response via JSON
+      
         $json = json_encode($response);
         error_log('Import: Response JSON - ' . $json);
         exit($json);
@@ -351,7 +338,7 @@ function handleImport() {
         error_log('Import error: ' . $e->getMessage());
         http_response_code(400);
         
-        // Write error to flag file
+   
         global $flag_file;
         $error_response = ['success' => false, 'error' => 'Import error: ' . $e->getMessage()];
         file_put_contents($flag_file, json_encode($error_response));
@@ -360,9 +347,7 @@ function handleImport() {
     }
 }
 
-/**
- * Handle delete all data (except root admin)
- */
+
 function handleDeleteAll() {
     global $conn, $flag_file;
     
@@ -370,7 +355,6 @@ function handleDeleteAll() {
         error_log('Starting delete all data operation...');
         set_time_limit(300);
         
-        // Disable foreign key checks to allow deletion
         error_log('DeleteAll: Disabling foreign key checks');
         try {
             $conn->exec('SET FOREIGN_KEY_CHECKS=0');
@@ -378,7 +362,7 @@ function handleDeleteAll() {
             error_log('DeleteAll: Could not disable foreign keys: ' . $e->getMessage());
         }
         
-        // Get all tables
+ 
         $tables = [];
         $result = $conn->query("SHOW TABLES");
         while ($row = $result->fetch(PDO::FETCH_NUM)) {
@@ -394,7 +378,7 @@ function handleDeleteAll() {
             try {
                 error_log('DeleteAll: Processing table: ' . $table);
                 
-                // For users table, only delete non-root users
+
                 if ($table === 'users') {
                     error_log('DeleteAll: Clearing users table except root');
                     $stmt = $conn->prepare("DELETE FROM $table WHERE username != ?");
@@ -402,14 +386,14 @@ function handleDeleteAll() {
                     $deleted_count += $stmt->rowCount();
                     error_log('DeleteAll: Deleted ' . $stmt->rowCount() . ' user records');
                 }
-                // For members table, delete all
+   
                 elseif ($table === 'members') {
                     error_log('DeleteAll: Clearing members table');
                     $conn->exec("DELETE FROM `$table`");
                     $deleted_count += $conn->query("SELECT FOUND_ROWS()")->fetchColumn();
                     error_log('DeleteAll: Cleared members table');
                 }
-                // For all other tables, delete all records
+
                 else {
                     error_log('DeleteAll: Clearing table: ' . $table);
                     $conn->exec("DELETE FROM `$table`");
@@ -423,7 +407,7 @@ function handleDeleteAll() {
             }
         }
         
-        // Re-enable foreign key checks
+
         error_log('DeleteAll: Re-enabling foreign key checks');
         try {
             $conn->exec('SET FOREIGN_KEY_CHECKS=1');
@@ -445,11 +429,11 @@ function handleDeleteAll() {
             'errors' => $errors
         ];
         
-        // Write response to flag file
+
         file_put_contents($flag_file, json_encode($response));
         error_log('DeleteAll: Wrote response to flag file: ' . $flag_file);
         
-        // Send response via JSON
+
         $json = json_encode($response);
         error_log('DeleteAll: Response JSON - ' . $json);
         exit($json);
@@ -458,7 +442,7 @@ function handleDeleteAll() {
         error_log('DeleteAll error: ' . $e->getMessage());
         http_response_code(400);
         
-        // Write error to flag file
+
         global $flag_file;
         $error_response = ['success' => false, 'error' => 'Delete operation failed: ' . $e->getMessage()];
         file_put_contents($flag_file, json_encode($error_response));
