@@ -414,14 +414,16 @@ document.addEventListener('DOMContentLoaded', function() {
         // Sidebar toggle logic
         const collapseEl = document.getElementById('navbarNav');
         const sidebar = document.querySelector('.sidebar');
+        const toggler = document.querySelector('.navbar-toggler');
         
-        if (!collapseEl || !sidebar) return;
+        if (!collapseEl || !sidebar || !toggler) return;
         
-        // When collapse is toggled, also toggle sidebar visibility
+        // When collapse is shown, also toggle sidebar visibility
         collapseEl.addEventListener('show.bs.collapse', function() {
             sidebar.classList.add('show');
         });
         
+        // When collapse is hidden, also hide sidebar
         collapseEl.addEventListener('hide.bs.collapse', function() {
             sidebar.classList.remove('show');
         });
@@ -431,21 +433,19 @@ document.addEventListener('DOMContentLoaded', function() {
         sidebarLinks.forEach(link => {
             link.addEventListener('click', function() {
                 if (window.innerWidth <= 768) {
-                    // Close the collapse
-                    const bsCollapse = new bootstrap.Collapse(collapseEl, { toggle: false });
+                    // Hide the collapse and sidebar
+                    const bsCollapse = bootstrap.Collapse.getInstance(collapseEl) || new bootstrap.Collapse(collapseEl, { toggle: false });
                     bsCollapse.hide();
-                    sidebar.classList.remove('show');
                 }
             });
         });
         
-        // Close sidebar when clicking overlay (but not sidebar itself)
+        // Close sidebar when clicking on the overlay background
         collapseEl.addEventListener('click', function(e) {
-            // Only close if clicking the overlay background, not the sidebar
+            // Only close if clicking the overlay background, not content inside
             if (e.target === collapseEl && window.innerWidth <= 768) {
-                const bsCollapse = new bootstrap.Collapse(collapseEl, { toggle: false });
+                const bsCollapse = bootstrap.Collapse.getInstance(collapseEl) || new bootstrap.Collapse(collapseEl, { toggle: false });
                 bsCollapse.hide();
-                sidebar.classList.remove('show');
             }
         });
     });
