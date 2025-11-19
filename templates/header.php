@@ -140,7 +140,7 @@ if (isset($_SESSION['user_id'])) {
                 z-index: 1001;
                 transform: translateX(-100%);
                 transition: transform 0.3s ease-in-out;
-                pointer-events: auto;
+                pointer-events: none;
             }
 
             .sidebar.show {
@@ -432,7 +432,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Close sidebar when clicking on a link
         const sidebarLinks = sidebar.querySelectorAll('.sidebar-link');
         sidebarLinks.forEach(link => {
-            link.addEventListener('click', function() {
+            link.addEventListener('click', function(e) {
                 if (window.innerWidth <= 768) {
                     sidebar.classList.remove('show');
                     collapseEl.classList.remove('show');
@@ -442,6 +442,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Close sidebar when clicking on the overlay background
         collapseEl.addEventListener('click', function(e) {
+            // Only close if clicking the overlay itself, not sidebar content
             if (e.target === collapseEl && window.innerWidth <= 768) {
                 sidebar.classList.remove('show');
                 collapseEl.classList.remove('show');
