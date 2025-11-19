@@ -307,7 +307,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <?php if (!empty($username)): ?>
-                        <li class="nav-item">
+                        <li class="nav-item d-none d-md-block">
                             <span class="nav-link">Welcome, <?php echo $username; ?></span>
                         </li>
                     <?php endif; ?>
@@ -328,6 +328,12 @@ document.addEventListener('DOMContentLoaded', function() {
     <?php if (isset($_SESSION['user_id'])): ?>
     <div class="sidebar">
         <div class="p-3">
+            <?php if (!empty($username)): ?>
+                <div class="d-md-none mb-4 pb-3 border-bottom">
+                    <h6 class="mb-0 text-muted">Welcome,</h6>
+                    <p class="mb-0 fw-bold text-primary"><?php echo $username; ?></p>
+                </div>
+            <?php endif; ?>
             <h5 class="mb-4 text-primary">Navigation</h5>
             <nav class="nav flex-column">
                 <a href="<?php echo base_path('Dashboard_intro.php'); ?>?page=dashboard" 
