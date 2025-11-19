@@ -412,20 +412,17 @@ document.addEventListener('DOMContentLoaded', function() {
         setInterval(updateNotificationBadge, 60000);
 
         // Sidebar toggle logic
-        const collapseEl = document.getElementById('navbarNav');
-        const sidebar = document.querySelector('.sidebar');
         const toggler = document.querySelector('.navbar-toggler');
+        const sidebar = document.querySelector('.sidebar');
+        const collapseEl = document.getElementById('navbarNav');
         
-        if (!collapseEl || !sidebar || !toggler) return;
+        if (!toggler || !sidebar || !collapseEl) return;
         
-        // When collapse is shown, also toggle sidebar visibility
-        collapseEl.addEventListener('show.bs.collapse', function() {
-            sidebar.classList.add('show');
-        });
-        
-        // When collapse is hidden, also hide sidebar
-        collapseEl.addEventListener('hide.bs.collapse', function() {
-            sidebar.classList.remove('show');
+        toggler.addEventListener('click', function() {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('show');
+                collapseEl.classList.toggle('show');
+            }
         });
         
         // Close sidebar when clicking on a link
@@ -433,19 +430,17 @@ document.addEventListener('DOMContentLoaded', function() {
         sidebarLinks.forEach(link => {
             link.addEventListener('click', function() {
                 if (window.innerWidth <= 768) {
-                    // Hide the collapse and sidebar
-                    const bsCollapse = bootstrap.Collapse.getInstance(collapseEl) || new bootstrap.Collapse(collapseEl, { toggle: false });
-                    bsCollapse.hide();
+                    sidebar.classList.remove('show');
+                    collapseEl.classList.remove('show');
                 }
             });
         });
         
         // Close sidebar when clicking on the overlay background
         collapseEl.addEventListener('click', function(e) {
-            // Only close if clicking the overlay background, not content inside
             if (e.target === collapseEl && window.innerWidth <= 768) {
-                const bsCollapse = bootstrap.Collapse.getInstance(collapseEl) || new bootstrap.Collapse(collapseEl, { toggle: false });
-                bsCollapse.hide();
+                sidebar.classList.remove('show');
+                collapseEl.classList.remove('show');
             }
         });
     });
